@@ -5,6 +5,7 @@
 #include "target.hpp"
 #include <hpx/modules/async_cuda.hpp>
 #include <vector>
+#include <cusolverDn.h>
 
 namespace gpu
 {
@@ -21,10 +22,12 @@ namespace gpu
  * @param n_tiles Number of tiles.
  */
 void right_looking_cholesky_tiled(
-    gpxpy::CUDA_GPU &gpu,
     std::vector<hpx::shared_future<double *>> &ft_tiles,
-    std::size_t N,
-    std::size_t n_tiles);
+    const std::size_t N,
+    const std::size_t n_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const cusolverDnHandle_t &cusolver,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // }}} ------------------------------------- end of Tiled Cholesky Algorithm
 

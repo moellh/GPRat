@@ -35,9 +35,8 @@ set(SOURCE_FILES
 
 if(GPXPY_WITH_CUDA)
     list(APPEND SOURCE_FILES
-        src/cuda_kernels.cu
-        src/gp_algorithms_gpu.cpp
-        src/tiled_algorithms_gpu.cpp
+        src/gp_algorithms_gpu.cu
+        src/tiled_algorithms_gpu.cu
     )
 endif()
 
@@ -47,7 +46,6 @@ set(HEADER_FILES
     include/adapter_mkl.hpp
     include/cuda_utils.hpp
     include/gp_algorithms_cpu.hpp
-    include/gp_algorithms_gpu.hpp
     include/gp_functions.hpp
     include/gp_kernels.hpp
     include/gp_optimizer.hpp
@@ -55,15 +53,20 @@ set(HEADER_FILES
     include/gpxpy_c.hpp
     include/target.hpp
     include/tiled_algorithms_cpu.hpp
-    include/tiled_algorithms_gpu.hpp
     include/utils_c.hpp
 )
+
+if(GPXPY_WITH_CUDA)
+    list(APPEND HEADER_FILES
+        include/gp_algorithms_gpu.cuh
+        include/tiled_algorithms_gpu.cuh
+    )
+endif()
 
 # Add library
 add_library(gpxpy SHARED ${SOURCE_FILES})
 
 # Link HPX libraries
-target_link_libraries(gpxpy PRIVATE ${HPX_LIBRARIES} MKL::MKL)
 target_link_libraries(gpxpy PRIVATE
     ${HPX_LIBRARIES}
     MKL::MKL

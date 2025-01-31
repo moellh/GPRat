@@ -39,7 +39,7 @@ using cublas_executor = hpx::cuda::experimental::cublas_executor;
  * @return factorized, lower triangular matrix f_L
  */
 hpx::shared_future<double *>
-potrf(std::shared_ptr<cusolverDnHandle_t> cusolver,
+potrf(cusolverDnHandle_t cusolver,
       hpx::shared_future<double *> f_A,
       const std::size_t N);
 
@@ -54,7 +54,7 @@ potrf(std::shared_ptr<cusolverDnHandle_t> cusolver,
  * @return solution matrix f_X
  */
 hpx::shared_future<double *>
-trsm(std::shared_ptr<cublasHandle_t> cublas,
+trsm(cublasHandle_t cublas,
      hpx::shared_future<double *> f_L,
      hpx::shared_future<double *> f_A,
      const std::size_t N,
@@ -72,7 +72,7 @@ trsm(std::shared_ptr<cublasHandle_t> cublas,
  * @return updated matrix f_A
  */
 hpx::shared_future<double *>
-syrk(std::shared_ptr<cublasHandle_t> cublas,
+syrk(cublasHandle_t cublas,
      hpx::shared_future<double *> f_A,
      hpx::shared_future<double *> f_B,
      const std::size_t N);
@@ -92,11 +92,11 @@ syrk(std::shared_ptr<cublasHandle_t> cublas,
  * @return updated matrix f_X
  */
 hpx::shared_future<double *>
-gemm_cholesky(std::shared_ptr<cublasHandle_t> cublas,
-     hpx::shared_future<double *> f_A,
-     hpx::shared_future<double *> f_B,
-     hpx::shared_future<double *> f_C,
-     const std::size_t N);
+gemm_cholesky(cublasHandle_t cublas,
+              hpx::shared_future<double *> f_A,
+              hpx::shared_future<double *> f_B,
+              hpx::shared_future<double *> f_C,
+              const std::size_t N);
 
 // }}} end of BLAS level 3 operations
 

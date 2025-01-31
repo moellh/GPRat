@@ -1,11 +1,9 @@
-#include "../include/tiled_algorithms_gpu.hpp"
+#include "tiled_algorithms_gpu.cuh"
 
-#include "../include/adapter_cublas.hpp"
-#include "target.hpp"
-#include <cusolverDn.h>
-#include <memory>
+#include "adapter_cublas.hpp"
+#include <hpx/algorithm.hpp>
 
-using hpx::cuda::experimental::check_cuda_error;
+using hpx::experimental::for_loop;
 
 namespace gpu
 {
@@ -13,62 +11,53 @@ namespace gpu
 // Tiled Cholesky Algorithm ------------------------------------------------ {{{
 
 void right_looking_cholesky_tiled(
-    gpxpy::CUDA_GPU &gpu,
     std::vector<hpx::shared_future<double *>> &ft_tiles,
-    std::size_t N,
-    std::size_t n_tiles)
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const cusolverDnHandle_t &cusolver,
+    const std::vector<cublasHandle_t> &cublas_handles)
 {
-    // Counter to equally split workload among the cublas executors.
-    // Currently only one cublas executor.
-    std::size_t counter = 0;
+    int cublas_counter = 0;
+    auto next_cublas = [&]()
+    { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
 
-    // NOTE: currently only one stream
-    cudaStream_t stream;
-    cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking);
-
-    // NOTE: currently only one cusolver handle
-    std::shared_ptr<cusolverDnHandle_t> cusolver = std::make_shared<cusolverDnHandle_t>();
-    cusolverDnCreate(cusolver.get());
-    cusolverDnSetStream(*cusolver, stream);
-
-    // NOTE: currently only one cublas executor
-    std::shared_ptr<cublasHandle_t> cublas = std::make_shared<cublasHandle_t>();
-    cublasCreate_v2(cublas.get());
-    cublasSetStream(*cublas, stream);
-
-    for (std::size_t k = 0; k < n_tiles; k++)
+    // clang-format off
+    for_loop(hpx::execution::seq, 0, n_tiles, [&](size_t k)
     {
-        // POTRF: Compute Cholesky factor L
-        ft_tiles[k * n_tiles + k] = hpx::dataflow(
-            hpx::annotated_function(&potrf, "cholesky_tiled_gpu"), cusolver, ft_tiles[k * n_tiles + k], N);
+        cusolverDnSetStream(cusolver, gpu.next_stream());
 
-        for (std::size_t m = k + 1; m < n_tiles; m++)
-        {
-            // TRSM:  Solve X * L^T = A for X:
-            // - f_tiles[k * n_tiles + k] is L
-            // - f_tiles[m * n_tiles + k] is A (same as X)
-            ft_tiles[m * n_tiles + k] = hpx::dataflow(
-                hpx::annotated_function(&trsm, "cholesky_tiled_gpu"), cublas, ft_tiles[k * n_tiles + k], ft_tiles[m * n_tiles + k], N, N, Blas_trans, Blas_right);
-        }
+        // POTRF
+        ft_tiles[k * n_tiles + k] = hpx::dataflow(&potrf, cusolver, ft_tiles[k * n_tiles + k], n_tile_size).get();
 
-        // using cublas for tile update
-        for (std::size_t m = k + 1; m < n_tiles; m++)
+        for_loop(hpx::execution::par, k + 1, n_tiles, [&](size_t m)
         {
+            cublasHandle_t cublas = next_cublas();
+            cublasSetStream(cublas, gpu.next_stream());
+
+            // TRSM
+            ft_tiles[m * n_tiles + k] = hpx::dataflow(&trsm, cublas, ft_tiles[k * n_tiles + k], ft_tiles[m * n_tiles + k], n_tile_size, n_tile_size, Blas_trans, Blas_right);
+        });
+
+        for_loop(hpx::execution::par, k + 1, n_tiles, [&](size_t m)
+        {
+            cublasHandle_t cublas = next_cublas();
+            cublasSetStream(cublas, gpu.next_stream());
+
             // SYRK
-            ft_tiles[m * n_tiles + m] = hpx::dataflow(hpx::annotated_function(&syrk, "cholesky_tiled_gpu"), cublas, ft_tiles[m * n_tiles + m], ft_tiles[m * n_tiles + k], N);
+            ft_tiles[m * n_tiles + m] = hpx::dataflow(&syrk, cublas, ft_tiles[m * n_tiles + m], ft_tiles[m * n_tiles + k], n_tile_size);
 
-            for (std::size_t n = k + 1; n < m; n++)
+            for_loop(hpx::execution::par, k + 1, m, [&](size_t n)
             {
+                cublasHandle_t cublas = next_cublas();
+                cublasSetStream(cublas, gpu.next_stream());
+
                 // GEMM
-                ft_tiles[m * n_tiles + n] = hpx::dataflow(hpx::annotated_function(&gemm_cholesky, "cholesky_tiled_gpu"), cublas, ft_tiles[m * n_tiles + k], ft_tiles[n * n_tiles + k], ft_tiles[m * n_tiles + n], N);
-            }
-        }
-    }
-    hpx::wait_all(ft_tiles);
-    check_cuda_error(cudaStreamSynchronize(stream));
-    check_cuda_error(cudaStreamDestroy(stream));
-    cusolverDnDestroy(*cusolver);
-    cublasDestroy_v2(*cublas);
+                ft_tiles[m * n_tiles + n] = hpx::dataflow(&gemm_cholesky, cublas, ft_tiles[m * n_tiles + k], ft_tiles[n * n_tiles + k], ft_tiles[m * n_tiles + n], n_tile_size);
+            });
+        });
+    });
+    // clang-format on
 }
 
 // }}} ----------------------------------------- end of Tiled Cholesky Algorithm
@@ -228,7 +217,9 @@ update_hyperparameter(
     const std::vector<hpx::shared_future<double>> &beta2_T,
     int iter,
     int param_idx)  // 0 for lengthscale, 1 for vertical-lengthscale
-{ }
+{
+    return 0.0;
+}
 
 double update_lengthscale(
     const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
@@ -306,6 +297,8 @@ double update_noise_variance(
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
     int iter)
-{ }
+{
+    return 0;
+}
 
 }  // namespace gpu

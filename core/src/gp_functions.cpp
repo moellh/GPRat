@@ -7,7 +7,7 @@
 
 // for GPU algorithms
 #ifdef GPXPY_WITH_CUDA
-    #include "../include/gp_algorithms_gpu.hpp"
+    #include "../include/gp_algorithms_gpu.cuh"
 #endif
 
 hpx::shared_future<std::vector<double>>

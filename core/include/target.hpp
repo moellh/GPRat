@@ -21,7 +21,7 @@ struct Target
      */
     virtual bool is_gpu() = 0;
 
-    virtual ~Target() {};
+    virtual ~Target() { }
 
   protected:
     Target() = default;
@@ -50,6 +50,8 @@ struct CUDA_GPU : public Target
 {
     int id;
     int n_streams;
+    int i_stream;
+    int shared_memory_size;
 
     /**
      * TODO: documentation
@@ -59,6 +61,15 @@ struct CUDA_GPU : public Target
     bool is_cpu() override;
 
     bool is_gpu() override;
+
+#ifdef GPXPY_WITH_CUDA
+    cudaStream_t next_stream();
+    void create_streams();
+    void destroy_streams();
+
+  private:
+    std::vector<cudaStream_t> streams;
+#endif
 };
 
 /**

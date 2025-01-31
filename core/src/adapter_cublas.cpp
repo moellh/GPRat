@@ -3,7 +3,6 @@
 #include <cuda_runtime.h>
 #include <hpx/future.hpp>
 #include <hpx/modules/async_cuda.hpp>
-#include <memory>
 #include <mkl_cblas.h>
 #include <mkl_lapacke.h>
 #include <vector>
@@ -19,17 +18,18 @@ using cublas_future = hpx::cuda::experimental::cuda_executor::future_type;
 // BLAS level 3 operations ------------------------------------------------- {{{
 
 hpx::shared_future<double *>
-potrf(std::shared_ptr<cusolverDnHandle_t> cusolver,
+potrf(cusolverDnHandle_t cusolver,
       hpx::shared_future<double *> f_A,
       const std::size_t N)
 {
+    // Get stream
     cudaStream_t stream;
-    cusolverDnGetStream(*cusolver, &stream);
+    cusolverDnGetStream(cusolver, &stream);
 
     cusolverDnParams_t params;
     cusolverDnCreateParams(&params);
 
-    int *d_info;
+    int *d_info = nullptr;
     check_cuda_error(cudaMalloc(reinterpret_cast<void **>(&d_info), sizeof(int)));
 
     size_t workspaceInBytesOnDevice;
@@ -44,7 +44,7 @@ potrf(std::shared_ptr<cusolverDnHandle_t> cusolver,
     cublasFillMode_t fillMode = CUBLAS_FILL_MODE_UPPER;
 
     cusolverDnXpotrf_bufferSize(
-        *cusolver, params, fillMode, N, CUDA_R_64F, d_A, N, CUDA_R_64F, &workspaceInBytesOnDevice, &workspaceInBytesOnHost);
+        cusolver, params, fillMode, N, CUDA_R_64F, d_A, N, CUDA_R_64F, &workspaceInBytesOnDevice, &workspaceInBytesOnHost);
 
     check_cuda_error(cudaMalloc(reinterpret_cast<void **>(&d_work), workspaceInBytesOnDevice));
 
@@ -57,7 +57,7 @@ potrf(std::shared_ptr<cusolverDnHandle_t> cusolver,
         }
     }
 
-    cusolverDnXpotrf(*cusolver, params, fillMode, N, CUDA_R_64F, d_A, N, CUDA_R_64F, d_work, workspaceInBytesOnDevice, h_work, workspaceInBytesOnHost, d_info);
+    cusolverDnXpotrf(cusolver, params, fillMode, N, CUDA_R_64F, d_A, N, CUDA_R_64F, d_work, workspaceInBytesOnDevice, h_work, workspaceInBytesOnHost, d_info);
 
     check_cuda_error(cudaStreamSynchronize(stream));
 
@@ -67,13 +67,13 @@ potrf(std::shared_ptr<cusolverDnHandle_t> cusolver,
         free(h_work);
     }
     check_cuda_error(cudaFree(d_info));
-
+    // std::cout << "potrf completed" << std::endl;
 
     return hpx::make_ready_future(d_A);
 }
 
 hpx::shared_future<double *>
-trsm(std::shared_ptr<cublasHandle_t> cublas,
+trsm(cublasHandle_t cublas,
      hpx::shared_future<double *> f_L,
      hpx::shared_future<double *> f_A,
      const std::size_t N,
@@ -81,8 +81,9 @@ trsm(std::shared_ptr<cublasHandle_t> cublas,
      const BLAS_TRANSPOSE transpose_L,
      const BLAS_SIDE side_L)
 {
+    // Get stream
     cudaStream_t stream;
-    cublasGetStream_v2(*cublas, &stream);
+    cublasGetStream_v2(cublas, &stream);
 
     // TRSM constants
     const double alpha = 1.0;
@@ -98,20 +99,22 @@ trsm(std::shared_ptr<cublasHandle_t> cublas,
     cublasSideMode_t cublas_side_L = cublas_side_invert(side_L);
 
     // Compute TRSM on device (X, returned as A)
-    cublasDtrsm(*cublas, cublas_side_L, CUBLAS_FILL_MODE_UPPER, cublas_transpose_L, CUBLAS_DIAG_NON_UNIT, N, N, &alpha, d_L, N, d_A, N);
+    cublasDtrsm(cublas, cublas_side_L, CUBLAS_FILL_MODE_UPPER, cublas_transpose_L, CUBLAS_DIAG_NON_UNIT, N, N, &alpha, d_L, N, d_A, N);
     check_cuda_error(cudaStreamSynchronize(stream));
+    // std::cout << "trsm completed" << std::endl;
 
     return hpx::make_ready_future(d_A);
 }
 
 hpx::shared_future<double *>
-syrk(std::shared_ptr<cublasHandle_t> cublas,
+syrk(cublasHandle_t cublas,
      hpx::shared_future<double *> f_A,
      hpx::shared_future<double *> f_B,
      const std::size_t N)
 {
+    // Get stream
     cudaStream_t stream;
-    cublasGetStream_v2(*cublas, &stream);
+    cublasGetStream_v2(cublas, &stream);
 
     // SYRK constants
     const double alpha = -1.0;
@@ -125,21 +128,23 @@ syrk(std::shared_ptr<cublasHandle_t> cublas,
     // Compute SYRK on device
     // NOTE: Changed CUBLAS_FILL_MODE_UPPER & CUBLAS_OP_T according to cuBLAS
     // column-major ordering
-    cublasDsyrk(*cublas, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_T, N, N, &alpha, d_B, N, &beta, d_A, N);
+    cublasStatus_t status2 = cublasDsyrk(cublas, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_T, N, N, &alpha, d_B, N, &beta, d_A, N);
     check_cuda_error(cudaStreamSynchronize(stream));
+    // std::cout << "syrk completed" << std::endl;
 
     return hpx::make_ready_future(d_A);
 }
 
 hpx::shared_future<double *>
-gemm_cholesky(std::shared_ptr<cublasHandle_t> cublas,
+gemm_cholesky(cublasHandle_t cublas,
      hpx::shared_future<double *> f_A,
      hpx::shared_future<double *> f_B,
      hpx::shared_future<double *> f_C,
      const std::size_t N)
 {
+    // Get stream
     cudaStream_t stream;
-    cublasGetStream_v2(*cublas, &stream);
+    cublasGetStream_v2(cublas, &stream);
 
     // GEMM constants
     const double alpha = -1.0;
@@ -157,8 +162,9 @@ gemm_cholesky(std::shared_ptr<cublasHandle_t> cublas,
     // Compute GEMM on device
     // NOTE: swapped order of d_A and d_B according to cuBLAS column-major
     // ordering
-    cublasDgemm(*cublas, CUBLAS_OP_T, CUBLAS_OP_N, N, N, N, &alpha, d_B, N, d_A, N, &beta, d_C, N);
+    cublasDgemm(cublas, CUBLAS_OP_T, CUBLAS_OP_N, N, N, N, &alpha, d_B, N, d_A, N, &beta, d_C, N);
     check_cuda_error(cudaStreamSynchronize(stream));
+    // std::cout << "gemm completed" << std::endl;
 
     return hpx::make_ready_future(d_C);
 }

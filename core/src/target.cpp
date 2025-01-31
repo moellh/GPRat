@@ -2,10 +2,14 @@
 
 #include <iostream>
 
+#ifdef GPXPY_WITH_CUDA
+using hpx::cuda::experimental::check_cuda_error;
+#endif
+
 namespace gpxpy
 {
 
-CPU::CPU() {}
+CPU::CPU() { }
 
 bool CPU::is_cpu() { return true; }
 
@@ -13,7 +17,10 @@ bool CPU::is_gpu() { return false; }
 
 CUDA_GPU::CUDA_GPU(int id, int n_streams) :
     id(id),
-    n_streams(n_streams)
+    n_streams(n_streams),
+    streams(),
+    i_stream(0),
+    shared_memory_size(0)
 {
 #ifdef GPXPY_WITH_CUDA
     int deviceCount;
@@ -30,6 +37,31 @@ CUDA_GPU::CUDA_GPU(int id, int n_streams) :
 bool CUDA_GPU::is_cpu() { return false; }
 
 bool CUDA_GPU::is_gpu() { return true; }
+
+#ifdef GPXPY_WITH_CUDA
+cudaStream_t CUDA_GPU::next_stream()
+{
+    return streams[i_stream++ % n_streams];
+}
+
+void CUDA_GPU::create_streams()
+{
+    streams = std::vector<cudaStream_t>(n_streams);
+    for (cudaStream_t &stream : streams)
+    {
+        hpx::cuda::experimental::check_cuda_error(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking));
+    };
+}
+
+void CUDA_GPU::destroy_streams()
+{
+    for (cudaStream_t& stream : streams)
+    {
+        check_cuda_error(cudaStreamSynchronize(stream));
+        check_cuda_error(cudaStreamDestroy(stream));
+    }
+}
+#endif
 
 CPU get_cpu() { return CPU(); }
 
@@ -92,7 +124,7 @@ int gpu_count()
 #else
     std::cout
         << "CUDA is not available - There are no GPUs available. You can only "
-           "`get_cpu()` to utilize the CPU for computation."
+           "use `get_cpu()` to utilize the CPU for computation."
         << std::endl;
     return 0;
 #endif

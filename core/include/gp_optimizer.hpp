@@ -9,6 +9,7 @@
 
 namespace gpxpy_hyper
 {
+
 /**
  * @brief Hyperparameters for the Adam optimizer
  */
@@ -42,7 +43,7 @@ struct AdamParams
      * @param b1 beta1
      * @param b2 beta2
      * @param eps epsilon
-     * @param opt_i number of optimization iterations
+     * @param opt_i number of optimization iterationsgp op
      * @param M_T_init initial values for first moment vector
      * @param V_T_init initial values for second moment vector
      */
