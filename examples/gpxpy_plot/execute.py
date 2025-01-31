@@ -21,7 +21,7 @@ gpx.start_hpx(sys.argv, 4)
 gp = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size,
             lengthscale=0.3, v_lengthscale=1.0 , noise_var=0.1, n_reg=1, trainable=[True, True, True])
 
-hpar = gpx.AdamParams(learning_rate=0.1, opt_iter=10000, m_T=[0,0,0], v_T=[0,0,0])
+hpar = gpx.AdamParams(learning_rate=0.1, opt_iter=100, m_T=[0,0,0], v_T=[0,0,0])
 losses = gp.optimize(hpar)
 
 pr, var = gp.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size)
