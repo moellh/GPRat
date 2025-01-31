@@ -1,7 +1,7 @@
 {
     "input_file": "./data/input_data.txt",
     "output_file": "./data/output_data.txt",
-    "N_SAMPLES": 1024,
+    "N_SAMPLES": 32768,
     "SAMPLING_FREQUENCY": 0.05,
     "NOISE": 0.05,
     "SIGNAL": "sinus",
