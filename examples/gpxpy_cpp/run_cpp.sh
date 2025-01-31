@@ -34,6 +34,11 @@ export CUDA_ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | \
 # Reset build directory
 rm -rf build && mkdir build && cd build
 
+# copy apex.conf if exists
+if [ -f ../apex.conf ]; then
+    cp ../apex.conf .
+fi
+
 # Configure project
 $CMAKE_COMMAND .. \
     -DCMAKE_BUILD_TYPE=Release \
