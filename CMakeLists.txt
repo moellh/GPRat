@@ -117,7 +117,8 @@ if(GPXPY_BUILD_CORE)
            MKL::MKL
            MKL::mkl_sequential
            CUDA::cublas
-           CUDA::cusolver)
+           CUDA::cusolver
+           atomic)
 
   install(
     TARGETS gpxpy

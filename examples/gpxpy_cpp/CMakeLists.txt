@@ -55,4 +55,4 @@ target_link_libraries(gpxpy_cpp PUBLIC
                       MKL::mkl_core
                       MKL::MKL
                       MKL::mkl_sequential
-                      )
+                      atomic)
