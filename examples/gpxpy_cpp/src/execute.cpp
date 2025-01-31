@@ -5,57 +5,58 @@
 #include <fstream>
 #include <hpx/algorithm.hpp>
 #include <iostream>
+#include <string>
 
 auto now = std::chrono::high_resolution_clock::now;
-
-// NOTE: my vec, to remove later
-std::vector<double> cholesky_times;
 
 int main(int argc, char *argv[])
 {
     // number of training points, number of rows/columns in the kernel matrix
-    const int N_TRAIN_START = 512;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384
-    const int N_TRAIN_END = 1024;
-    const int N_TRAIN_STEP = 512;
+    const int N_TRAIN_START = 4096;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384
+    const int N_TRAIN_END = 4096;    // 7,   8,   9,   10,   11,   12,   13,   14
 
     const int N_TEST = 1024;
 
-    const int LOOPS = 8;
+    const int LOOPS = 1;
     const int OPTIMIZE_ITERATIONS = 1;
 
     // 2^NUM_CORES_EXPONENT CPU cores are used by HPX
-    const std::size_t NUM_CORES_EXPONENT = 2;
+    const std::size_t NUM_CORES_EXPONENT = 3;
+
+    const int N_REGRESSORS = 1;
 
     // number of tiles per dimension
-    const int n_train_tiles = 1;
+    // const int n_train_tiles = 4;
 
     // number of regressors, i.e. number of previous points incl. current point
     // considered for each entry in the kernel matrix
-    const int n_reg = 128;
 
     // path to training input & output data
-    std::string train_in_path = "../../../data/training/training_input.txt";
-    std::string train_out_path = "../../../data/training/training_output.txt";
+    std::string train_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
+    std::string train_out_path = "../../../data/generators/msd_simulator/data/output_data.txt";
 
     // path to test input data, output data is predicted
     std::string test_in_path = "../../../data/test/test_input.txt";
 
-    for (std::size_t cores = 4; cores <= pow(2, NUM_CORES_EXPONENT); cores *= 2) // NOTE: currently all cores
+    // Add number of threads to arguments
+    std::vector<std::string> args(argv, argv + argc);
+    args.push_back("--hpx:threads=" + std::to_string(8));
+
+    // Convert arguments to char* array
+    std::vector<char *> cstr_args;
+    for (auto &arg : args)
     {
-        // Add number of threads to arguments
-        std::vector<std::string> args(argv, argv + argc);
-        args.push_back("--hpx:threads=" + std::to_string(cores));
+        cstr_args.push_back(const_cast<char *>(arg.c_str()));
+    }
+    int hpx_argc = static_cast<int>(cstr_args.size());
+    char **hpx_argv = cstr_args.data();
 
-        // Convert arguments to char* array
-        std::vector<char *> cstr_args;
-        for (auto &arg : args)
-        {
-            cstr_args.push_back(const_cast<char *>(arg.c_str()));
-        }
-        int hpx_argc = static_cast<int>(cstr_args.size());
-        char **hpx_argv = cstr_args.data();
+    // Start HPX runtime with arguments
+    utils::start_hpx_runtime(hpx_argc, hpx_argv);
 
-        for (std::size_t n_train = N_TRAIN_START; n_train <= N_TRAIN_END; n_train += N_TRAIN_STEP)
+    for (std::size_t n_train_tiles = 4; n_train_tiles <= 4; n_train_tiles *= 2)  // NOTE: currently all cores
+    {
+        for (std::size_t n_train = N_TRAIN_START; n_train <= N_TRAIN_END; n_train *= 2)
         {
             for (std::size_t loop = 0; loop < LOOPS; loop++)
             {
@@ -81,25 +82,21 @@ int main(int argc, char *argv[])
                 std::vector<bool> trainable = { true, true, true };
 
                 // GP for CPU computation
-                // std::string target = "cpu";
-                // gpxpy::GP gp_cpu(training_input.data, training_output.data, n_train_tiles, n_train_tile_size, 1.0, 1.0, 0.1, n_reg, trainable);
+                std::string target = "cpu";
+                // gpxpy::GP gp_cpu(training_input.data, training_output.data, n_train_tiles, n_train_tile_size, 1.0, 1.0, 0.1, N_REGRESSORS, trainable);
 
                 // GP for GPU computation
-                std::string target = "gpu";
+                target = "gpu";
                 int device = 0;
-                int n_streams = 1;
-                gpxpy::GP gp_gpu(training_input.data, training_output.data, n_train_tiles, n_train_tile_size, 1.0, 1.0, 0.1, n_reg, trainable, device, n_streams);
+                int n_streams = 32;
+                gpxpy::GP gp_gpu(training_input.data, training_output.data, n_train_tiles, n_train_tile_size, 1.0, 1.0, 0.1, N_REGRESSORS, trainable, device, n_streams);
 
                 auto init_time = now() - start_init_gp;  // ----------------- }}}
 
-                // Start HPX runtime with arguments
-                utils::start_hpx_runtime(hpx_argc, hpx_argv);
-
                 // Cholesky factorization time ----------------------------- {{{
                 auto start_cholesky = now();
-                auto choleksy_gpu = gp_gpu.cholesky();
+                auto tiles = gp_gpu.cholesky();
                 auto cholesky_time = now() - start_cholesky;
-                cholesky_times.push_back(cholesky_time.count()); // NOTE: to remove later
                 // ------------ }}}
 
                 /*
@@ -129,10 +126,7 @@ int main(int argc, char *argv[])
 
                 */
 
-                // Stop HPX runtime
-                utils::stop_hpx_runtime();
-
-                auto total_time = now() - start_total;  // ------------------ }}}
+                auto total_time = now() - start_total;  // ----------------- }}}
 
                 // Append parameters & times as CSV
                 std::ofstream outfile("../output.csv", std::ios::app);
@@ -140,20 +134,20 @@ int main(int argc, char *argv[])
                 // If file is empty, write the header
                 if (outfile.tellp() == 0)
                 {
-                    outfile << "target,cores,n_train,n_test,n_tiles,n_regressor,opt_iter,";
-                    outfile << "total_time,init_time,cholesky_time,";
+                    outfile << "target,n_train,n_tiles,";
+                    outfile << "cholesky_time,";
                     // outfile << "Opt_time,Pred_Uncer_time,Pred_Full_time,Pred_time,"
                     outfile << "n_loop\n";
                 }
                 outfile << target << ","
-                        << cores << ","
+                        // << cores << ","
                         << n_train << ","
-                        << N_TEST << ","
+                        // << N_TEST << ","
                         << n_train_tiles << ","
-                        << n_reg << ","
-                        << OPTIMIZE_ITERATIONS << ","
-                        << total_time.count() << ","
-                        << init_time.count() << ","
+                        // << N_REGRESSORS << ","
+                        // << OPTIMIZE_ITERATIONS << ","
+                        // << total_time.count() << ","
+                        // << init_time.count() << ","
                         << cholesky_time.count() << ","
                         // << opt_time.count() << "," << pred_uncer_time.count() << "," << pred_full_cov_time.count() << "," << pred_time.count() << ","
                         << loop << "\n";
@@ -162,11 +156,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    for (auto &time : cholesky_times) // NOTE: to remove later
-    {
-        std::cout << time << ",";
-    }
-    std::cout << std::endl;
+    // Stop HPX runtime
+    utils::stop_hpx_runtime();
 
     return 0;
 }
