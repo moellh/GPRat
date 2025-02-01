@@ -19,10 +19,6 @@ typedef enum BLAS_ALPHA { Blas_add = 1,
 
 using cublas_executor = hpx::cuda::experimental::cublas_executor;
 
-// =============================================================================
-// BLAS operations on GPU with cuBLAS (and cuSOLVER)
-// =============================================================================
-
 // BLAS level 3 operations {{{
 
 /**
@@ -55,12 +51,12 @@ potrf(cusolverDnHandle_t cusolver,
  */
 hpx::shared_future<double *>
 trsm(cublasHandle_t cublas,
-     hpx::shared_future<double *> f_L,
      hpx::shared_future<double *> f_A,
-     const std::size_t N,
+     hpx::shared_future<double *> f_B,
      const std::size_t M,
-     const BLAS_TRANSPOSE transpose_L,
-     const BLAS_SIDE side_L);
+     const std::size_t N,
+     const BLAS_TRANSPOSE transpose_A,
+     const BLAS_SIDE side_A);
 
 /**
  * @brief Symmetric rank-k update: A = A - B * B^T
@@ -92,11 +88,15 @@ syrk(cublasHandle_t cublas,
  * @return updated matrix f_X
  */
 hpx::shared_future<double *>
-gemm_cholesky(cublasHandle_t cublas,
-              hpx::shared_future<double *> f_A,
-              hpx::shared_future<double *> f_B,
-              hpx::shared_future<double *> f_C,
-              const std::size_t N);
+gemm(cublasHandle_t cublas,
+     hpx::shared_future<double *> f_A,
+     hpx::shared_future<double *> f_B,
+     hpx::shared_future<double *> f_C,
+     const std::size_t M,
+     const std::size_t N,
+     const std::size_t K,
+     const BLAS_TRANSPOSE transpose_A,
+     const BLAS_TRANSPOSE transpose_B);
 
 // }}} end of BLAS level 3 operations
 
@@ -112,12 +112,12 @@ gemm_cholesky(cublasHandle_t cublas,
  *
  * @return solution vector f_x
  */
-hpx::shared_future<std::vector<double>>
-trsv(cublas_executor *cublas,
-     hpx::shared_future<std::vector<double>> f_L,
-     hpx::shared_future<std::vector<double>> f_a,
+hpx::shared_future<double *>
+trsv(cublasHandle_t cublas,
+     hpx::shared_future<double *> f_A,
+     hpx::shared_future<double *> f_b,
      const std::size_t N,
-     const BLAS_TRANSPOSE transpose_L);
+     const BLAS_TRANSPOSE transpose_A);
 
 /**
  * @brief General matrix-vector multiplication: b = b - A(^T) * a
@@ -131,13 +131,13 @@ trsv(cublas_executor *cublas,
  *
  * @return updated vector f_b
  */
-hpx::shared_future<std::vector<double>>
-gemv(cublas_executor *cublas,
-     hpx::shared_future<std::vector<double>> f_A,
-     hpx::shared_future<std::vector<double>> f_a,
-     hpx::shared_future<std::vector<double>> f_b,
-     const std::size_t N,
+hpx::shared_future<double *>
+gemv(cublasHandle_t cublas,
+     hpx::shared_future<double *> f_A,
+     hpx::shared_future<double *> f_x,
+     hpx::shared_future<double *> f_y,
      const std::size_t M,
+     const std::size_t N,
      const BLAS_ALPHA alpha,
      const BLAS_TRANSPOSE transpose_A);
 
@@ -151,11 +151,11 @@ gemv(cublas_executor *cublas,
  *
  * @return updated vector f_b
  */
-hpx::shared_future<std::vector<double>>
-ger(cublas_executor *cublas,
-    hpx::shared_future<std::vector<double>> f_A,
-    hpx::shared_future<std::vector<double>> f_x,
-    hpx::shared_future<std::vector<double>> f_y,
+hpx::shared_future<double *>
+ger(cublasHandle_t cublas,
+    hpx::shared_future<double *> f_A,
+    hpx::shared_future<double *> f_x,
+    hpx::shared_future<double *> f_y,
     const std::size_t N);
 
 /**
@@ -168,12 +168,12 @@ ger(cublas_executor *cublas,
  *
  * @return updated vector f_r
  */
-hpx::shared_future<std::vector<double>>
-dot_diag_syrk(cublas_executor *cublas,
-              hpx::shared_future<std::vector<double>> f_A,
-              hpx::shared_future<std::vector<double>> f_r,
-              const std::size_t N,
-              const std::size_t M);
+hpx::shared_future<double *>
+dot_diag_syrk(cublasHandle_t cublas,
+              hpx::shared_future<double *> f_A,
+              hpx::shared_future<double *> f_r,
+              const std::size_t M,
+              const std::size_t N);
 
 /**
  * @brief Vector update with diagonal GEMM: r = r + diag(A * B)
@@ -185,13 +185,13 @@ dot_diag_syrk(cublas_executor *cublas,
  * @param M second matrix dimension
  * @return updated vector f_r
  */
-hpx::shared_future<std::vector<double>>
-dot_diag_gemm(cublas_executor *cublas,
-              hpx::shared_future<std::vector<double>> f_A,
-              hpx::shared_future<std::vector<double>> f_B,
-              hpx::shared_future<std::vector<double>> f_r,
-              const std::size_t N,
-              const std::size_t M);
+hpx::shared_future<double *>
+dot_diag_gemm(cublasHandle_t cublas,
+              hpx::shared_future<double *> f_A,
+              hpx::shared_future<double *> f_B,
+              hpx::shared_future<double *> f_r,
+              const std::size_t M,
+              const std::size_t N);
 
 // }}} end of BLAS level 2 operations
 
@@ -204,9 +204,9 @@ dot_diag_gemm(cublas_executor *cublas,
  * @param N vector length
  * @return f_a * f_b
  */
-double dot(cublas_executor *cublas,
-           std::vector<double> a,
-           std::vector<double> b,
+double dot(cublasHandle_t cublas,
+           hpx::shared_future<double *> f_a,
+           hpx::shared_future<double *> f_b,
            const std::size_t N);
 
 // }}} end of BLAS level 1 operations
