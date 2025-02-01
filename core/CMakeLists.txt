@@ -20,7 +20,6 @@ include_directories(${MKL_INCLUDE_DIRS})
 
 # Source files
 set(SOURCE_FILES
-    src/adapter_cublas.cpp
     src/adapter_mkl.cpp
     src/gp_algorithms_cpu.cpp
     src/gp_functions.cpp
@@ -35,6 +34,7 @@ set(SOURCE_FILES
 
 if(GPXPY_WITH_CUDA)
     list(APPEND SOURCE_FILES
+        src/adapter_cublas.cu
         src/gp_algorithms_gpu.cu
         src/tiled_algorithms_gpu.cu
     )
@@ -42,7 +42,6 @@ endif()
 
 # Headers (to be installed)
 set(HEADER_FILES
-    include/adapter_cublas.hpp
     include/adapter_mkl.hpp
     include/cuda_utils.hpp
     include/gp_algorithms_cpu.hpp
@@ -58,6 +57,7 @@ set(HEADER_FILES
 
 if(GPXPY_WITH_CUDA)
     list(APPEND HEADER_FILES
+        include/adapter_cublas.cuh
         include/gp_algorithms_gpu.cuh
         include/tiled_algorithms_gpu.cuh
     )

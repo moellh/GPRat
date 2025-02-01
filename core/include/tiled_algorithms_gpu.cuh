@@ -34,18 +34,21 @@ void right_looking_cholesky_tiled(
 // Tiled Triangular Solve Algorithms ----------------------------------- {{{
 
 void forward_solve_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
     std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
     std::vector<hpx::shared_future<std::vector<double>>> &ft_rhs,
-    std::size_t N,
-    std::size_t n_tiles);
+    std::size_t n_tile_size,
+    std::size_t n_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 void backward_solve_tiled(
     std::vector<hpx::cuda::experimental::cublas_executor> cublas,
     std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
     std::vector<hpx::shared_future<std::vector<double>>> &ft_rhs,
-    std::size_t N,
-    std::size_t n_tiles);
+    std::size_t n_tile_size,
+    std::size_t n_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // Tiled Triangular Solve Algorithms for matrices (K * X = B)
 void forward_solve_tiled_matrix(

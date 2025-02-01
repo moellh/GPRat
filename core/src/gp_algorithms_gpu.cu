@@ -55,10 +55,6 @@ gen_tile_covariance_kernel(double *d_tile,
 
         d_tile[i * n_tile_size + j] = covariance;
     }
-    else
-    {
-        printf("Error: Indices out of bounds.\n");
-    }
 }
 
 double *
@@ -85,116 +81,204 @@ gen_tile_covariance(const double *d_input,
     return d_tile;
 }
 
-std::vector<double>
-gen_tile_full_prior_covariance(std::size_t row,
-                               std::size_t col,
-                               std::size_t N,
-                               std::size_t n_regressors,
-                               gpxpy_hyper::SEKParams sek_params,
-                               const std::vector<double> &input)
+__global__ void
+gen_tile_full_prior_covariance_kernel(double *d_tile,
+                                      const double *d_input,
+                                      const std::size_t n_tile_size,
+                                      const std::size_t n_regressors,
+                                      const std::size_t tile_row,
+                                      const std::size_t tile_column,
+                                      const gpxpy_hyper::SEKParams sek_params)
 {
-    /* std::size_t i_global, j_global;
-    double covariance_function;
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    for (std::size_t i = 0; i < N; i++)
+    unsigned int i = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < n_tile_size && j < n_tile_size)
     {
-        i_global = N * row + i;
-        for (std::size_t j = 0; j < N; j++)
+        std::size_t i_global = n_tile_size * tile_row + i;
+        std::size_t j_global = n_tile_size * tile_column + j;
+
+        double distance = 0.0;
+        for (std::size_t k = 0; k < n_regressors; ++k)
         {
-            j_global = N * col + j;
-            // compute covariance function
-            covariance_function = compute_covariance_function(
-                i_global, j_global, n_regressors, sek_params, input, input);
-            tile[i * N + j] = covariance_function;
+            int offset = -n_regressors + 1 + k;
+            int i_local = i_global + offset;
+            int j_local = j_global + offset;
+
+            double z_ik = (i_local >= 0) ? d_input[i_local] : 0.0;
+            double z_jk = (j_local >= 0) ? d_input[j_local] : 0.0;
+            distance += (z_ik - z_jk) * (z_ik - z_jk);
         }
+
+        double covariance = sek_params.vertical_lengthscale * exp(-0.5 * distance / (sek_params.lengthscale * sek_params.lengthscale));
+
+        d_tile[i * n_tile_size + j] = covariance;
     }
-    return std::move(tile); */
-    return std::vector<double>();
 }
 
-std::vector<double>
-gen_tile_prior_covariance(std::size_t row,
-                          std::size_t col,
-                          std::size_t N,
-                          std::size_t n_regressors,
-                          gpxpy_hyper::SEKParams sek_params,
-                          const std::vector<double> &input)
+double *
+gen_tile_full_prior_covariance(const double *d_input,
+                               const std::size_t tile_row,
+                               const std::size_t tile_colums,
+                               const std::size_t n_tile_size,
+                               const std::size_t n_regressors,
+                               const gpxpy_hyper::SEKParams sek_params,
+                               gpxpy::CUDA_GPU &gpu)
 {
-    /* std::size_t i_global, j_global;
-    double covariance_function;
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N);
-    for (std::size_t i = 0; i < N; i++)
-    {
-        i_global = N * row + i;
-        j_global = N * col + i;
-        // compute covariance function
-        covariance_function =
-            compute_covariance_function(i_global, j_global, n_regressors, sek_params, input, input);
-        tile[i] = covariance_function;
-    }
-    return std::move(tile); */
-    return std::vector<double>();
+    double *d_tile;
+
+    dim3 threads_per_block(16, 16);
+    dim3 n_blocks((n_tile_size + 15) / 16, (n_tile_size + 15) / 16);
+
+    cudaStream_t stream = gpu.next_stream();
+
+    check_cuda_error(cudaMalloc(&d_tile, n_tile_size * n_tile_size * sizeof(double)));
+    gen_tile_full_prior_covariance_kernel<<<n_blocks, threads_per_block, gpu.shared_memory_size, stream>>>(d_tile, d_input, n_tile_size, n_regressors, tile_row, tile_colums, sek_params);
+
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return d_tile;
 }
 
-std::vector<double>
-gen_tile_cross_covariance(std::size_t row,
-                          std::size_t col,
-                          std::size_t N_row,
-                          std::size_t N_col,
-                          std::size_t n_regressors,
-                          gpxpy_hyper::SEKParams sek_params,
-                          const std::vector<double> &row_input,
-                          const std::vector<double> &col_input)
+__global__ void
+gen_tile_prior_covariance_kernel(double *d_tile,
+                                 const double *d_input,
+                                 const std::size_t n_tile_size,
+                                 const std::size_t n_regressors,
+                                 const std::size_t tile_row,
+                                 const std::size_t tile_column,
+                                 const gpxpy_hyper::SEKParams sek_params)
 {
-    /* std::size_t i_global, j_global;
-    double covariance_function;
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N_row * N_col);
-    for (std::size_t i = 0; i < N_row; i++)
+    unsigned int i = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < n_tile_size)
     {
-        i_global = N_row * row + i;
-        for (std::size_t j = 0; j < N_col; j++)
+        std::size_t i_global = n_tile_size * tile_row + i;
+        std::size_t j_global = n_tile_size * tile_column + i;
+
+        double distance = 0.0;
+        for (std::size_t k = 0; k < n_regressors; ++k)
         {
-            j_global = N_col * col + j;
-            // compute covariance function
-            covariance_function = compute_covariance_function(
-                i_global, j_global, n_regressors, sek_params, row_input, col_input);
-            tile[i * N_col + j] = covariance_function;
+            int offset = -n_regressors + 1 + k;
+            int i_local = i_global + offset;
+            int j_local = j_global + offset;
+
+            double z_ik = (i_local >= 0) ? d_input[i_local] : 0.0;
+            double z_jk = (j_local >= 0) ? d_input[j_local] : 0.0;
+            distance += (z_ik - z_jk) * (z_ik - z_jk);
         }
+
+        double covariance = sek_params.vertical_lengthscale * exp(-0.5 * distance / (sek_params.lengthscale * sek_params.lengthscale));
+
+        d_tile[i] = covariance;
     }
-    return std::move(tile); */
-    return std::vector<double>();
+}
+
+double *
+gen_tile_prior_covariance(const double *d_input,
+                          const std::size_t tile_row,
+                          const std::size_t tile_column,
+                          const std::size_t n_tile_size,
+                          const std::size_t n_regressors,
+                          const gpxpy_hyper::SEKParams sek_params,
+                          gpxpy::CUDA_GPU &gpu)
+{
+    double *d_tile;
+
+    dim3 threads_per_block(256);
+    dim3 n_blocks((n_tile_size + 255) / 256);
+
+    cudaStream_t stream = gpu.next_stream();
+
+    check_cuda_error(cudaMalloc(&d_tile, n_tile_size * sizeof(double)));
+    gen_tile_prior_covariance_kernel<<<n_blocks, threads_per_block, 0, stream>>>(d_tile, d_input, n_tile_size, n_regressors, tile_row, tile_column, sek_params);
+
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return d_tile;
+}
+
+__global__ void
+gen_tile_cross_covariance_kernel(double *d_tile,
+                                 const double *d_row_input,
+                                 const double *d_col_input,
+                                 const std::size_t n_row_tile_size,
+                                 const std::size_t n_column_tile_size,
+                                 const std::size_t n_regressors,
+                                 const std::size_t tile_row,
+                                 const std::size_t tile_column,
+                                 const gpxpy_hyper::SEKParams sek_params)
+{
+    unsigned int i = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned int j = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (i < n_row_tile_size && j < n_column_tile_size)
+    {
+        std::size_t i_global = n_row_tile_size * tile_row + i;
+        std::size_t j_global = n_column_tile_size * tile_column + j;
+
+        double distance = 0.0;
+        for (std::size_t k = 0; k < n_regressors; ++k)
+        {
+            double z_ik = d_row_input[i_global * n_regressors + k];
+            double z_jk = d_col_input[j_global * n_regressors + k];
+            distance += (z_ik - z_jk) * (z_ik - z_jk);
+        }
+
+        double covariance = sek_params.vertical_lengthscale * exp(-0.5 * distance / (sek_params.lengthscale * sek_params.lengthscale));
+        d_tile[i * n_column_tile_size + j] = covariance;
+    }
+}
+
+double *
+gen_tile_cross_covariance(const double *d_row_input,
+                          const double *d_col_input,
+                          const std::size_t tile_row,
+                          const std::size_t tile_column,
+                          const std::size_t n_row_tile_size,
+                          const std::size_t n_column_tile_size,
+                          const std::size_t n_regressors,
+                          const gpxpy_hyper::SEKParams sek_params,
+                          gpxpy::CUDA_GPU &gpu)
+{
+    double *d_tile;
+
+    dim3 threads_per_block(16, 16);
+    dim3 n_blocks((n_column_tile_size + 15) / 16, (n_row_tile_size + 15) / 16);
+
+    cudaStream_t stream = gpu.next_stream();
+
+    check_cuda_error(cudaMalloc(&d_tile, n_row_tile_size * n_column_tile_size * sizeof(double)));
+    gen_tile_cross_covariance_kernel<<<n_blocks, threads_per_block, 0, stream>>>(d_tile, d_row_input, d_col_input, n_row_tile_size, n_column_tile_size, n_regressors, tile_row, tile_column, sek_params);
+
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return d_tile;
 }
 
 std::vector<double>
-gen_tile_cross_cov_T(std::size_t N_row,
-                     std::size_t N_col,
+gen_tile_cross_cov_T(std::size_t n_row_tile_size,
+                     std::size_t n_column_tile_size,
                      const std::vector<double> &cross_covariance_tile)
 {
-    /* std::vector<double> transposed;
-    transposed.resize(N_row * N_col);
-    for (std::size_t i = 0; i < N_row; ++i)
+    std::vector<double> transposed;
+    transposed.resize(n_row_tile_size * n_column_tile_size);
+    for (std::size_t i = 0; i < n_row_tile_size; ++i)
     {
-        for (std::size_t j = 0; j < N_col; j++)
+        for (std::size_t j = 0; j < n_column_tile_size; j++)
         {
-            transposed[j * N_row + i] =
-                cross_covariance_tile[i * N_col + j];
+            transposed[j * n_row_tile_size + i] =
+                cross_covariance_tile[i * n_column_tile_size + j];
         }
     }
-    return std::move(transposed); */
-    return std::vector<double>();
+    return transposed;
 }
 
 std::vector<double> gen_tile_output(std::size_t row,
                                     std::size_t N,
                                     const std::vector<double> &output)
 {
-    /* std::size_t i_global;
+    std::size_t i_global;
     // Initialize tile
     std::vector<double> tile;
     tile.resize(N);
@@ -203,37 +287,35 @@ std::vector<double> gen_tile_output(std::size_t row,
         i_global = N * row + i;
         tile[i] = output[i_global];
     }
-    return std::move(tile); */
-    return std::vector<double>();
+    return tile;
 }
 
 double compute_error_norm(std::size_t n_tiles,
-                          std::size_t tile_size,
+                          std::size_t n_tile_size,
                           const std::vector<double> &b,
                           const std::vector<std::vector<double>> &tiles)
 {
-    /* double error = 0.0;
+    double error = 0.0;
     for (std::size_t k = 0; k < n_tiles; k++)
     {
         auto a = tiles[k];
-        for (std::size_t i = 0; i < tile_size; i++)
+        for (std::size_t i = 0; i < n_tile_size; i++)
         {
-            std::size_t i_global = tile_size * k + i;
+            std::size_t i_global = n_tile_size * k + i;
             // ||a - b||_2
             error += (b[i_global] - a[i]) * (b[i_global] - a[i]);
         }
     }
-    return std::move(sqrt(error)); */
-    return 0;
+    return sqrt(error);
 }
 
 std::vector<double> gen_tile_zeros(std::size_t N)
 {
-    /* // Initialize tile
+    // Initialize tile
     std::vector<double> tile;
     tile.resize(N);
     std::fill(tile.begin(), tile.end(), 0.0);
-    return std::move(tile); */
+    return std::move(tile);
     return std::vector<double>();
 }
 
@@ -249,7 +331,7 @@ predict(const std::vector<double> &training_input,
         const gpxpy_hyper::SEKParams sek_params,
         gpxpy::CUDA_GPU &gpu)
 {
-    /* // declare tiled future data structures
+    // declare tiled future data structures
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
     std::vector<hpx::shared_future<std::vector<double>>> alpha_tiles;
     std::vector<hpx::shared_future<std::vector<double>>>
@@ -332,8 +414,7 @@ predict(const std::vector<double> &training_input,
 
     // Return computed data
     return hpx::async([pred]()
-                      { return pred; }); */
-    return hpx::shared_future<std::vector<double>>();
+                      { return pred; });
 }
 
 hpx::shared_future<std::vector<std::vector<double>>>

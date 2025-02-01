@@ -213,24 +213,14 @@ double dot(cublas_executor *cublas,
 
 // Helper functions {{{
 
-inline cublasOperation_t cublas_transpose(BLAS_TRANSPOSE trans)
+inline cublasOperation_t opposite(cublasOperation_t op)
 {
-    return (trans == Blas_no_trans) ? CUBLAS_OP_N : CUBLAS_OP_T;
+    return (op == CUBLAS_OP_N) ? CUBLAS_OP_T : CUBLAS_OP_N;
 }
 
-inline cublasOperation_t cublas_transpose_invert(BLAS_TRANSPOSE trans)
+inline cublasSideMode_t opposite(cublasSideMode_t side)
 {
-    return (trans == Blas_no_trans) ? CUBLAS_OP_T : CUBLAS_OP_N;
-}
-
-inline cublasSideMode_t cublas_side(BLAS_SIDE side)
-{
-    return (side == Blas_left) ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT;
-}
-
-inline cublasSideMode_t cublas_side_invert(BLAS_SIDE side)
-{
-    return (side == Blas_left) ? CUBLAS_SIDE_RIGHT : CUBLAS_SIDE_LEFT;
+    return (side == CUBLAS_SIDE_LEFT) ? CUBLAS_SIDE_RIGHT : CUBLAS_SIDE_LEFT;
 }
 
 // }}} end of Helper functions

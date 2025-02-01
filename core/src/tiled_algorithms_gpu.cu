@@ -1,6 +1,6 @@
 #include "tiled_algorithms_gpu.cuh"
 
-#include "adapter_cublas.hpp"
+#include "adapter_cublas.cuh"
 #include <hpx/algorithm.hpp>
 
 using hpx::experimental::for_loop;
