@@ -28,7 +28,7 @@ void right_looking_cholesky_tiled(
         cusolverDnSetStream(cusolver, gpu.next_stream());
 
         // POTRF
-        ft_tiles[k * n_tiles + k] = hpx::dataflow(&potrf, cusolver, ft_tiles[k * n_tiles + k], n_tile_size).get();
+        ft_tiles[k * n_tiles + k] = hpx::dataflow(&potrf, cusolver, ft_tiles[k * n_tiles + k], n_tile_size);
 
         for_loop(hpx::execution::par, k + 1, n_tiles, [&](size_t m)
         {
@@ -45,7 +45,10 @@ void right_looking_cholesky_tiled(
             cublasSetStream(cublas, gpu.next_stream());
 
             // SYRK
-            ft_tiles[m * n_tiles + m] = hpx::dataflow(&syrk, cublas, ft_tiles[m * n_tiles + m], ft_tiles[m * n_tiles + k], n_tile_size);
+            ft_tiles[m * n_tiles + m] = hpx::dataflow(&syrk, cublas,
+                    ft_tiles[m * n_tiles + k],
+                    ft_tiles[m * n_tiles + m],
+                    n_tile_size);
 
             for_loop(hpx::execution::par, k + 1, m, [&](size_t n)
             {
@@ -53,7 +56,7 @@ void right_looking_cholesky_tiled(
                 cublasSetStream(cublas, gpu.next_stream());
 
                 // GEMM
-                ft_tiles[m * n_tiles + n] = hpx::dataflow(&gemm_cholesky, cublas, ft_tiles[m * n_tiles + k], ft_tiles[n * n_tiles + k], ft_tiles[m * n_tiles + n], n_tile_size);
+                ft_tiles[m * n_tiles + n] = hpx::dataflow(&gemm, cublas, ft_tiles[m * n_tiles + k], ft_tiles[n * n_tiles + k], ft_tiles[m * n_tiles + n], n_tile_size, n_tile_size, n_tile_size, Blas_no_trans, Blas_trans);
             });
         });
     });

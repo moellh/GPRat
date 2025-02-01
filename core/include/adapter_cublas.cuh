@@ -70,7 +70,7 @@ trsm(cublasHandle_t cublas,
 hpx::shared_future<double *>
 syrk(cublasHandle_t cublas,
      hpx::shared_future<double *> f_A,
-     hpx::shared_future<double *> f_B,
+     hpx::shared_future<double *> f_C,
      const std::size_t N);
 
 /**

@@ -12,8 +12,8 @@ auto now = std::chrono::high_resolution_clock::now;
 int main(int argc, char *argv[])
 {
     // number of training points, number of rows/columns in the kernel matrix
-    const int N_TRAIN_START = 4096;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384
-    const int N_TRAIN_END = 4096;    // 7,   8,   9,   10,   11,   12,   13,   14
+    const int N_TRAIN_START = 32;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384
+    const int N_TRAIN_END = 32;    // 7,   8,   9,   10,   11,   12,   13,   14
 
     const int N_TEST = 1024;
 
@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
     const int N_REGRESSORS = 1;
 
     // number of tiles per dimension
-    // const int n_train_tiles = 4;
+    const int N_TRAIN_TILES = 4;
 
     // number of regressors, i.e. number of previous points incl. current point
     // considered for each entry in the kernel matrix
@@ -54,7 +54,7 @@ int main(int argc, char *argv[])
     // Start HPX runtime with arguments
     utils::start_hpx_runtime(hpx_argc, hpx_argv);
 
-    for (std::size_t n_train_tiles = 4; n_train_tiles <= 4; n_train_tiles *= 2)  // NOTE: currently all cores
+    for (std::size_t n_train_tiles = N_TRAIN_TILES; n_train_tiles <= N_TRAIN_TILES; n_train_tiles *= 2)  // NOTE: currently all cores
     {
         for (std::size_t n_train = N_TRAIN_START; n_train <= N_TRAIN_END; n_train *= 2)
         {
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
 
                 // GP for CPU computation
                 std::string target = "cpu";
-                // gpxpy::GP gp_cpu(training_input.data, training_output.data, n_train_tiles, n_train_tile_size, 1.0, 1.0, 0.1, N_REGRESSORS, trainable);
+                gpxpy::GP gp_cpu(training_input.data, training_output.data, n_train_tiles, n_train_tile_size, 1.0, 1.0, 0.1, N_REGRESSORS, trainable);
 
                 // GP for GPU computation
                 target = "gpu";
@@ -95,7 +95,18 @@ int main(int argc, char *argv[])
 
                 // Cholesky factorization time ----------------------------- {{{
                 auto start_cholesky = now();
-                auto tiles = gp_gpu.cholesky();
+                std::vector<std::vector<double>> cpu_tiles = gp_cpu.cholesky();
+                std::vector<std::vector<double>> gpu_tiles = gp_gpu.cholesky();
+                double chol_err = 0;
+                for (std::size_t i = 0; i < cpu_tiles.size(); i++)
+                {
+                    for (std::size_t j = 0; j < cpu_tiles[i].size(); j++)
+                    {
+                        chol_err += std::abs(cpu_tiles[i][j] - gpu_tiles[i][j]);
+                        // std::cout << "CPU: " << cpu_tiles[i][j] << " GPU: " << gpu_tiles[i][j] << std::endl;
+                    }
+                }
+                std::cout << "Cholesky error: " << chol_err << std::endl;
                 auto cholesky_time = now() - start_cholesky;
                 // ------------ }}}
 
@@ -118,13 +129,21 @@ int main(int argc, char *argv[])
                 std::vector<std::vector<double>> full = gp.predict_with_full_cov(test_input.data, result.first, result.second);
                 auto pred_full_cov_time = now() - start_pred_full_cov; // -- }}}
 
+                */
 
                 // Predict time -------------------------------------------- {{{
                 auto start_pred = now();
-                std::vector<double> pred = gp.predict(test_input.data, result.first, result.second);
-                auto pred_time = end_pred - start_pred; // ----------------- }}}
+                std::vector<double> cpu_pred = gp_cpu.predict(test_input.data, n_test_tiles, n_test_tile_size);
+                // std::vector<double> gpu_pred = gp_gpu.predict(test_input.data, n_test_tiles, n_test_tile_size);
+                // double pred_err = 0;
+                // for (std::size_t i = 0; i < cpu_pred.size(); i++)
+                // {
+                //     pred_err += std::abs(cpu_pred[i] - gpu_pred[i]);
+                //     // std::cout << "CPU: " << cpu_pred[i] << " GPU: " << gpu_pred[i] << std::endl;
+                // }
+                // std::cout << "Prediction error: " << pred_err << std::endl;
+                auto pred_time = now() - start_pred; // ----------------- }}}
 
-                */
 
                 auto total_time = now() - start_total;  // ----------------- }}}
 

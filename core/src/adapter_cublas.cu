@@ -35,11 +35,9 @@ potrf(cusolverDnHandle_t cusolver,
 
     double *d_A = f_A.get();
 
-    cusolverDnXpotrf_bufferSize(
-        cusolver, params, CUBLAS_FILL_MODE_UPPER, N, CUDA_R_64F, d_A, N, CUDA_R_64F, &workspaceInBytesOnDevice, &workspaceInBytesOnHost);
+    cusolverDnXpotrf_bufferSize(cusolver, params, CUBLAS_FILL_MODE_UPPER, N, CUDA_R_64F, d_A, N, CUDA_R_64F, &workspaceInBytesOnDevice, &workspaceInBytesOnHost);
 
-    check_cuda_error(
-        cudaMalloc(reinterpret_cast<void **>(&d_work), workspaceInBytesOnDevice));
+    check_cuda_error(cudaMalloc(reinterpret_cast<void **>(&d_work), workspaceInBytesOnDevice));
 
     if (workspaceInBytesOnHost > 0)
     {
@@ -118,27 +116,27 @@ syrk(cublasHandle_t cublas,
     cublasGetStream_v2(cublas, &stream);
 
     // SYRK constants
-    const double alpha = 1.0;
-    const double beta = -1.0;
+    const double alpha = -1.0;
+    const double beta = 1.0;
     double *d_A = f_A.get();
     double *d_C = f_C.get();
 
     // row-major SYRK
     // C = alpha * op(A) * op(A)^T + beta * C
-    //     C = A * A^T - C
+    //     C = - A * A^T + C
     // for LOWER part of symmetric matrix C
     // for op: NO transpose:
 
     // column-major cuBLAS SYRK for row-major stored A & C
-    // C = op(A) * op(A)^T - fm(C)
-    //   = A^T * A - C
+    // C = - op(A) * op(A)^T + fm(C)
+    //   = - A^T * A - C
     // for UPPER part of symmetric matrix C
     // for op: TRANSPOSE
 
     cublasDsyrk(cublas, CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_T, N, N, &alpha, d_A, N, &beta, d_C, N);
 
     check_cuda_error(cudaStreamSynchronize(stream));
-    return hpx::make_ready_future(d_A);
+    return hpx::make_ready_future(d_C);
 }
 
 hpx::shared_future<double *>
