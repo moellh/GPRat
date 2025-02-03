@@ -24,7 +24,7 @@ set(SOURCE_FILES
     src/gp_algorithms_cpu.cpp
     src/gp_functions.cpp
     src/gp_kernel.cpp
-    src/gp_optimizer.cpp
+    src/gp_optimizer_cpu.cpp
     src/gp_uncertainty.cpp
     src/gpxpy_c.cpp
     src/target.cpp
@@ -34,6 +34,7 @@ set(SOURCE_FILES
 
 if(GPXPY_WITH_CUDA)
     list(APPEND SOURCE_FILES
+        src/gp_optimizer_gpu.cu
         src/adapter_cublas.cu
         src/gp_algorithms_gpu.cu
         src/tiled_algorithms_gpu.cu
@@ -47,7 +48,7 @@ set(HEADER_FILES
     include/gp_algorithms_cpu.hpp
     include/gp_functions.hpp
     include/gp_kernels.hpp
-    include/gp_optimizer.hpp
+    include/gp_optimizer_cpu.hpp
     include/gp_uncertainty.hpp
     include/gpxpy_c.hpp
     include/target.hpp
@@ -57,6 +58,7 @@ set(HEADER_FILES
 
 if(GPXPY_WITH_CUDA)
     list(APPEND HEADER_FILES
+        include/gp_optimizer_gpu.cuh
         include/adapter_cublas.cuh
         include/gp_algorithms_gpu.cuh
         include/tiled_algorithms_gpu.cuh

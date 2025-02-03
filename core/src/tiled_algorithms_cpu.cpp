@@ -1,8 +1,7 @@
 #include "../include/tiled_algorithms_cpu.hpp"
 
 #include "../include/adapter_mkl.hpp"
-#include "../include/gp_optimizer.hpp"
-#include "../include/gp_uncertainty.hpp"
+#include "../include/gp_optimizer_cpu.hpp"
 #include <cmath>
 #include <hpx/future.hpp>
 

@@ -1,4 +1,4 @@
-#include "../include/gp_optimizer.hpp"
+#include "../include/gp_optimizer_cpu.hpp"
 
 #include "../include/adapter_mkl.hpp"
 #include <numeric>

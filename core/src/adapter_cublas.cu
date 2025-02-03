@@ -5,7 +5,6 @@
 #include <hpx/modules/async_cuda.hpp>
 #include <mkl_cblas.h>
 #include <mkl_lapacke.h>
-#include <vector>
 
 // frequently used names
 using hpx::cuda::experimental::check_cuda_error;

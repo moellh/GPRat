@@ -2,7 +2,7 @@
 #define GP_FUNCTIONS_H
 
 #include "gp_kernels.hpp"
-#include "gp_optimizer.hpp"
+#include "gp_optimizer_cpu.hpp"
 #include "target.hpp"
 #include <hpx/future.hpp>
 #include <memory>

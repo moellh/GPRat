@@ -2,7 +2,7 @@
 #define GP_ALGORITHMS_GPU_H
 
 #include "gp_kernels.hpp"
-#include "gp_optimizer.hpp"
+#include "gp_optimizer_gpu.cuh"
 #include "target.hpp"
 #include <hpx/future.hpp>
 #include <vector>

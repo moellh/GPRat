@@ -4,6 +4,7 @@
 #include <cusolverDn.h>
 #include <hpx/future.hpp>
 #include <hpx/modules/async_cuda.hpp>
+#include <target.hpp>
 
 // Constants are compatible with cuBLAS
 typedef enum BLAS_TRANSPOSE {

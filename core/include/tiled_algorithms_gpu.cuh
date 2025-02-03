@@ -1,7 +1,7 @@
 #ifndef TILED_ALGORITHMS_GPU_H
 #define TILED_ALGORITHMS_GPU_H
 
-#include "gp_optimizer.hpp"
+#include "gp_optimizer_cpu.hpp"
 #include "target.hpp"
 #include <cusolverDn.h>
 #include <hpx/modules/async_cuda.hpp>

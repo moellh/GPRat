@@ -1,4 +1,4 @@
-#include "../core/include/gp_optimizer.hpp"
+#include "../core/include/gp_optimizer_cpu.hpp"
 #include "../core/include/gpxpy_c.hpp"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

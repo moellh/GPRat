@@ -18,7 +18,7 @@ void right_looking_cholesky_tiled(
     const cusolverDnHandle_t &cusolver,
     const std::vector<cublasHandle_t> &cublas_handles)
 {
-    int cublas_counter = 0;
+    std::size_t cublas_counter = 0;
     auto next_cublas = [&]()
     { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
 
@@ -75,7 +75,7 @@ void forward_solve_tiled(
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles)
 {
-    int cublas_counter = 0;
+    std::size_t cublas_counter = 0;
     auto next_cublas = [&]()
     { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
 
@@ -123,11 +123,12 @@ void backward_solve_tiled(
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles)
 {
-    int cublas_counter = 0;
+    std::size_t cublas_counter = 0;
     auto next_cublas = [&]()
     { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
 
-    for (int k = n_tiles - 1; k >= 0; k--)  // int instead of std::size_t for last comparison
+    // clang-format off
+    for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t k)
     {
         cublasHandle_t cublas = next_cublas();
         cublasSetStream(cublas, gpu.next_stream());
@@ -140,12 +141,13 @@ void backward_solve_tiled(
             ft_rhs[k],
             n_tile_size,
             Blas_trans);
-        for (int m = k - 1; m >= 0; m--)  // int instead of std::size_t for last comparison
+
+        for_loop(hpx::execution::seq, 0, k, [&](std::size_t m)
         {
             cublasHandle_t cublas = next_cublas();
             cublasSetStream(cublas, gpu.next_stream());
 
-            // GEMV:b = b - A^T * a
+            // GEMV: b = b - A^T * a
             ft_rhs[m] = hpx::dataflow(
                 &gemv,
                 cublas,
@@ -156,8 +158,9 @@ void backward_solve_tiled(
                 n_tile_size,
                 Blas_substract,
                 Blas_trans);
-        }
-    }
+        });
+    });
+    //  clang-format on
 }
 
 // Tiled Triangular Solve Algorithms for matrices (K * X = B)
@@ -170,7 +173,52 @@ void forward_solve_tiled_matrix(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles)
-{ }
+{
+    std::size_t cublas_counter = 0;
+    auto next_cublas = [&]()
+    { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
+
+    // clang-format off
+    for_loop(hpx::execution::seq, 0, m_tiles, [&](std::size_t c)
+    {
+        for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t k)
+        {
+            cublasHandle_t cublas = next_cublas();
+            cublasSetStream(cublas, gpu.next_stream());
+
+            // TRSM: solve L * X = A
+            ft_rhs[k * m_tiles + c] = hpx::dataflow(
+                &trsm,
+                cublas,
+                ft_tiles[k * n_tiles + k],
+                ft_rhs[k * m_tiles + c],
+                n_tile_size,
+                m_tile_size,
+                Blas_no_trans,
+                Blas_left);
+
+            for_loop(hpx::execution::seq, k + 1, n_tiles, [&](std::size_t m)
+            {
+                cublasHandle_t cublas = next_cublas();
+                cublasSetStream(cublas, gpu.next_stream());
+
+                // GEMM: C = C - A * B
+                ft_rhs[m * m_tiles + c] = hpx::dataflow(
+                    &gemm,
+                    cublas,
+                    ft_tiles[m * n_tiles + k],
+                    ft_rhs[k * m_tiles + c],
+                    ft_rhs[m * m_tiles + c],
+                    n_tile_size,
+                    m_tile_size,
+                    n_tile_size,
+                    Blas_no_trans,
+                    Blas_no_trans);
+            });
+        });
+    });
+    // clang-format on
+}
 
 void backward_solve_tiled_matrix(
     std::vector<hpx::shared_future<double *>> &ft_tiles,
@@ -181,7 +229,52 @@ void backward_solve_tiled_matrix(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles)
-{ }
+{
+    std::size_t cublas_counter = 0;
+    auto next_cublas = [&]()
+    { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
+
+    // clang-format off
+    for_loop(hpx::execution::seq, 0, m_tiles, [&](std::size_t c)
+    {
+        for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t k)
+        {
+            cublasHandle_t cublas = next_cublas();
+            cublasSetStream(cublas, gpu.next_stream());
+
+            // TRSM: solve L^T * X = A
+            ft_rhs[k * m_tiles + c] = hpx::dataflow(
+                &trsm,
+                cublas,
+                ft_tiles[k * n_tiles + k],
+                ft_rhs[k * m_tiles + c],
+                n_tile_size,
+                m_tile_size,
+                Blas_trans,
+                Blas_left);
+
+            for_loop(hpx::execution::seq, 0, k, [&](std::size_t m)
+            {
+                cublasHandle_t cublas = next_cublas();
+                cublasSetStream(cublas, gpu.next_stream());
+
+                // GEMM: C = C - A^T * B
+                ft_rhs[m * m_tiles + c] = hpx::dataflow(
+                    &gemm,
+                    cublas,
+                    ft_tiles[k * n_tiles + m],
+                    ft_rhs[k * m_tiles + c],
+                    ft_rhs[m * m_tiles + c],
+                    n_tile_size,
+                    m_tile_size,
+                    n_tile_size,
+                    Blas_trans,
+                    Blas_no_trans);
+            });
+        });
+    });
+    // clang-format on
+}
 
 // }}} ---------------------------- end of Tiled Triangular Solve Algorithms
 
@@ -189,12 +282,57 @@ void forward_solve_KcK_tiled(
     std::vector<hpx::shared_future<double *>> &ft_tiles,
     std::vector<hpx::shared_future<double *>> &ft_rhs,
     const std::size_t n_tile_size,
-    const std::size_t m_tile_size,
+    const std::size_t M,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles)
-{ }
+{
+    std::size_t cublas_counter = 0;
+    auto next_cublas = [&]()
+    { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
+
+    // clang-format off
+    for_loop(hpx::execution::seq, 0, m_tiles, [&](std::size_t r)
+    {
+        for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t c)
+        {
+            cublasHandle_t cublas = next_cublas();
+            cublasSetStream(cublas, gpu.next_stream());
+
+            // TRSM: solve L * X = A
+            ft_rhs[c * m_tiles + r] = hpx::dataflow(
+                &trsm,
+                cublas,
+                ft_tiles[c * n_tiles + c],
+                ft_rhs[c * m_tiles + r],
+                n_tile_size,
+                M,
+                Blas_no_trans,
+                Blas_left);
+
+            for_loop(hpx::execution::seq, c + 1, n_tiles, [&](std::size_t m)
+            {
+                cublasHandle_t cublas = next_cublas();
+                cublasSetStream(cublas, gpu.next_stream());
+
+                // GEMM: C = C - A * B
+                ft_rhs[m * m_tiles + r] = hpx::dataflow(
+                    &gemm,
+                    cublas,
+                    ft_tiles[m * n_tiles + c],
+                    ft_rhs[c * m_tiles + r],
+                    ft_rhs[m * m_tiles + r],
+                    n_tile_size,
+                    M,
+                    n_tile_size,
+                    Blas_no_trans,
+                    Blas_no_trans);
+            });
+        });
+    });
+    // clang-format on
+}
 
 void compute_gemm_of_invK_y(
     std::vector<hpx::shared_future<double *>> &ft_invK,
@@ -204,7 +342,33 @@ void compute_gemm_of_invK_y(
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles)
-{ }
+{
+    std::size_t cublas_counter = 0;
+    auto next_cublas = [&]()
+    { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
+
+    // clang-format off
+    for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t i)
+    {
+        for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t j)
+        {
+            cublasHandle_t cublas = next_cublas();
+            cublasSetStream(cublas, gpu.next_stream());
+
+            ft_alpha[i] = hpx::dataflow(
+                &gemv,
+                cublas,
+                ft_invK[i * n_tiles + j],
+                ft_y[j],
+                ft_alpha[i],
+                n_tile_size,
+                n_tile_size,
+                Blas_add,
+                Blas_no_trans);
+        });
+    });
+    // clang-format on
+}
 
 void compute_loss_tiled(
     std::vector<hpx::shared_future<double *>> &ft_tiles,
@@ -215,7 +379,26 @@ void compute_loss_tiled(
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles)
-{ }
+{
+    std::vector<hpx::shared_future<double>> loss_tiled;
+    loss_tiled.resize(n_tiles);
+    for (std::size_t k = 0; k < n_tiles; k++)
+    {
+        loss_tiled[k] = hpx::dataflow(
+            hpx::annotated_function(hpx::unwrapping(&compute_loss),
+                                    "loss_tiled"),
+            ft_tiles[k * n_tiles + k],
+            ft_alpha[k],
+            ft_y[k],
+            n_tile_size);
+    }
+
+    loss = hpx::dataflow(
+        hpx::annotated_function(hpx::unwrapping(&add_losses), "loss_tiled"),
+        loss_tiled,
+        n_tile_size,
+        n_tiles);
+}
 
 // Tiled Prediction
 void prediction_tiled(
@@ -229,7 +412,31 @@ void prediction_tiled(
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles)
 {
-    // TODO: nextup
+    int cublas_counter = 0;
+    auto next_cublas = [&]()
+    { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
+
+    // clang-format off
+    for_loop(hpx::execution::par, 0, m_tiles, [&](std::size_t k)
+    {
+        for_loop(hpx::execution::par, 0, n_tiles, [&](std::size_t m)
+        {
+            cublasHandle_t cublas = next_cublas();
+            cublasSetStream(cublas, gpu.next_stream());
+
+            ft_rhs[k] = hpx::dataflow(
+                &gemv,
+                cublas,
+                ft_tiles[k * n_tiles + m],
+                ft_vector[m],
+                ft_rhs[k],
+                N_row,
+                N_col,
+                Blas_add,
+                Blas_no_trans);
+        });
+    });
+    // clang-format on
 }
 
 void posterior_covariance_tiled(

@@ -1,5 +1,5 @@
-#ifndef GP_OPTIMIZER_H
-#define GP_OPTIMIZER_H
+#ifndef GP_OPTIMIZER_CPU_H
+#define GP_OPTIMIZER_CPU_H
 
 #include "gp_kernels.hpp"
 #include <cmath>
@@ -240,4 +240,4 @@ double sum_noise_gradright(const std::vector<double> &alpha,
                            gpxpy_hyper::SEKParams sek_params,
                            std::size_t N);
 
-#endif  // end of GP_OPTIMIZER_H
+#endif  // end of GP_OPTIMIZER_CPU_H

@@ -2,7 +2,7 @@
 #define GP_ALGORITHMS_CPU_H
 
 #include "gp_kernels.hpp"
-#include "gp_optimizer.hpp"
+#include "gp_optimizer_cpu.hpp"
 #include <cmath>
 #include <hpx/future.hpp>
 #include <vector>
