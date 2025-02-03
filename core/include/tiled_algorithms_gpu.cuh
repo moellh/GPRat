@@ -3,9 +3,9 @@
 
 #include "gp_optimizer.hpp"
 #include "target.hpp"
+#include <cusolverDn.h>
 #include <hpx/modules/async_cuda.hpp>
 #include <vector>
-#include <cusolverDn.h>
 
 namespace gpu
 {
@@ -34,172 +34,186 @@ void right_looking_cholesky_tiled(
 // Tiled Triangular Solve Algorithms ----------------------------------- {{{
 
 void forward_solve_tiled(
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_rhs,
-    std::size_t n_tile_size,
-    std::size_t n_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_rhs,
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles);
 
 void backward_solve_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_rhs,
-    std::size_t n_tile_size,
-    std::size_t n_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_rhs,
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu,
     const std::vector<cublasHandle_t> &cublas_handles);
 
 // Tiled Triangular Solve Algorithms for matrices (K * X = B)
 void forward_solve_tiled_matrix(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_rhs,
-    std::size_t N,
-    std::size_t M,
-    std::size_t n_tiles,
-    std::size_t m_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_rhs,
+    const std::size_t n_tile_size,
+    const std::size_t m_tile_size,
+    const std::size_t n_tiles,
+    const std::size_t m_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 void backward_solve_tiled_matrix(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_rhs,
-    std::size_t N,
-    std::size_t M,
-    std::size_t n_tiles,
-    std::size_t m_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_rhs,
+    const std::size_t n_tile_size,
+    const std::size_t m_tile_size,
+    const std::size_t n_tiles,
+    const std::size_t m_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // }}} ---------------------------- end of Tiled Triangular Solve Algorithms
 
 // Triangular solve A_M,N * K_NxN = K_MxN -> A_MxN = K_MxN * K^-1_NxN
 // Tiled Triangular Solve Algorithms for Matrices (K * X = B)
 void forward_solve_KcK_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_rhs,
-    std::size_t N,
-    std::size_t M,
-    std::size_t n_tiles,
-    std::size_t m_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_rhs,
+    const std::size_t n_tile_size,
+    const std::size_t m_tile_size,
+    const std::size_t n_tiles,
+    const std::size_t m_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 void compute_gemm_of_invK_y(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_y,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
-    std::size_t N,
-    std::size_t n_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_invK,
+    std::vector<hpx::shared_future<double *>> &ft_y,
+    std::vector<hpx::shared_future<double *>> &ft_alpha,
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // Tiled Loss
 void compute_loss_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_y,
+    std::vector<hpx::shared_future<double *>> &ft_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_alpha,
+    std::vector<hpx::shared_future<double *>> &ft_y,
     hpx::shared_future<double> &loss,
-    std::size_t N,
-    std::size_t n_tiles);
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // Tiled Prediction
 void prediction_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_vector,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_rhs,
-    std::size_t N_row,
-    std::size_t N_col,
-    std::size_t n_tiles,
-    std::size_t m_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_vector,
+    std::vector<hpx::shared_future<double *>> &ft_rhs,
+    const std::size_t N_row,
+    const std::size_t N_col,
+    const std::size_t n_tiles,
+    const std::size_t m_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // Tiled Diagonal of Posterior Covariance Matrix
 void posterior_covariance_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tCC_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_inter_tiles,
-    std::size_t N,
-    std::size_t M,
-    std::size_t n_tiles,
-    std::size_t m_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_tCC_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_inter_tiles,
+    const std::size_t n_tile_size,
+    const std::size_t m_tile_size,
+    const std::size_t n_tiles,
+    const std::size_t m_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // Tiled Diagonal of Posterior Covariance Matrix
 void full_cov_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tCC_tiles,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_priorK,
-    std::size_t N,
-    std::size_t M,
-    std::size_t n_tiles,
-    std::size_t m_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_tCC_tiles,
+    std::vector<hpx::shared_future<double *>> &ft_priorK,
+    const std::size_t n_tile_size,
+    const std::size_t m_tile_size,
+    const std::size_t n_tiles,
+    const std::size_t m_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handl);
 
 // Tiled Prediction Uncertainty
 void prediction_uncertainty_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_priorK,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_inter,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_vector,
-    std::size_t M,
-    std::size_t m_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_priorK,
+    std::vector<hpx::shared_future<double *>> &ft_inter,
+    std::vector<hpx::shared_future<double *>> &ft_vector,
+    const std::size_t m_tile_size,
+    const std::size_t m_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // Tiled Prediction Uncertainty
 void pred_uncer_tiled(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_priorK,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_vector,
-    std::size_t M,
-    std::size_t m_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_priorK,
+    std::vector<hpx::shared_future<double *>> &ft_vector,
+    const std::size_t m_tile_size,
+    const std::size_t m_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // Compute I-y*y^T*inv(K)
 void update_grad_K_tiled_mkl(
-    std::vector<hpx::cuda::experimental::cublas_executor> cublas,
-    std::vector<hpx::shared_future<std::vector<double>>> &ft_tiles,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_v1,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_v2,
-    std::size_t N,
-    std::size_t n_tiles);
+    std::vector<hpx::shared_future<double *>> &ft_tiles,
+    const std::vector<hpx::shared_future<double *>> &ft_v1,
+    const std::vector<hpx::shared_future<double *>> &ft_v2,
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 double update_lengthscale(
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    const std::vector<hpx::shared_future<std::vector<double>>> &
-        ft_gradparam,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
+    const std::vector<hpx::shared_future<double *>> &ft_invK,
+    const std::vector<hpx::shared_future<double *>> &ft_gradparam,
+    const std::vector<hpx::shared_future<double *>> &ft_alpha,
     gpxpy_hyper::SEKParams sek_params,
     gpxpy_hyper::AdamParams adam_params,
-    std::size_t N,
-    std::size_t n_tiles,
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
     std::vector<hpx::shared_future<double>> &m_T,
     std::vector<hpx::shared_future<double>> &v_T,
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
-    int iter);
+    int iter,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 double update_vertical_lengthscale(
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    const std::vector<hpx::shared_future<std::vector<double>>> &
-        ft_gradparam,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
+    const std::vector<hpx::shared_future<double *>> &ft_invK,
+    const std::vector<hpx::shared_future<double *>> &ft_gradparam,
+    const std::vector<hpx::shared_future<double *>> &ft_alpha,
     gpxpy_hyper::SEKParams sek_params,
     gpxpy_hyper::AdamParams adam_params,
-    std::size_t N,
-    std::size_t n_tiles,
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
     std::vector<hpx::shared_future<double>> &m_T,
     std::vector<hpx::shared_future<double>> &v_T,
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
-    int iter);
+    int iter,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 // Update noise variance using gradient decent + Adam
 double update_noise_variance(
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    const std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
+    const std::vector<hpx::shared_future<double *>> &ft_invK,
+    const std::vector<hpx::shared_future<double *>> &ft_alpha,
     gpxpy_hyper::SEKParams sek_params,
     gpxpy_hyper::AdamParams adam_params,
-    std::size_t N,
-    std::size_t n_tiles,
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
     std::vector<hpx::shared_future<double>> &m_T,
     std::vector<hpx::shared_future<double>> &v_T,
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
-    int iter);
+    int iter,
+    gpxpy::CUDA_GPU &gpu,
+    const std::vector<cublasHandle_t> &cublas_handles);
 
 }  // end of namespace gpu
 
