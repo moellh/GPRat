@@ -1,7 +1,7 @@
 #include "../include/tiled_algorithms_cpu.hpp"
 
 #include "../include/adapter_mkl.hpp"
-#include "../include/gp_optimizer_cpu.hpp"
+#include "gp_uncertainty.hpp"
 #include <cmath>
 #include <hpx/future.hpp>
 
@@ -451,8 +451,7 @@ void update_grad_K_tiled_mkl(
 static double
 update_hyperparameter(
     const std::vector<hpx::shared_future<std::vector<double>>> &ft_invK,
-    const std::vector<hpx::shared_future<std::vector<double>>> &
-        ft_gradparam,
+    const std::vector<hpx::shared_future<std::vector<double>>> &ft_gradparam,
     const std::vector<hpx::shared_future<std::vector<double>>> &ft_alpha,
     double &hyperparameter,  // lengthscale or vertical-lengthscale
     gpxpy_hyper::SEKParams sek_params,
