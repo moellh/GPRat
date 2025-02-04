@@ -1,11 +1,12 @@
 #ifndef TILED_ALGORITHMS_GPU_H
 #define TILED_ALGORITHMS_GPU_H
 
-#include "gp_optimizer_cpu.hpp"
+#include "gp_optimizer_gpu.cuh"
 #include "target.hpp"
 #include <cusolverDn.h>
 #include <hpx/modules/async_cuda.hpp>
 #include <vector>
+#include <gp_kernels.hpp>
 
 namespace gpu
 {

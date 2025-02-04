@@ -24,6 +24,7 @@ set(SOURCE_FILES
     src/gp_algorithms_cpu.cpp
     src/gp_functions.cpp
     src/gp_kernel.cpp
+    src/gp_hyperparameters.cpp
     src/gp_optimizer_cpu.cpp
     src/gp_uncertainty.cpp
     src/gpxpy_c.cpp
@@ -48,6 +49,7 @@ set(HEADER_FILES
     include/gp_algorithms_cpu.hpp
     include/gp_functions.hpp
     include/gp_kernels.hpp
+    include/gp_hyperparameters.hpp
     include/gp_optimizer_cpu.hpp
     include/gp_uncertainty.hpp
     include/gpxpy_c.hpp
