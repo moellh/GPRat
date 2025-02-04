@@ -28,7 +28,7 @@ void right_looking_cholesky_tiled(
         cusolverDnSetStream(cusolver, gpu.next_stream());
 
         // POTRF
-        ft_tiles[k * n_tiles + k] = hpx::dataflow(&potrf, cusolver, ft_tiles[k * n_tiles + k], n_tile_size);
+        ft_tiles[k * n_tiles + k] = hpx::dataflow(hpx::annotated_function(&potrf, "Cholesky POTRF"), cusolver, ft_tiles[k * n_tiles + k], n_tile_size);
 
         for_loop(hpx::execution::par, k + 1, n_tiles, [&](size_t m)
         {

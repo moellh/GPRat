@@ -36,15 +36,16 @@ gen_tile_prior_covariance(const std::size_t row,
 /**
  * @brief Generate a tile of the cross-covariance matrix.
  */
-std::vector<double>
-gen_tile_cross_covariance(const std::size_t row,
-                          const std::size_t col,
-                          const std::size_t N_row,
-                          const std::size_t N_col,
+double *
+gen_tile_cross_covariance(const double *d_row_input,
+                          const double *d_col_input,
+                          const std::size_t tile_row,
+                          const std::size_t tile_column,
+                          const std::size_t n_row_tile_size,
+                          const std::size_t n_column_tile_size,
                           const std::size_t n_regressors,
                           const gpxpy_hyper::SEKParams sek_params,
-                          const std::vector<double> &row_input,
-                          const std::vector<double> &col_input);
+                          gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Generate a tile of the cross-covariance matrix.
@@ -57,10 +58,11 @@ gen_tile_cross_cov_T(const std::size_t N_row,
 /**
  * @brief Generate a tile containing the output observations.
  */
-std::vector<double>
+double *
 gen_tile_output(const std::size_t row,
-                const std::size_t N,
-                const std::vector<double> &output);
+                const std::size_t n_tile_size,
+                const std::vector<double> &h_output,
+                gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Compute the total 2-norm error.
@@ -74,7 +76,7 @@ compute_error_norm(const std::size_t n_tiles,
 /**
  * @brief Generate an empty tile
  */
-std::vector<double> gen_tile_zeros(std::size_t n);
+double *gen_tile_zeros(std::size_t n_tile_size, gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief TODO: documentation
@@ -166,7 +168,7 @@ optimize_step(const std::vector<double> &training_input,
  * @brief TODO: documentation
  */
 std::vector<hpx::shared_future<double *>>
-assemble_tiled_covariance_matrix(const std::vector<double> &training_input,
+assemble_tiled_covariance_matrix(const double *d_training_input,
                                  const std::size_t n_tiles,
                                  const std::size_t n_tile_size,
                                  const std::size_t n_regressors,
@@ -176,18 +178,17 @@ assemble_tiled_covariance_matrix(const std::vector<double> &training_input,
 /**
  * @brief TODO: documentation
  */
-std::vector<std::vector<double>>
-copy_tiled_matrix_to_host(const std::vector<hpx::shared_future<double *>> &d_K_tiles,
-                          const std::size_t n_tile_size,
-                          const std::size_t n_tiles,
-                          gpxpy::CUDA_GPU &gpu);
+std::vector<hpx::shared_future<std::vector<double>>>
+copy_lower_tiled_matrix_to_host(const std::vector<hpx::shared_future<double *>> &d_K_tiles,
+                                const std::size_t n_tile_size,
+                                const std::size_t n_tiles,
+                                gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief TODO: documentation
  */
 hpx::shared_future<std::vector<std::vector<double>>>
 cholesky(const std::vector<double> &training_input,
-         const std::vector<double> &training_output,
          const std::size_t n_tiles,
          const std::size_t n_tile_size,
          const std::size_t n_regressors,

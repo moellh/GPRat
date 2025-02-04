@@ -7,7 +7,7 @@
 
 // for GPU algorithms
 #ifdef GPXPY_WITH_CUDA
-    #include "../include/gp_algorithms_gpu.cuh"
+    #include "gp_algorithms_gpu.cuh"
 #endif
 
 hpx::shared_future<std::vector<double>>
@@ -164,7 +164,6 @@ optimize_step_on_target(const std::vector<double> &training_input,
 
 hpx::shared_future<std::vector<std::vector<double>>>
 cholesky_on_target(const std::vector<double> &training_input,
-                   const std::vector<double> &training_output,
                    int n_tiles,
                    int n_tile_size,
                    int n_regressors,
@@ -174,13 +173,13 @@ cholesky_on_target(const std::vector<double> &training_input,
 #ifdef GPXPY_WITH_CUDA
     if (target->is_gpu())
     {
-        return gpu::cholesky(training_input, training_output, n_tiles, n_tile_size, n_regressors, sek_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
+        return gpu::cholesky(training_input, n_tiles, n_tile_size, n_regressors, sek_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
     }
     else
     {
-        return cpu::cholesky(training_input, training_output, n_tiles, n_tile_size, n_regressors, sek_params);
+        return cpu::cholesky(training_input, n_tiles, n_tile_size, n_regressors, sek_params);
     }
 #else
-    return cpu::cholesky(training_input, training_output, n_tiles, n_tile_size, n_regressors, sek_params);
+    return cpu::cholesky(training_input, n_tiles, n_tile_size, n_regressors, sek_params);
 #endif
 }

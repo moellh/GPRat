@@ -53,11 +53,28 @@ void CUDA_GPU::create_streams()
     };
 }
 
+void CUDA_GPU::sync_streams(std::vector<cudaStream_t> &subset_of_streams)
+{
+    if (subset_of_streams.size() < streams.size())
+    {
+        for (cudaStream_t &stream : subset_of_streams)
+        {
+            check_cuda_error(cudaStreamSynchronize(stream));
+        }
+    }
+    else
+    {
+        for (cudaStream_t &stream : streams)
+        {
+            check_cuda_error(cudaStreamSynchronize(stream));
+        }
+    }
+}
+
 void CUDA_GPU::destroy_streams()
 {
-    for (cudaStream_t& stream : streams)
+    for (cudaStream_t &stream : streams)
     {
-        check_cuda_error(cudaStreamSynchronize(stream));
         check_cuda_error(cudaStreamDestroy(stream));
     }
 }

@@ -61,4 +61,13 @@ inline void destroy(std::vector<cublasHandle_t> &handles)
     // clang-format on
 }
 
+inline void
+free(std::vector<hpx::shared_future<double *>> &vector)
+{
+    for (auto &ptr : vector)
+    {
+        check_cuda_error(cudaFree(ptr.get()));
+    }
+}
+
 #endif  // end of CUDA_UTILS_H

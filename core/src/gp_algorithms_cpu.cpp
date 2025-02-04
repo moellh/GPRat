@@ -1106,7 +1106,6 @@ optimize_step(const std::vector<double> &training_input,
 
 hpx::shared_future<std::vector<std::vector<double>>>
 cholesky(const std::vector<double> &training_input,
-         const std::vector<double> &training_output,
          int n_tiles,
          int n_tile_size,
          int n_regressors,
