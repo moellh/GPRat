@@ -178,11 +178,12 @@ assemble_tiled_covariance_matrix(const double *d_training_input,
 /**
  * @brief TODO: documentation
  */
-std::vector<hpx::shared_future<std::vector<double>>>
-copy_lower_tiled_matrix_to_host(const std::vector<hpx::shared_future<double *>> &d_K_tiles,
-                                const std::size_t n_tile_size,
-                                const std::size_t n_tiles,
-                                gpxpy::CUDA_GPU &gpu);
+std::vector<std::vector<double>>
+move_lower_tiled_matrix_to_host(
+    const std::vector<hpx::shared_future<double *>> &d_tiles,
+    const std::size_t n_tile_size,
+    const std::size_t n_tiles,
+    gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief TODO: documentation

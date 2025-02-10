@@ -204,9 +204,9 @@ gen_tile_cross_covariance_kernel(double *d_tile,
                                  const double *d_col_input,
                                  const std::size_t n_row_tile_size,
                                  const std::size_t n_column_tile_size,
-                                 const std::size_t n_regressors,
                                  const std::size_t tile_row,
                                  const std::size_t tile_column,
+                                 const std::size_t n_regressors,
                                  const gpxpy_hyper::SEKParams sek_params)
 {
     unsigned int i = blockIdx.y * blockDim.y + threadIdx.y;
@@ -435,33 +435,27 @@ copy_tiled_vector_to_host_vector(
     return h_vector;
 }
 
-std::vector<hpx::shared_future<std::vector<double>>> copy_lower_tiled_matrix_to_host(
+std::vector<std::vector<double>>
+move_lower_tiled_matrix_to_host(
     const std::vector<hpx::shared_future<double *>> &d_tiles,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    std::vector<hpx::shared_future<std::vector<double>>> h_tiles;
-    h_tiles.reserve(n_tiles * n_tiles);
+    std::vector<std::vector<double>> h_tiles(n_tiles * n_tiles);
 
-    // clang-format off
+    std::vector<cudaStream_t> streams(n_tiles * (n_tiles + 1) / 2);
     for (std::size_t i = 0; i < n_tiles; ++i)
     {
         for (std::size_t j = 0; j <= i; ++j)
         {
-            cudaStream_t stream = gpu.next_stream();
-
-            h_tiles[i * n_tiles + j] = hpx::async([=]()
-                {
-                    std::vector<double> h_tile;
-                    h_tile.reserve(n_tile_size * n_tile_size);
-                    check_cuda_error(cudaMemcpyAsync(h_tile.data(), d_tiles[i * n_tiles + j].get(), n_tile_size * n_tile_size * sizeof(double), cudaMemcpyDeviceToHost, stream));
-                    check_cuda_error(cudaStreamSynchronize(stream));
-                    return h_tile;
-                });
+            streams[i] = gpu.next_stream();
+            h_tiles[i * n_tiles + j].resize(n_tile_size * n_tile_size);
+            check_cuda_error(cudaMemcpyAsync(h_tiles[i * n_tiles + j].data(), d_tiles[i * n_tiles + j].get(), n_tile_size * n_tile_size * sizeof(double), cudaMemcpyDeviceToHost, streams[i]));
+            check_cuda_error(cudaFree(d_tiles[i * n_tiles + j].get()));
         }
     }
-    // clang-format on
+    gpu.sync_streams(streams);
     return h_tiles;
 }
 
@@ -1323,14 +1317,18 @@ cholesky(const std::vector<double> &h_training_input,
     cusolverDnHandle_t cusolver = create_cusolver_handle();
     std::vector<cublasHandle_t> cublas_handles = create_cublas_handles(gpu.n_streams);
 
-    // Compute Tiled Cholesky decomposition on device.
+    // Compute Tiled Cholesky decomposition on device
     right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver, cublas_handles);
 
-    // Copy tiled matrix to host.
-    std::vector<hpx::shared_future<std::vector<double>>> h_tiles = copy_lower_tiled_matrix_to_host(d_tiles, n_tile_size, n_tiles, gpu);
+    // Copy tiled matrix to host
+    std::vector<std::vector<double>> h_tiles = move_lower_tiled_matrix_to_host(d_tiles, n_tile_size, n_tiles, gpu);
 
+    cudaFree(d_training_input);
+    destroy(cusolver);
+    destroy(cublas_handles);
     gpu.destroy_streams();
-    return hpx::make_ready_future(hpx::unwrap(h_tiles));
+
+    return hpx::make_ready_future(h_tiles);
 }
 
 }  // end of namespace gpu
