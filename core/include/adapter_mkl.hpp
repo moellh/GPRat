@@ -19,10 +19,6 @@ typedef enum BLAS_SIDE { Blas_left = 141,
 typedef enum BLAS_ALPHA { Blas_add = 1,
                           Blas_substract = -1 } BLAS_ALPHA;
 
-// =============================================================================
-// BLAS operations on CPU with MKL
-// =============================================================================
-
 // BLAS level 3 operations ------------------------------------------------- {{{
 
 /**

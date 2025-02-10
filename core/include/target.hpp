@@ -65,7 +65,7 @@ struct CUDA_GPU : public Target
 #ifdef GPXPY_WITH_CUDA
     cudaStream_t next_stream();
     void create_streams();
-    void sync_streams(std::vector<cudaStream_t>& subset_of_streams);
+    void sync_streams(std::vector<cudaStream_t> &subset_of_streams);
     void destroy_streams();
 
   private:

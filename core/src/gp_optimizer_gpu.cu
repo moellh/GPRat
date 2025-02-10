@@ -3,6 +3,9 @@
 #include "../include/adapter_mkl.hpp"
 #include <numeric>
 
+namespace gpu
+{
+
 double to_constrained(const double parameter, bool noise)
 {
     if (noise)
@@ -370,3 +373,5 @@ double sum_noise_gradright(const std::vector<double> &alpha,
     grad += (noise_der * dot(alpha, alpha, N));
     return grad;
 }
+
+}  // namespace gpu

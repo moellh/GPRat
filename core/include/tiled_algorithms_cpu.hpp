@@ -1,7 +1,8 @@
 #ifndef TILED_ALGORITHMS_CPU
 #define TILED_ALGORITHMS_CPU
 
-#include "gp_optimizer_cpu.hpp"
+#include "gp_hyperparameters.hpp"
+#include "gp_kernels.hpp"
 #include <cmath>
 #include <hpx/future.hpp>
 

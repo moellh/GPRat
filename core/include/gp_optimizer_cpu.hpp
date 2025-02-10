@@ -1,11 +1,14 @@
 #ifndef GP_OPTIMIZER_CPU_H
 #define GP_OPTIMIZER_CPU_H
 
-#include "gp_kernels.hpp"
 #include "gp_hyperparameters.hpp"
+#include "gp_kernels.hpp"
 #include <cmath>
 #include <hpx/future.hpp>
 #include <vector>
+
+namespace cpu
+{
 
 /**
  * @brief Transform hyperparameter to enforce constraints using softplus.
@@ -185,5 +188,6 @@ double sum_noise_gradright(const std::vector<double> &alpha,
                            double grad,
                            gpxpy_hyper::SEKParams sek_params,
                            std::size_t N);
+}  // namespace cpu
 
 #endif  // end of GP_OPTIMIZER_CPU_H

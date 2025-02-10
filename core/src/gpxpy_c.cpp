@@ -176,7 +176,7 @@ std::vector<std::vector<double>> GP::cholesky()
     std::vector<std::vector<double>> result;
     hpx::run_as_hpx_thread([this, &result]()
                            { result =
-                                 cholesky_on_target(_training_input, _training_output, _n_tiles, _n_tile_size, n_regressors, sek_params, target)
+                                 cholesky_on_target(_training_input, _n_tiles, _n_tile_size, n_regressors, sek_params, target)
                                      .get(); });
     return result;
 }

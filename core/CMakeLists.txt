@@ -71,14 +71,18 @@ endif()
 add_library(gpxpy SHARED ${SOURCE_FILES})
 
 # Link HPX libraries
-target_link_libraries(gpxpy PRIVATE
-    ${HPX_LIBRARIES}
+target_link_libraries(
+    gpxpy
+    PUBLIC HPX::hpx
+    HPX::wrap_main
+    HPX::iostreams_component
+    MKL::mkl_intel_lp64
+    MKL::mkl_core
     MKL::MKL
+    MKL::mkl_sequential
+    CUDA::cublas
+    CUDA::cusolver
     atomic)
-
-if(GPXPY_WITH_CUDA)
-    target_link_libraries(gpxpy PRIVATE CUDA::cublas CUDA::cusolver)
-endif()
 
 # Include directories
 target_include_directories(

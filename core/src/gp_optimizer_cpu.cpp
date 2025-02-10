@@ -3,6 +3,9 @@
 #include "../include/adapter_mkl.hpp"
 #include <numeric>
 
+namespace cpu
+{
+
 double to_constrained(const double parameter, bool noise)
 {
     if (noise)
@@ -315,7 +318,8 @@ gen_tile_identity(std::size_t row, std::size_t col, std::size_t N)
     return std::move(tile);
 }
 
-std::vector<double> gen_tile_zeros_diag(std::size_t N)
+std::vector<double>
+gen_tile_zeros_diag(std::size_t N)
 {
     // Initialize tile
     std::vector<double> tile;
@@ -370,3 +374,5 @@ double sum_noise_gradright(const std::vector<double> &alpha,
     grad += (noise_der * dot(alpha, alpha, N));
     return grad;
 }
+
+}  // namespace cpu

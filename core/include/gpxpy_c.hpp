@@ -2,7 +2,7 @@
 #define GPXPY_C_H
 
 #include "../include/gp_kernels.hpp"
-#include "gp_optimizer_cpu.hpp"
+#include "gp_hyperparameters.hpp"
 #include "target.hpp"
 #include <memory>
 #include <string>

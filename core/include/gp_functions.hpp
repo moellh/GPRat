@@ -2,7 +2,7 @@
 #define GP_FUNCTIONS_H
 
 #include "gp_kernels.hpp"
-#include "gp_optimizer_cpu.hpp"
+#include "gp_hyperparameters.hpp"
 #include "target.hpp"
 #include <hpx/future.hpp>
 #include <memory>
@@ -99,7 +99,6 @@ optimize_step_on_target(const std::vector<double> &training_input,
  */
 hpx::shared_future<std::vector<std::vector<double>>>
 cholesky_on_target(const std::vector<double> &training_input,
-                   const std::vector<double> &training_output,
                    int n_tiles,
                    int n_tile_size,
                    int n_regressors,

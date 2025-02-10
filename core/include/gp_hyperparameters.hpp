@@ -1,3 +1,6 @@
+#ifndef GP_HYPERPARAMETERS_H
+#define GP_HYPERPARAMETERS_H
+
 #include <vector>
 #include <string>
 
@@ -56,3 +59,5 @@ struct AdamParams
 };
 
 }  // namespace gpxpy_hyper
+
+#endif  // GP_HYPERPARAMETERS_H

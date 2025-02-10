@@ -2,6 +2,7 @@
 
 #include "../include/adapter_mkl.hpp"
 #include "gp_uncertainty.hpp"
+#include "gp_optimizer_cpu.hpp"
 #include <cmath>
 #include <hpx/future.hpp>
 
