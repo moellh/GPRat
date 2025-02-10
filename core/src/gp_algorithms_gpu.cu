@@ -217,11 +217,24 @@ gen_tile_cross_covariance_kernel(double *d_tile,
         std::size_t i_global = n_row_tile_size * tile_row + i;
         std::size_t j_global = n_column_tile_size * tile_column + j;
 
+        double z_ik = 0.0;
+        double z_jk = 0.0;
         double distance = 0.0;
+
         for (std::size_t k = 0; k < n_regressors; ++k)
         {
-            double z_ik = d_row_input[i_global * n_regressors + k];
-            double z_jk = d_col_input[j_global * n_regressors + k];
+            int offset = -n_regressors + 1 + k;
+            int i_local = i_global + offset;
+            int j_local = j_global + offset;
+
+            if (i_local >= 0)
+            {
+                z_ik = d_row_input[i_local];
+            }
+            if (j_local >= 0)
+            {
+                z_jk = d_col_input[j_local];
+            }
             distance += (z_ik - z_jk) * (z_ik - z_jk);
         }
 
@@ -249,7 +262,7 @@ gen_tile_cross_covariance(const double *d_row_input,
     cudaStream_t stream = gpu.next_stream();
 
     check_cuda_error(cudaMalloc(&d_tile, n_row_tile_size * n_column_tile_size * sizeof(double)));
-    gen_tile_cross_covariance_kernel<<<n_blocks, threads_per_block, 0, stream>>>(d_tile, d_row_input, d_col_input, n_row_tile_size, n_column_tile_size, n_regressors, tile_row, tile_column, sek_params);
+    gen_tile_cross_covariance_kernel<<<n_blocks, threads_per_block, 0, stream>>>(d_tile, d_row_input, d_col_input, n_row_tile_size, n_column_tile_size, tile_row, tile_column, n_regressors, sek_params);
 
     check_cuda_error(cudaStreamSynchronize(stream));
 
@@ -291,11 +304,9 @@ gen_tile_output_kernel(double *tile,
 double *
 gen_tile_output(const std::size_t row,
                 const std::size_t n_tile_size,
-                const std::vector<double> &h_output,
+                const double *d_output,
                 gpxpy::CUDA_GPU &gpu)
 {
-    double *d_output = copy_to_device(h_output, gpu);
-
     dim3 threads_per_block(256);
     dim3 n_blocks((n_tile_size + 255) / 256);
 
@@ -307,7 +318,6 @@ gen_tile_output(const std::size_t row,
     gen_tile_output_kernel<<<n_blocks, threads_per_block>>>(d_tile, d_output, row, n_tile_size);
 
     check_cuda_error(cudaStreamSynchronize(stream));
-    cudaFree(d_output);
 
     return d_tile;
 }
@@ -365,22 +375,22 @@ assemble_tiled_covariance_matrix(const double *d_training_input,
 }
 
 std::vector<hpx::shared_future<double *>>
-assemble_alpha_tiles(const std::vector<double> &h_training_output,
+assemble_alpha_tiles(const double *d_output,
                      const std::size_t n_tiles,
                      const std::size_t n_tile_size,
                      gpxpy::CUDA_GPU &gpu)
 {
-    std::vector<hpx::shared_future<double *>> alpha_tiles;
-    alpha_tiles.resize(n_tiles);
+    std::vector<hpx::shared_future<double *>> alpha_tiles(n_tiles);
     for (std::size_t i = 0; i < n_tiles; i++)
     {
-        alpha_tiles[i] = hpx::async(hpx::annotated_function(&gen_tile_output, "assemble_tiled_alpha"), i, n_tile_size, h_training_output, std::ref(gpu));
+        alpha_tiles[i] = hpx::async(hpx::annotated_function(&gen_tile_output, "assemble_tiled_alpha"), i, n_tile_size, d_output, std::ref(gpu));
     }
+
     return alpha_tiles;
 }
 
 std::vector<hpx::shared_future<double *>>
-assemble_cross_covariance_tiles(const std::vector<double> &h_test_input,
+assemble_cross_covariance_tiles(const double *d_test_input,
                                 const double *d_training_input,
                                 const std::size_t m_tiles,
                                 const std::size_t n_tiles,
@@ -392,7 +402,6 @@ assemble_cross_covariance_tiles(const std::vector<double> &h_test_input,
 {
     std::vector<hpx::shared_future<double *>> cross_covariance_tiles;
     cross_covariance_tiles.resize(m_tiles * n_tiles);
-    double *d_test_input = copy_to_device(h_test_input, gpu);
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         for (std::size_t j = 0; j < n_tiles; j++)
@@ -400,7 +409,6 @@ assemble_cross_covariance_tiles(const std::vector<double> &h_test_input,
             cross_covariance_tiles[i * n_tiles + j] = hpx::async(hpx::annotated_function(&gen_tile_cross_covariance, "assemble_pred"), d_test_input, d_training_input, i, j, m_tile_size, n_tile_size, n_regressors, sek_params, std::ref(gpu));
         }
     }
-    cudaFree(d_test_input);
     return cross_covariance_tiles;
 }
 
@@ -424,7 +432,7 @@ copy_tiled_vector_to_host_vector(
     gpxpy::CUDA_GPU &gpu)
 {
     std::vector<double> h_vector;
-    h_vector.reserve(n_tile_size * n_tiles);
+    h_vector.resize(n_tile_size * n_tiles);
     std::vector<cudaStream_t> streams(n_tiles);
     for (std::size_t i = 0; i < n_tiles; i++)
     {
@@ -456,9 +464,22 @@ move_lower_tiled_matrix_to_host(
         }
     }
     gpu.sync_streams(streams);
+
     return h_tiles;
 }
 
+void free_lower_tiled_matrix(
+    const std::vector<hpx::shared_future<double *>> &d_tiles,
+    const std::size_t n_tiles)
+{
+    for (std::size_t i = 0; i < n_tiles; ++i)
+    {
+        for (std::size_t j = 0; j <= i; ++j)
+        {
+            check_cuda_error(cudaFree(d_tiles[i * n_tiles + j].get()));
+        }
+    }
+}
 
 hpx::shared_future<std::vector<double>>
 predict(const std::vector<double> &h_training_input,
@@ -475,10 +496,12 @@ predict(const std::vector<double> &h_training_input,
     gpu.create_streams();
 
     double *d_training_input = copy_to_device(h_training_input, gpu);
+    double *d_training_output = copy_to_device(h_training_output, gpu);
+    double *d_test_input = copy_to_device(h_test_input, gpu);
 
     auto d_tiles = assemble_tiled_covariance_matrix(d_training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
-    auto alpha_tiles = assemble_alpha_tiles(h_training_output, n_tiles, n_tile_size, gpu);
-    auto cross_covariance_tiles = assemble_cross_covariance_tiles(h_test_input, d_training_input, m_tiles, n_tiles, m_tile_size, n_tile_size, n_regressors, sek_params, gpu);
+    auto alpha_tiles = assemble_alpha_tiles(d_training_output, n_tiles, n_tile_size, gpu);
+    auto cross_covariance_tiles = assemble_cross_covariance_tiles(d_test_input, d_training_input, m_tiles, n_tiles, m_tile_size, n_tile_size, n_regressors, sek_params, gpu);
     auto prediction_tiles = assemble_prediction_tiles(m_tile_size, m_tiles, gpu);
 
     cusolverDnHandle_t cusolver = create_cusolver_handle();
@@ -490,10 +513,9 @@ predict(const std::vector<double> &h_training_input,
     backward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu, cublas_handles);
 
     prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles, gpu, cublas_handles);
+    std::vector<double> prediction = copy_tiled_vector_to_host_vector(prediction_tiles, m_tile_size, m_tiles, gpu);
 
-    hpx::shared_future<std::vector<double>> prediction = hpx::async(&copy_tiled_vector_to_host_vector, prediction_tiles, m_tile_size, m_tiles, std::ref(gpu));
-
-    free(d_tiles);
+    free_lower_tiled_matrix(d_tiles, n_tiles);
     free(alpha_tiles);
     free(cross_covariance_tiles);
     free(prediction_tiles);
@@ -501,6 +523,7 @@ predict(const std::vector<double> &h_training_input,
     destroy(cublas_handles);
 
     gpu.destroy_streams();
+
     return hpx::make_ready_future(prediction);
 }
 

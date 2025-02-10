@@ -61,7 +61,7 @@ gen_tile_cross_cov_T(const std::size_t N_row,
 double *
 gen_tile_output(const std::size_t row,
                 const std::size_t n_tile_size,
-                const std::vector<double> &h_output,
+                const double* d_output,
                 gpxpy::CUDA_GPU &gpu);
 
 /**
