@@ -55,14 +55,15 @@ potrf(cusolverDnHandle_t cusolver,
     // for UPPER part of symmetric positive semi-definite matrix A
 
     cusolverDnXpotrf(cusolver, params, CUBLAS_FILL_MODE_UPPER, N, CUDA_R_64F, d_A, N, CUDA_R_64F, d_work, workspaceInBytesOnDevice, h_work, workspaceInBytesOnHost, d_info);
-
     check_cuda_error(cudaStreamSynchronize(stream));
+
     check_cuda_error(cudaFree(d_work));
     if (h_work != nullptr)
     {
         free(h_work);
     }
     check_cuda_error(cudaFree(d_info));
+    cusolverDnDestroyParams(params);
 
     return hpx::make_ready_future(d_A);
 }
@@ -99,7 +100,7 @@ trsm(cublasHandle_t cublas,
     // column-major cuBLAS TRSM for row-major stored A & B
     // for X on opposite side (opposite of side_A)
 
-    cublasDtrsm(cublas, opposite(static_cast<cublasSideMode_t>(side_A)), CUBLAS_FILL_MODE_UPPER, static_cast<cublasOperation_t>(transpose_A), CUBLAS_DIAG_NON_UNIT, M, M, &alpha, d_A, M, d_B, M);
+    cublasDtrsm(cublas, opposite(static_cast<cublasSideMode_t>(side_A)), CUBLAS_FILL_MODE_UPPER, static_cast<cublasOperation_t>(transpose_A), CUBLAS_DIAG_NON_UNIT, N, M, &alpha, d_A, M, d_B, N);
 
     check_cuda_error(cudaStreamSynchronize(stream));
     return hpx::make_ready_future(d_B);
