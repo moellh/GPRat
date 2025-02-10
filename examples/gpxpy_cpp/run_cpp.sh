@@ -41,14 +41,13 @@ fi
 
 # Configure project
 $CMAKE_COMMAND .. \
-    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_BUILD_TYPE=Debug \
     -DHPX_WITH_DYNAMIC_HPX_MAIN=ON \
     -DCMAKE_C_COMPILER=$(which clang) \
     -DCMAKE_CXX_COMPILER=$(which clang++) \
     -DCMAKE_CUDA_COMPILER=$(which clang++) \
     -DCMAKE_CUDA_FLAGS="--cuda-gpu-arch=sm_${CUDA_ARCH} \
-                        --cuda-path=${CUDA_HOME} \
-                        -lcusolver" \
+                        --cuda-path=${CUDA_HOME}" \
     -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
     ${MKL_CONFIG} \
     "$@"

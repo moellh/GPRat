@@ -12,18 +12,18 @@ auto now = std::chrono::high_resolution_clock::now;
 int main(int argc, char *argv[])
 {
     // number of training points, number of rows/columns in the kernel matrix
-    const int N_TRAIN_START = 32;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384
-    const int N_TRAIN_END = 32;    // 7,   8,   9,   10,   11,   12,   13,   14
+    const int N_TRAIN_START = 8;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384
+    const int N_TRAIN_END = 8;    // 7,   8,   9,   10,   11,   12,   13,   14
 
-    const int N_TEST = 1024;
+    const int N_TEST = 8;
 
     const int LOOPS = 1;
     const int OPTIMIZE_ITERATIONS = 1;
 
     // 2^NUM_CORES_EXPONENT CPU cores are used by HPX
-    const std::size_t NUM_CORES_EXPONENT = 3;
+    const std::size_t NUM_CORES_EXPONENT = 2;
 
-    const int N_REGRESSORS = 1;
+    const int N_REGRESSORS = 8;
 
     // number of tiles per dimension
     const int N_TRAIN_TILES = 4;
@@ -31,16 +31,13 @@ int main(int argc, char *argv[])
     // number of regressors, i.e. number of previous points incl. current point
     // considered for each entry in the kernel matrix
 
-    // path to training input & output data
-    std::string train_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
-    std::string train_out_path = "../../../data/generators/msd_simulator/data/output_data.txt";
-
-    // path to test input data, output data is predicted
-    std::string test_in_path = "../../../data/test/test_input.txt";
+    std::string train_in_path = "../../../data/data_1024/training_input.txt";
+    std::string train_out_path = "../../../data/data_1024/training_output.txt";
+    std::string test_in_path = "../../../data/data_1024/test_input.txt";
 
     // Add number of threads to arguments
     std::vector<std::string> args(argv, argv + argc);
-    args.push_back("--hpx:threads=" + std::to_string(8));
+    args.push_back("--hpx:threads=" + std::to_string(NUM_CORES_EXPONENT));
 
     // Convert arguments to char* array
     std::vector<char *> cstr_args;
@@ -95,6 +92,7 @@ int main(int argc, char *argv[])
 
                 // Cholesky factorization time ----------------------------- {{{
                 auto start_cholesky = now();
+
                 std::vector<std::vector<double>> cpu_tiles = gp_cpu.cholesky();
                 std::vector<std::vector<double>> gpu_tiles = gp_gpu.cholesky();
                 double chol_err = 0;
@@ -107,41 +105,41 @@ int main(int argc, char *argv[])
                     }
                 }
                 std::cout << "Cholesky error: " << chol_err << std::endl;
+
                 auto cholesky_time = now() - start_cholesky;
                 // ------------ }}}
 
-                /*
-
                 // Optimize time (for OPTIMIZE_ITERATIONS) ----------------- {{{
                 auto start_opt = now();
+                /*
                 std::vector<double> losses = gp.optimize(hpar);
+                */
                 auto opt_time = now() - start_opt; // ---------------------- }}}
-
 
                 // Predict & Uncertainty time  ----------------------------- {{{
                 auto start_pred_uncer = now();
+                /*
                 std::vector<std::vector<double>> sum = gp.predict_with_uncertainty(test_input.data, result.first, result.second);
+                */
                 auto pred_uncer_time = now() - start_pred_uncer; // -------- }}}
-
 
                 // Predictions with full covariance time ------------------- {{{
                 auto start_pred_full_cov = now();
+                /*
                 std::vector<std::vector<double>> full = gp.predict_with_full_cov(test_input.data, result.first, result.second);
-                auto pred_full_cov_time = now() - start_pred_full_cov; // -- }}}
-
                 */
+                auto pred_full_cov_time = now() - start_pred_full_cov; // -- }}}
 
                 // Predict time -------------------------------------------- {{{
                 auto start_pred = now();
                 std::vector<double> cpu_pred = gp_cpu.predict(test_input.data, n_test_tiles, n_test_tile_size);
-                // std::vector<double> gpu_pred = gp_gpu.predict(test_input.data, n_test_tiles, n_test_tile_size);
-                // double pred_err = 0;
-                // for (std::size_t i = 0; i < cpu_pred.size(); i++)
-                // {
-                //     pred_err += std::abs(cpu_pred[i] - gpu_pred[i]);
-                //     // std::cout << "CPU: " << cpu_pred[i] << " GPU: " << gpu_pred[i] << std::endl;
-                // }
-                // std::cout << "Prediction error: " << pred_err << std::endl;
+                std::vector<double> gpu_pred = gp_gpu.predict(test_input.data, n_test_tiles, n_test_tile_size);
+                double pred_err = 0;
+                for (std::size_t i = 0; i < cpu_pred.size(); i++)
+                {
+                    pred_err += std::abs(cpu_pred[i] - gpu_pred[i]);
+                }
+                std::cout << "Prediction error: " << pred_err << std::endl;
                 auto pred_time = now() - start_pred; // ----------------- }}}
 
 

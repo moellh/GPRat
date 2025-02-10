@@ -39,12 +39,6 @@ message(STATUS "GPXPy library found: ${GPXPY_LIB}")
 # Add the executable
 add_executable(gpxpy_cpp src/execute.cpp)
 
-if(GPXPY_WITH_CUDA)
-    # Additional CUDA-specific setup
-    target_link_libraries(gpxpy_cpp PRIVATE CUDA::cublas CUDA::cusolver)
-    set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -lineinfo")
-endif()
-
 # Link the libraries
 target_link_libraries(gpxpy_cpp PUBLIC
                       "${GPXPY_LIB}"
@@ -55,4 +49,6 @@ target_link_libraries(gpxpy_cpp PUBLIC
                       MKL::mkl_core
                       MKL::MKL
                       MKL::mkl_sequential
-                      atomic)
+                      atomic
+                      $<$<BOOL:${GPXPY_WITH_CUDA}>:CUDA::cublas>
+                      $<$<BOOL:${GPXPY_WITH_CUDA}>:CUDA::cusolver>)
