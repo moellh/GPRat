@@ -22,45 +22,44 @@ void right_looking_cholesky_tiled(
     auto next_cublas = [&]()
     { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
 
-    // clang-format off
-    for_loop(hpx::execution::seq, 0, n_tiles, [&](size_t k)
+    for (std::size_t k = 0; k < n_tiles; ++k)
     {
         cusolverDnSetStream(cusolver, gpu.next_stream());
 
         // POTRF
         ft_tiles[k * n_tiles + k] = hpx::dataflow(hpx::annotated_function(&potrf, "Cholesky POTRF"), cusolver, ft_tiles[k * n_tiles + k], n_tile_size);
 
-        for_loop(hpx::execution::par, k + 1, n_tiles, [&](size_t m)
+        // NOTE: The result is immediately needed by TRSM. Also TRSM may throw
+        // an error otherwise.
+        ft_tiles[k * n_tiles + k].get();
+
+        for (std::size_t m = k + 1; m < n_tiles; ++m)
         {
             cublasHandle_t cublas = next_cublas();
             cublasSetStream(cublas, gpu.next_stream());
 
             // TRSM
             ft_tiles[m * n_tiles + k] = hpx::dataflow(&trsm, cublas, ft_tiles[k * n_tiles + k], ft_tiles[m * n_tiles + k], n_tile_size, n_tile_size, Blas_trans, Blas_right);
-        });
+        }
 
-        for_loop(hpx::execution::par, k + 1, n_tiles, [&](size_t m)
+        for (std::size_t m = k + 1; m < n_tiles; ++m)
         {
             cublasHandle_t cublas = next_cublas();
             cublasSetStream(cublas, gpu.next_stream());
 
             // SYRK
-            ft_tiles[m * n_tiles + m] = hpx::dataflow(&syrk, cublas,
-                    ft_tiles[m * n_tiles + k],
-                    ft_tiles[m * n_tiles + m],
-                    n_tile_size);
+            ft_tiles[m * n_tiles + m] = hpx::dataflow(&syrk, cublas, ft_tiles[m * n_tiles + k], ft_tiles[m * n_tiles + m], n_tile_size);
 
-            for_loop(hpx::execution::par, k + 1, m, [&](size_t n)
+            for (std::size_t n = k + 1; n < m; ++n)
             {
                 cublasHandle_t cublas = next_cublas();
                 cublasSetStream(cublas, gpu.next_stream());
 
                 // GEMM
                 ft_tiles[m * n_tiles + n] = hpx::dataflow(&gemm, cublas, ft_tiles[m * n_tiles + k], ft_tiles[n * n_tiles + k], ft_tiles[m * n_tiles + n], n_tile_size, n_tile_size, n_tile_size, Blas_no_trans, Blas_trans);
-            });
-        });
-    });
-    // clang-format on
+            }
+        }
+    }
 }
 
 // }}} ----------------------------------------- end of Tiled Cholesky Algorithm
@@ -79,8 +78,7 @@ void forward_solve_tiled(
     auto next_cublas = [&]()
     { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
 
-    // clang-format off
-    for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t k)
+    for (std::size_t k = 0; k < n_tiles; ++k)
     {
         cublasHandle_t cublas = next_cublas();
         cublasSetStream(cublas, gpu.next_stream());
@@ -94,7 +92,7 @@ void forward_solve_tiled(
             n_tile_size,
             Blas_no_trans);
 
-        for_loop(hpx::execution::seq, k + 1, n_tiles, [&](std::size_t m)
+        for (std::size_t m = k + 1; m < n_tiles; ++m)
         {
             cublasHandle_t cublas = next_cublas();
             cublasSetStream(cublas, gpu.next_stream());
@@ -110,9 +108,8 @@ void forward_solve_tiled(
                 n_tile_size,
                 Blas_substract,
                 Blas_no_trans);
-        });
-    });
-    // clang-format on
+        }
+    }
 }
 
 void backward_solve_tiled(
@@ -127,8 +124,7 @@ void backward_solve_tiled(
     auto next_cublas = [&]()
     { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
 
-    // clang-format off
-    for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t k)
+    for (int k = n_tiles - 1; k >= 0; k--)  // int instead of std::size_t for last comparison < 0
     {
         cublasHandle_t cublas = next_cublas();
         cublasSetStream(cublas, gpu.next_stream());
@@ -142,7 +138,7 @@ void backward_solve_tiled(
             n_tile_size,
             Blas_trans);
 
-        for_loop(hpx::execution::seq, 0, k, [&](std::size_t m)
+        for (int m = k - 1; m >= 0; m--)  // int instead of std::size_t for last comparison < 0
         {
             cublasHandle_t cublas = next_cublas();
             cublasSetStream(cublas, gpu.next_stream());
@@ -158,9 +154,8 @@ void backward_solve_tiled(
                 n_tile_size,
                 Blas_substract,
                 Blas_trans);
-        });
-    });
-    //  clang-format on
+        }
+    }
 }
 
 // Tiled Triangular Solve Algorithms for matrices (K * X = B)
@@ -419,9 +414,9 @@ void prediction_tiled(
     { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
 
     // clang-format off
-    for_loop(hpx::execution::par, 0, m_tiles, [&](std::size_t k)
+    for(std::size_t k = 0; k < m_tiles; ++k)
     {
-        for_loop(hpx::execution::par, 0, n_tiles, [&](std::size_t m)
+        for(std::size_t m = 0; m < n_tiles; ++m)
         {
             cublasHandle_t cublas = next_cublas();
             cublasSetStream(cublas, gpu.next_stream());
@@ -436,8 +431,8 @@ void prediction_tiled(
                 N_col,
                 Blas_add,
                 Blas_no_trans);
-        });
-    });
+        }
+    }
     // clang-format on
 }
 

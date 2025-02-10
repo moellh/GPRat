@@ -103,8 +103,7 @@ void backward_solve_tiled(
     std::size_t N,
     std::size_t n_tiles)
 {
-    for (int k = n_tiles - 1; k >= 0;
-         k--)  // int instead of std::size_t for last comparison
+    for (int k = n_tiles - 1; k >= 0; k--)  // int instead of std::size_t for last comparison
     {
         // TRSM: Solve L^T * x = a
         ft_rhs[k] = hpx::dataflow(
@@ -113,8 +112,7 @@ void backward_solve_tiled(
             ft_rhs[k],
             N,
             Blas_trans);
-        for (int m = k - 1; m >= 0;
-             m--)  // int instead of std::size_t for last comparison
+        for (int m = k - 1; m >= 0; m--)  // int instead of std::size_t for last comparison
         {
             // GEMV:b = b - A^T * a
             ft_rhs[m] = hpx::dataflow(

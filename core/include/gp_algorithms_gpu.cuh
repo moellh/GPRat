@@ -1,8 +1,8 @@
 #ifndef GP_ALGORITHMS_GPU_H
 #define GP_ALGORITHMS_GPU_H
 
-#include "gp_kernels.hpp"
 #include "gp_hyperparameters.hpp"
+#include "gp_kernels.hpp"
 #include "target.hpp"
 #include <hpx/future.hpp>
 #include <vector>
