@@ -1,5 +1,5 @@
-#ifndef GP_UNCERTAINTY_H
-#define GP_UNCERTAINTY_H
+#ifndef GP_UNCERTAINTY_CPU_H
+#define GP_UNCERTAINTY_CPU_H
 
 #include <cmath>
 #include <vector>
@@ -13,9 +13,11 @@
  *
  * @return Diagonal elements of posterior covariance matrix
  */
-std::vector<double> diag_posterior(const std::vector<double> &A,
-                                   const std::vector<double> &B,
-                                   std::size_t M);
+std::vector<double>
+diag_posterior(
+    const std::vector<double> &A,
+    const std::vector<double> &B,
+    std::size_t M);
 
 /**
  * @brief Retrieve diagonal elements of posterior covariance matrix.
@@ -25,6 +27,9 @@ std::vector<double> diag_posterior(const std::vector<double> &A,
  *
  * @return Diagonal elements of posterior covariance matrix
  */
-std::vector<double> diag_tile(const std::vector<double> &A, std::size_t M);
+std::vector<double>
+diag_tile(
+    const std::vector<double> &A,
+    std::size_t M);
 
-#endif // end of GP_UNCERTAINTY_H
+#endif  // end of GP_UNCERTAINTY_CPU_H

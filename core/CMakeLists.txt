@@ -26,7 +26,7 @@ set(SOURCE_FILES
     src/gp_kernel.cpp
     src/gp_hyperparameters.cpp
     src/gp_optimizer_cpu.cpp
-    src/gp_uncertainty.cpp
+    src/gp_uncertainty_cpu.cpp
     src/gpxpy_c.cpp
     src/target.cpp
     src/tiled_algorithms_cpu.cpp
@@ -36,6 +36,7 @@ set(SOURCE_FILES
 if(GPXPY_WITH_CUDA)
     list(APPEND SOURCE_FILES
         src/gp_optimizer_gpu.cu
+        src/gp_uncertainty_gpu.cu
         src/adapter_cublas.cu
         src/gp_algorithms_gpu.cu
         src/tiled_algorithms_gpu.cu
@@ -51,7 +52,7 @@ set(HEADER_FILES
     include/gp_kernels.hpp
     include/gp_hyperparameters.hpp
     include/gp_optimizer_cpu.hpp
-    include/gp_uncertainty.hpp
+    include/gp_uncertainty_cpu.hpp
     include/gpxpy_c.hpp
     include/target.hpp
     include/tiled_algorithms_cpu.hpp
@@ -61,6 +62,7 @@ set(HEADER_FILES
 if(GPXPY_WITH_CUDA)
     list(APPEND HEADER_FILES
         include/gp_optimizer_gpu.cuh
+        include/gp_uncertainty_gpu.cu
         include/adapter_cublas.cuh
         include/gp_algorithms_gpu.cuh
         include/tiled_algorithms_gpu.cuh
