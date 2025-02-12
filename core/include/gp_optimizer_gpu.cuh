@@ -3,9 +3,9 @@
 
 #include "gp_hyperparameters.hpp"
 #include "gp_kernels.hpp"
+#include "target.hpp"
 #include <hpx/future.hpp>
 #include <vector>
-#include "target.hpp"
 
 namespace gpu
 {
@@ -101,16 +101,22 @@ double gen_beta_T(int t, double beta);
 /**
  * @brief Compute negative-log likelihood tiled.
  */
-double compute_loss(const std::vector<double> &K_diag_tile,
-                    const std::vector<double> &alpha_tile,
-                    const std::vector<double> &y_tile,
-                    std::size_t N);
+hpx::shared_future<double>
+compute_loss(
+    const hpx::shared_future<double *> &K_diag_tile,
+    const hpx::shared_future<double *> &alpha_tile,
+    const hpx::shared_future<double *> &y_tile,
+    std::size_t N,
+    gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Compute negative-log likelihood.
  */
-double
-add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n);
+hpx::shared_future<double>
+add_losses(
+    const std::vector<hpx::shared_future<double>> &losses,
+    std::size_t n_tile_size,
+    std::size_t n_tiles);
 
 /**
  * @brief Compute trace of (K^-1 - K^-1*y*y^T*K^-1)* del(K)/del(hyperparam) =

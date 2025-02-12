@@ -1,8 +1,8 @@
 #include "gp_optimizer_gpu.cuh"
 
-#include <numeric>
-#include "cuda_utils.cuh"
+#include "adapter_cublas.cuh"
 #include "cuda_kernels.cuh"
+#include "cuda_utils.cuh"
 
 namespace gpu
 {
@@ -214,33 +214,56 @@ double gen_beta_T(int t, double beta)
     return pow(beta, t);
 }
 
-double compute_loss(const std::vector<double> &K_diag_tile,
-                    const std::vector<double> &alpha_tile,
-                    const std::vector<double> &y_tile,
-                    std::size_t N)
+__global__ void
+add_log_squared_K_diag(
+    double *K_diag_tile,
+    double *alpha_tile,
+    double *y_tile,
+    double *loss,
+    std::size_t N)
 {
-    // double l = 0.0;
-    // l += dot(y_tile, alpha_tile, N);
-    // for (std::size_t i = 0; i < N; i++)
-    // {
-    //     // Add the squared difference to the error
-    //     l += log(K_diag_tile[i * N + i] * K_diag_tile[i * N + i]);
-    // }
-    // return l;
-    return 0.0;
+    for (std::size_t i = 0; i < N; i++)
+    {
+        *loss += log(K_diag_tile[i * N + i] * K_diag_tile[i * N + i]);
+    }
 }
 
-double
-add_losses(const std::vector<double> &losses, std::size_t N, std::size_t n)
+hpx::shared_future<double>
+compute_loss(
+    const hpx::shared_future<double *> &K_diag_tile,
+    const hpx::shared_future<double *> &alpha_tile,
+    const hpx::shared_future<double *> &y_tile,
+    std::size_t N,
+    gpxpy::CUDA_GPU &gpu)
 {
+    auto [cublas, stream] = gpu.next_cublas_handle();
+
+    hpx::shared_future<double *> d_loss = hpx::dataflow(&dot, cublas, stream, y_tile, alpha_tile, N);
+    add_log_squared_K_diag<<<1, 1, 0, stream>>>(K_diag_tile.get(), alpha_tile.get(), y_tile.get(), d_loss.get(), N);
+
+    double h_loss;
+    check_cuda_error(cudaMemcpyAsync(&h_loss, d_loss.get(), sizeof(double), cudaMemcpyDeviceToHost, stream));
+    check_cuda_error(cudaFree(d_loss.get()));
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return hpx::make_ready_future(h_loss);
+}
+
+hpx::shared_future<double>
+add_losses(
+    const std::vector<hpx::shared_future<double>> &losses,
+    std::size_t n_tile_size,
+    std::size_t n_tiles)
+{
+    // Add the squared difference to the error
     double l = 0.0;
-    for (std::size_t i = 0; i < n; i++)
+    for (std::size_t i = 0; i < n_tiles; i++)
     {
-        // Add the squared difference to the error
-        l += losses[i];
+        l += losses[i].get();
     }
-    l += N * n * log(2.0 * M_PI);
-    return 0.5 * l / (N * n);
+    l += n_tile_size * n_tiles * log(2.0 * M_PI);
+
+    return hpx::make_ready_future(0.5 * l / (n_tile_size * n_tiles));
 }
 
 double compute_gradient(const double &grad_l,
