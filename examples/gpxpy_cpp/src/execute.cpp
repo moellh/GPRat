@@ -101,7 +101,6 @@ int main(int argc, char *argv[])
                     for (std::size_t j = 0; j < cpu_tiles[i].size(); j++)
                     {
                         chol_err += std::abs(cpu_tiles[i][j] - gpu_tiles[i][j]);
-                        // std::cout << "CPU: " << cpu_tiles[i][j] << " GPU: " << gpu_tiles[i][j] << std::endl;
                     }
                 }
                 std::cout << "Cholesky error: " << chol_err << std::endl;
@@ -114,21 +113,7 @@ int main(int argc, char *argv[])
                 /*
                 std::vector<double> losses = gp.optimize(hpar);
                 */
-                auto opt_time = now() - start_opt; // ---------------------- }}}
-
-                // Predict & Uncertainty time  ----------------------------- {{{
-                auto start_pred_uncer = now();
-                /*
-                std::vector<std::vector<double>> sum = gp.predict_with_uncertainty(test_input.data, result.first, result.second);
-                */
-                auto pred_uncer_time = now() - start_pred_uncer; // -------- }}}
-
-                // Predictions with full covariance time ------------------- {{{
-                auto start_pred_full_cov = now();
-                /*
-                std::vector<std::vector<double>> full = gp.predict_with_full_cov(test_input.data, result.first, result.second);
-                */
-                auto pred_full_cov_time = now() - start_pred_full_cov; // -- }}}
+                auto opt_time = now() - start_opt;  // ---------------------- }}}
 
                 // Predict time -------------------------------------------- {{{
                 auto start_pred = now();
@@ -140,9 +125,39 @@ int main(int argc, char *argv[])
                     pred_err += std::abs(cpu_pred[i] - gpu_pred[i]);
                 }
                 std::cout << "Prediction error: " << pred_err << std::endl;
-                auto pred_time = now() - start_pred; // ----------------- }}}
+                auto pred_time = now() - start_pred;  // ----------------- }}}
 
+                // Predict & Uncertainty time  ----------------------------- {{{
+                auto start_pred_uncer = now();
+                std::vector<std::vector<double>> pred_uncer_cpu = gp_cpu.predict_with_uncertainty(test_input.data, n_test_tiles, n_test_tile_size);
+                std::vector<std::vector<double>> pred_uncer_gpu = gp_gpu.predict_with_uncertainty(test_input.data,n_test_tiles , n_test_tile_size);
+                double pred_uncer_err = 0;
+                for (std::size_t j = 0; j < pred_uncer_cpu[0].size(); j++)
+                {
+                    pred_uncer_err += std::abs(pred_uncer_cpu[0][j] - pred_uncer_gpu[0][j]);
+                }
+                for (std::size_t j = 0; j < pred_uncer_cpu[1].size(); j++)
+                {
+                    pred_uncer_err += std::abs(pred_uncer_cpu[1][j] - pred_uncer_gpu[1][j]);
+                }
+                std::cout << "Pred Uncer error: " << pred_uncer_err << std::endl;
+                auto pred_uncer_time = now() - start_pred_uncer;  // -------- }}}
 
+                // Predictions with full covariance time ------------------- {{{
+                auto start_pred_full_cov = now();
+                std::vector<std::vector<double>> pred_full_cpu = gp_cpu.predict_with_full_cov(test_input.data, n_test_tile_size, n_test_tile_size);
+                std::vector<std::vector<double>> pred_full_gpu = gp_gpu.predict_with_full_cov(test_input.data, n_test_tile_size, n_test_tile_size);
+                double pred_full_err = 0;
+                for (std::size_t j = 0; j < pred_full_cpu[0].size(); j++)
+                {
+                    pred_full_err += std::abs(pred_full_cpu[0][j] - pred_full_gpu[0][j]);
+                }
+                for (std::size_t j = 0; j < pred_full_cpu[1].size(); j++)
+                {
+                    pred_full_err += std::abs(pred_full_cpu[1][j] - pred_full_gpu[1][j]);
+                }
+                std::cout << "Pred FullCov error: " << pred_full_err << std::endl;
+                auto pred_full_cov_time = now() - start_pred_full_cov;  // -- }}}
                 auto total_time = now() - start_total;  // ----------------- }}}
 
                 // Append parameters & times as CSV
