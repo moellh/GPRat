@@ -1,6 +1,7 @@
 #include "tiled_algorithms_gpu.cuh"
 
 #include "adapter_cublas.cuh"
+#include "gp_uncertainty_gpu.cuh"
 #include <hpx/algorithm.hpp>
 
 using hpx::experimental::for_loop;
@@ -107,8 +108,11 @@ void backward_solve_tiled(
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
+    // NOTE: The loops traverse backwards. Its last comparisons require the
+    // usage negative numbers. Therefore they use signed int instead of the
+    // unsigned std::size_t.
 
-    for (int k = n_tiles - 1; k >= 0; k--)  // int instead of std::size_t for last comparison < 0
+    for (int k = n_tiles - 1; k >= 0; k--)
     {
         auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -122,7 +126,7 @@ void backward_solve_tiled(
             n_tile_size,
             Blas_trans);
 
-        for (int m = k - 1; m >= 0; m--)  // int instead of std::size_t for last comparison < 0
+        for (int m = k - 1; m >= 0; m--)
         {
             auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -255,10 +259,9 @@ void forward_solve_KcK_tiled(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // clang-format off
-    for_loop(hpx::execution::seq, 0, m_tiles, [&](std::size_t r)
+    for (std::size_t r = 0; r < m_tiles; ++r)
     {
-        for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t c)
+        for (std::size_t c = 0; c < n_tiles; ++c)
         {
             auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -274,7 +277,7 @@ void forward_solve_KcK_tiled(
                 Blas_no_trans,
                 Blas_left);
 
-            for_loop(hpx::execution::seq, c + 1, n_tiles, [&](std::size_t m)
+            for (std::size_t m = c + 1; m < n_tiles; ++m)
             {
                 auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -291,10 +294,9 @@ void forward_solve_KcK_tiled(
                     n_tile_size,
                     Blas_no_trans,
                     Blas_no_trans);
-            });
-        });
-    });
-    // clang-format on
+            }
+        }
+    }
 }
 
 void compute_gemm_of_invK_y(
@@ -305,10 +307,9 @@ void compute_gemm_of_invK_y(
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // clang-format off
-    for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t i)
+    for (std::size_t i = 0; i < n_tiles; ++i)
     {
-        for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t j)
+        for (std::size_t j = 0; j < n_tiles; ++j)
         {
             auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -323,9 +324,8 @@ void compute_gemm_of_invK_y(
                 n_tile_size,
                 Blas_add,
                 Blas_no_trans);
-        });
-    });
-    // clang-format on
+        }
+    }
 }
 
 void compute_loss_tiled(
@@ -370,10 +370,9 @@ void prediction_tiled(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // clang-format off
-    for(std::size_t k = 0; k < m_tiles; ++k)
+    for (std::size_t k = 0; k < m_tiles; ++k)
     {
-        for(std::size_t m = 0; m < n_tiles; ++m)
+        for (std::size_t m = 0; m < n_tiles; ++m)
         {
             auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -390,7 +389,6 @@ void prediction_tiled(
                 Blas_no_trans);
         }
     }
-    // clang-format on
 }
 
 void posterior_covariance_tiled(
@@ -402,10 +400,9 @@ void posterior_covariance_tiled(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // clang-format off
-    for_loop(hpx::execution::par, 0, m_tiles, [&](std::size_t i)
+    for (std::size_t i = 0; i < m_tiles; ++i)
     {
-        for_loop(hpx::execution::par, 0, n_tiles, [&](std::size_t n)
+        for (std::size_t n = 0; n < n_tiles; ++n)
         {
             auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -419,9 +416,8 @@ void posterior_covariance_tiled(
                 ft_inter_tiles[i],
                 n_tile_size,
                 m_tile_size);
-        });
-    });
-    // clang-format on
+        }
+    }
 }
 
 void full_cov_tiled(
@@ -433,12 +429,11 @@ void full_cov_tiled(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // clang-format off
-    for_loop(hpx::execution::seq, 0, m_tiles, [&](std::size_t c)
+    for (std::size_t c = 0; c < m_tiles; ++c)
     {
-        for_loop(hpx::execution::seq, 0, m_tiles, [&](std::size_t k)
+        for (std::size_t k = 0; k < m_tiles; ++k)
         {
-            for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t m)
+            for (std::size_t m = 0; m < n_tiles; ++m)
             {
                 auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -455,10 +450,9 @@ void full_cov_tiled(
                     m_tile_size,
                     Blas_trans,
                     Blas_no_trans);
-            });
-        });
-    });
-    // clang-format on
+            }
+        }
+    }
 }
 
 void prediction_uncertainty_tiled(
@@ -523,10 +517,9 @@ void update_grad_K_tiled_mkl(
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // clang-format off
-    for_loop(hpx::execution::par, 0, n_tiles, [&](std::size_t i)
+    for (std::size_t i = 0; i < n_tiles; ++i)
     {
-        for_loop(hpx::execution::par, 0, n_tiles, [&](std::size_t j)
+        for (std::size_t j = 0; j < n_tiles; ++j)
         {
             auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -538,13 +531,12 @@ void update_grad_K_tiled_mkl(
                 ft_v1[i],
                 ft_v2[j],
                 n_tile_size);
-        });
-    });
-    // clang-format on
+        }
+    }
 }
 
 /**
- * NOTE: not in header -> TODO: write documentation
+ * TODO: not in header -> write documentation
  */
 static double
 update_hyperparameter(
