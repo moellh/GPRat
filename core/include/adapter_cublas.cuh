@@ -214,11 +214,12 @@ dot_diag_gemm(cublasHandle_t cublas,
  * @param N vector length
  * @return f_a * f_b
  */
-double dot(cublasHandle_t cublas,
-           cudaStream_t stream,
-           hpx::shared_future<double *> f_a,
-           hpx::shared_future<double *> f_b,
-           const std::size_t N);
+hpx::shared_future<double *>
+dot(cublasHandle_t cublas,
+            cudaStream_t stream,
+            hpx::shared_future<double *> f_a,
+            hpx::shared_future<double *> f_b,
+            const std::size_t N);
 
 // }}} end of BLAS level 1 operations
 

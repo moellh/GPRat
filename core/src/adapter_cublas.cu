@@ -357,7 +357,8 @@ dot_diag_gemm(
 
 // BLAS level 1 operations ------------------------------------------------- {{{
 
-double dot(
+hpx::shared_future<double *>
+dot(
     cublasHandle_t cublas,
     cudaStream_t stream,
     hpx::shared_future<double *> f_a,
@@ -366,12 +367,15 @@ double dot(
 {
     double *d_a = f_a.get();
     double *d_b = f_b.get();
-    double result;
+    double *result;
 
-    cublasDdot(cublas, N, d_a, 1, d_b, 1, &result);
+    check_cuda_error(cudaMalloc(&result, sizeof(double)));
+    check_cuda_error(cudaMemset(result, 0, sizeof(double)));
+
+    cublasDdot(cublas, N, d_a, 1, d_b, 1, result);
     check_cuda_error(cudaStreamSynchronize(stream));
 
-    return result;
+    return hpx::make_ready_future(result);
 }
 
 // }}} ------------------------------------------ end of BLAS level 1 operations

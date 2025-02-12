@@ -515,6 +515,21 @@ assemble_t_cross_covariance_tiles(
     return d_t_cross_covariance_tiles;
 }
 
+std::vector<hpx::shared_future<double *>>
+assemble_y_tiles(
+    const double *d_training_output,
+    const std::size_t n_tiles,
+    const std::size_t n_tile_size,
+    gpxpy::CUDA_GPU &gpu)
+{
+    std::vector<hpx::shared_future<double *>> d_y_tiles(n_tiles);
+    for (std::size_t i = 0; i < n_tiles; i++)
+    {
+        d_y_tiles[i] = hpx::async(&gen_tile_output, i, n_tile_size, d_training_output, std::ref(gpu));
+    }
+    return d_y_tiles;
+}
+
 std::vector<double>
 copy_tiled_vector_to_host_vector(
     std::vector<hpx::shared_future<double *>> &d_tiles,
@@ -772,66 +787,45 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 }
 
 hpx::shared_future<double>
-compute_loss(const std::vector<double> &training_input,
-             const std::vector<double> &training_output,
+compute_loss(const std::vector<double> &h_training_input,
+             const std::vector<double> &h_training_output,
              const std::size_t n_tiles,
              const std::size_t n_tile_size,
              const std::size_t n_regressors,
              const gpxpy_hyper::SEKParams sek_params,
              gpxpy::CUDA_GPU &gpu)
 {
-    /* // declare data structures
-    // tiled future data structures
-    std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> alpha_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> y_tiles;
-    hpx::shared_future<double> loss_value;
+    gpu.create();
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Assemble covariance matrix vector
-    K_tiles.resize(n_tiles * n_tiles);
-    for (std::size_t i = 0; i < n_tiles; i++)
-    {
-        for (std::size_t j = 0; j <= i; j++)
-        {
-            K_tiles[i * n_tiles + j] =
-                hpx::async(hpx::annotated_function(&gen_tile_covariance,
-                                                   "assemble_tiled"),
-                           i,
-                           j,
-                           n_tile_size,
-                           n_regressors,
-                           sek_params,
-                           training_input);
-        }
-    }
+    double *d_training_input = copy_to_device(h_training_input, gpu);
+    double *d_training_output = copy_to_device(h_training_output, gpu);
 
-    // Assemble alpha
-    alpha_tiles.resize(n_tiles);
-    for (std::size_t i = 0; i < n_tiles; i++)
-    {
-        alpha_tiles[i] = hpx::async(
-            hpx::annotated_function(&gen_tile_output, "assemble_tiled"), i, n_tile_size, training_output);
-    }
-    // Assemble y
-    y_tiles.resize(n_tiles);
-    for (std::size_t i = 0; i < n_tiles; i++)
-    {
-        y_tiles[i] = hpx::async(
-            hpx::annotated_function(&gen_tile_output, "assemble_tiled"), i, n_tile_size, training_output);
-    }
+    // Assemble tiled covariance matrix on GPU.
+    auto d_K_tiles = assemble_tiled_covariance_matrix(d_training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
 
-    //////////////////////////////////////////////////////////////////////////////
-    // Cholesky decomposition
-    right_looking_cholesky_tiled(target.cublas_executors, K_tiles, n_tile_size, n_tiles);
+    auto d_alpha_tiles = assemble_alpha_tiles(d_training_output, n_tiles, n_tile_size, gpu);
+
+    auto d_y_tiles = assemble_y_tiles(d_training_output, n_tiles, n_tile_size, gpu);
+
+    cusolverDnHandle_t cusolver = create_cusolver_handle();
+    right_looking_cholesky_tiled(d_K_tiles, n_tile_size, n_tiles, gpu, cusolver);
+
     // Triangular solve K_NxN * alpha = y
-    forward_solve_tiled(target.cublas_executors, K_tiles, alpha_tiles, n_tile_size, n_tiles);
-    backward_solve_tiled(target.cublas_executors, K_tiles, alpha_tiles, n_tile_size, n_tiles);
+    forward_solve_tiled(d_K_tiles, d_alpha_tiles, n_tile_size, n_tiles, gpu);
+    backward_solve_tiled(d_K_tiles, d_alpha_tiles, n_tile_size, n_tiles, gpu);
+
     // Compute loss
-    compute_loss_tiled(target.cublas_executors, K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, n_tiles);
-    // Return loss
-    return loss_value; */
-    return hpx::shared_future<double>();
+    hpx::shared_future<double> loss_value = compute_loss_tiled(d_K_tiles, d_alpha_tiles, d_y_tiles, n_tile_size, n_tiles, gpu);
+
+    check_cuda_error(cudaFree(d_training_input));
+    check_cuda_error(cudaFree(d_training_output));
+    free_lower_tiled_matrix(d_K_tiles, n_tiles);
+    free(d_alpha_tiles);
+    destroy(cusolver);
+
+    gpu.destroy();
+
+    return loss_value;
 }
 
 hpx::shared_future<std::vector<double>>
