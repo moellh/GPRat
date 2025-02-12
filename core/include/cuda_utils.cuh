@@ -8,6 +8,9 @@
 #include <stdexcept>
 #include <target.hpp>
 #include <vector>
+#include <hpx/async_cuda/cuda_exception.hpp>
+
+#define BLOCK_SIZE 16
 
 using hpx::cuda::experimental::check_cuda_error;
 

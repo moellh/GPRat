@@ -47,7 +47,6 @@ endif()
 # Headers (to be installed)
 set(HEADER_FILES
     include/adapter_mkl.hpp
-    include/cuda_utils.hpp
     include/gp_algorithms_cpu.hpp
     include/gp_functions.hpp
     include/gp_kernels.hpp
@@ -62,6 +61,7 @@ set(HEADER_FILES
 
 if(GPXPY_WITH_CUDA)
     list(APPEND HEADER_FILES
+        include/cuda_utils.cuh
         include/cuda_kernels.cuh
         include/gp_optimizer_gpu.cuh
         include/gp_uncertainty_gpu.cu
