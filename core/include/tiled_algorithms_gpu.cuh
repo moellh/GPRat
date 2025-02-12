@@ -88,11 +88,11 @@ void compute_gemm_of_invK_y(
     gpxpy::CUDA_GPU &gpu);
 
 // Tiled Loss
-void compute_loss_tiled(
+hpx::shared_future<double>
+compute_loss_tiled(
     std::vector<hpx::shared_future<double *>> &ft_tiles,
     std::vector<hpx::shared_future<double *>> &ft_alpha,
     std::vector<hpx::shared_future<double *>> &ft_y,
-    hpx::shared_future<double> &loss,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu);

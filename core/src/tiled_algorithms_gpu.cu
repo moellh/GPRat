@@ -1,6 +1,7 @@
 #include "tiled_algorithms_gpu.cuh"
 
 #include "adapter_cublas.cuh"
+#include "gp_optimizer_gpu.cuh"
 #include "gp_uncertainty_gpu.cuh"
 #include <hpx/algorithm.hpp>
 
@@ -328,35 +329,23 @@ void compute_gemm_of_invK_y(
     }
 }
 
-void compute_loss_tiled(
+hpx::shared_future<double>
+compute_loss_tiled(
     std::vector<hpx::shared_future<double *>> &ft_tiles,
     std::vector<hpx::shared_future<double *>> &ft_alpha,
     std::vector<hpx::shared_future<double *>> &ft_y,
-    hpx::shared_future<double> &loss,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // std::vector<hpx::shared_future<double>> loss_tiled;
-    // loss_tiled.resize(n_tiles);
-    // for (std::size_t k = 0; k < n_tiles; k++)
-    // {
-    //     loss_tiled[k] = hpx::dataflow(
-    //         hpx::annotated_function(hpx::unwrapping(&compute_loss),
-    //                                 "loss_tiled"),
-    //         ft_tiles[k * n_tiles + k],
-    //         ft_alpha[k],
-    //         ft_y[k],
-    //         n_tile_size);
-    // }
-    //
-    // loss = hpx::dataflow(
-    //     hpx::annotated_function(hpx::unwrapping(&add_losses), "loss_tiled"),
-    //     loss_tiled,
-    //     n_tile_size,
-    //     n_tiles);
+    std::vector<hpx::shared_future<double>> loss_tiled(n_tiles);
 
-    // TODO: requires GPU implementation of compute loss and add_losses in gp_optimizer
+    for (std::size_t k = 0; k < n_tiles; k++)
+    {
+        loss_tiled[k] = hpx::dataflow(&compute_loss, ft_tiles[k * n_tiles + k], ft_alpha[k], ft_y[k], n_tile_size, std::ref(gpu));
+    }
+
+    return hpx::dataflow(&add_losses, loss_tiled, n_tile_size, n_tiles);
 }
 
 // Tiled Prediction
