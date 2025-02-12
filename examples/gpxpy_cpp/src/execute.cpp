@@ -115,6 +115,22 @@ int main(int argc, char *argv[])
                 */
                 auto opt_time = now() - start_opt;  // ---------------------- }}}
 
+                // Optimize step time ------------------ {{{
+                auto start_opt_step = now();
+                /*
+                std::vector<double> losses = gp.optimize(hpar);
+                */
+                auto opt_step_time = now() - start_opt_step;  // ---------------------- }}}
+
+                // Calculate loss time ------------------- {{{
+                auto start_calc_loss = now();
+                double loss_cpu = gp_cpu.calculate_loss();
+                double loss_gpu = gp_gpu.calculate_loss();
+                double calc_loss_err = std::abs(loss_cpu - loss_gpu);
+                std::cout << "cpu: " << loss_cpu << ", gpu: " << loss_gpu << std::endl;
+                std::cout << "Calc Loss error: " << calc_loss_err << std::endl;
+                auto calc_loss_time = now() - start_calc_loss;  // -- }}}
+
                 // Predict time -------------------------------------------- {{{
                 auto start_pred = now();
                 std::vector<double> cpu_pred = gp_cpu.predict(test_input.data, n_test_tiles, n_test_tile_size);
