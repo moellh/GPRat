@@ -463,24 +463,15 @@ void prediction_uncertainty_tiled(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // // int cublas_counter = 0;
-    // // auto next_cublas = [&]()
-    // // { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
-    // //
-    // // cublasHandle_t cublas = next_cublas();
-    // // cublasSetStream(cublas, gpu.next_stream());
-    //
-    // for (std::size_t i = 0; i < m_tiles; i++)
-    // {
-    //     ft_vector[i] = hpx::dataflow(
-    //         hpx::annotated_function(hpx::unwrapping(&diag_posterior),
-    //                                 "uncertainty_tiled"),
-    //         ft_priorK[i],
-    //         ft_inter[i],
-    //         M);
-    // }
-
-    // TODO: requires GPU implementation of diag_posterior in gp_optimizer
+    for (std::size_t i = 0; i < m_tiles; i++)
+    {
+        ft_vector[i] = hpx::dataflow(
+            &diag_posterior,
+            ft_priorK[i],
+            ft_inter[i],
+            m_tile_size,
+            std::ref(gpu));
+    }
 }
 
 void pred_uncer_tiled(
@@ -490,23 +481,14 @@ void pred_uncer_tiled(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // // int cublas_counter = 0;
-    // // auto next_cublas = [&]()
-    // // { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
-    // //
-    // // cublasHandle_t cublas = next_cublas();
-    // // cublasSetStream(cublas, gpu.next_stream());
-    //
-    // for (std::size_t i = 0; i < m_tiles; i++)
-    // {
-    //     ft_vector[i] = hpx::dataflow(
-    //         hpx::annotated_function(hpx::unwrapping(&diag_tile),
-    //                                 "uncertainty_tiled"),
-    //         ft_priorK[i * m_tiles + i],
-    //         M);
-    // }
-
-    // TODO: requires GPU implementation of diag_tile in gp_optimizer
+    for (std::size_t i = 0; i < m_tiles; i++)
+    {
+        ft_vector[i] = hpx::dataflow(
+            &diag_tile,
+            ft_priorK[i * m_tiles + i],
+            m_tile_size,
+            std::ref(gpu));
+    }
 }
 
 void update_grad_K_tiled_mkl(
