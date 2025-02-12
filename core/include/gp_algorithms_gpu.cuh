@@ -25,13 +25,14 @@ gen_tile_covariance(const double *d_input,
 /**
  * @brief Generate a tile of the prior covariance matrix.
  */
-std::vector<double>
-gen_tile_prior_covariance(const std::size_t row,
-                          const std::size_t col,
-                          const std::size_t N,
+double *
+gen_tile_prior_covariance(const double *d_input,
+                          const std::size_t tile_row,
+                          const std::size_t tile_column,
+                          const std::size_t n_tile_size,
                           const std::size_t n_regressors,
                           const gpxpy_hyper::SEKParams sek_params,
-                          const std::vector<double> &input);
+                          gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Generate a tile of the cross-covariance matrix.
@@ -50,10 +51,12 @@ gen_tile_cross_covariance(const double *d_row_input,
 /**
  * @brief Generate a tile of the cross-covariance matrix.
  */
-std::vector<double>
-gen_tile_cross_cov_T(const std::size_t N_row,
-                     const std::size_t N_col,
-                     const std::vector<double> &cross_covariance_tile);
+hpx::shared_future<double *>
+gen_tile_cross_cov_T(
+    std::size_t n_row_tile_size,
+    std::size_t n_column_tile_size,
+    const hpx::shared_future<double *> f_cross_covariance_tile,
+    gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Generate a tile containing the output observations.
