@@ -40,6 +40,7 @@ if(GPXPY_WITH_CUDA)
         src/adapter_cublas.cu
         src/gp_algorithms_gpu.cu
         src/tiled_algorithms_gpu.cu
+        src/cuda_kernels.cu
     )
 endif()
 
@@ -61,6 +62,7 @@ set(HEADER_FILES
 
 if(GPXPY_WITH_CUDA)
     list(APPEND HEADER_FILES
+        include/cuda_kernels.cuh
         include/gp_optimizer_gpu.cuh
         include/gp_uncertainty_gpu.cu
         include/adapter_cublas.cuh
