@@ -63,13 +63,17 @@ struct CUDA_GPU : public Target
     bool is_gpu() override;
 
 #ifdef GPXPY_WITH_CUDA
+    void create();
+    void destroy();
+
     cudaStream_t next_stream();
-    void create_streams();
     void sync_streams(std::vector<cudaStream_t> &subset_of_streams);
-    void destroy_streams();
+
+    std::pair<cublasHandle_t, cudaStream_t> next_cublas_handle();
 
   private:
     std::vector<cudaStream_t> streams;
+    std::vector<cublasHandle_t> cublas_handles;
 #endif
 };
 

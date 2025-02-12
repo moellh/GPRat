@@ -1,9 +1,11 @@
-#include "../include/gp_algorithms_gpu.cuh"
+#include "gp_algorithms_gpu.cuh"
 
-#include "../include/gp_kernels.hpp"
-#include "../include/target.hpp"
-#include "../include/tiled_algorithms_gpu.cuh"
-#include "cuda_utils.hpp"
+#include "cuda_kernels.cuh"
+#include "cuda_utils.cuh"
+#include "gp_kernels.hpp"
+#include "gp_optimizer_gpu.cuh"
+#include "target.hpp"
+#include "tiled_algorithms_gpu.cuh"
 #include <cuda_runtime.h>
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>
@@ -493,7 +495,7 @@ predict(const std::vector<double> &h_training_input,
         const gpxpy_hyper::SEKParams sek_params,
         gpxpy::CUDA_GPU &gpu)
 {
-    gpu.create_streams();
+    gpu.create();
 
     double *d_training_input = copy_to_device(h_training_input, gpu);
     double *d_training_output = copy_to_device(h_training_output, gpu);
@@ -505,14 +507,13 @@ predict(const std::vector<double> &h_training_input,
     auto prediction_tiles = assemble_prediction_tiles(m_tile_size, m_tiles, gpu);
 
     cusolverDnHandle_t cusolver = create_cusolver_handle();
-    std::vector<cublasHandle_t> cublas_handles = create_cublas_handles(gpu.n_streams);
-    right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver, cublas_handles);
+    right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
     // Triangular solve K_NxN * alpha = y
-    forward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu, cublas_handles);
-    backward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu, cublas_handles);
+    forward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu);
+    backward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu);
 
-    prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles, gpu, cublas_handles);
+    prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles, gpu);
     std::vector<double> prediction = copy_tiled_vector_to_host_vector(prediction_tiles, m_tile_size, m_tiles, gpu);
 
     free_lower_tiled_matrix(d_tiles, n_tiles);
@@ -520,9 +521,8 @@ predict(const std::vector<double> &h_training_input,
     free(cross_covariance_tiles);
     free(prediction_tiles);
     destroy(cusolver);
-    destroy(cublas_handles);
 
-    gpu.destroy_streams();
+    gpu.destroy();
 
     return hpx::make_ready_future(prediction);
 }
@@ -539,7 +539,7 @@ predict_with_uncertainty(const std::vector<double> &training_input,
                          const gpxpy_hyper::SEKParams sek_params,
                          gpxpy::CUDA_GPU &gpu)
 {
-    gpu.create_streams();
+    gpu.create();
 
     // Assemble tiled covariance matrix on GPU.
     // std::vector<hpx::shared_future<double *>> d_tiles = assemble_tiled_covariance_matrix(training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
@@ -674,6 +674,7 @@ predict_with_uncertainty(const std::vector<double> &training_input,
             result[1] = pred_var_full;
             return result; }); */
     return hpx::shared_future<std::vector<std::vector<double>>>();
+    gpu.destroy();
 }
 
 hpx::shared_future<std::vector<std::vector<double>>>
@@ -689,6 +690,7 @@ predict_with_full_cov(const std::vector<double> &training_input,
                       gpxpy::CUDA_GPU &gpu)
 {
     /* double hyperparameters[3];
+    gpu.create();
 
     // declare tiled future data structures
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
@@ -839,6 +841,7 @@ predict_with_full_cov(const std::vector<double> &training_input,
             result[1] = pred_var;
             return result; }); */
     return hpx::shared_future<std::vector<std::vector<double>>>();
+    gpu.destroy();
 }
 
 hpx::shared_future<double>
@@ -1331,25 +1334,22 @@ cholesky(const std::vector<double> &h_training_input,
          const gpxpy_hyper::SEKParams sek_params,
          gpxpy::CUDA_GPU &gpu)
 {
-    gpu.create_streams();
+    gpu.create();
 
     double *d_training_input = copy_to_device(h_training_input, gpu);
     // Assemble tiled covariance matrix on GPU.
     std::vector<hpx::shared_future<double *>> d_tiles = assemble_tiled_covariance_matrix(d_training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
 
-    cusolverDnHandle_t cusolver = create_cusolver_handle();
-    std::vector<cublasHandle_t> cublas_handles = create_cublas_handles(gpu.n_streams);
-
     // Compute Tiled Cholesky decomposition on device
-    right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver, cublas_handles);
+    cusolverDnHandle_t cusolver = create_cusolver_handle();
+    right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
     // Copy tiled matrix to host
     std::vector<std::vector<double>> h_tiles = move_lower_tiled_matrix_to_host(d_tiles, n_tile_size, n_tiles, gpu);
 
     cudaFree(d_training_input);
     destroy(cusolver);
-    destroy(cublas_handles);
-    gpu.destroy_streams();
+    gpu.destroy();
 
     return hpx::make_ready_future(h_tiles);
 }

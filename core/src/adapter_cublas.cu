@@ -13,14 +13,12 @@ using cublas_future = hpx::cuda::experimental::cuda_executor::future_type;
 // BLAS level 3 operations ------------------------------------------------- {{{
 
 hpx::shared_future<double *>
-potrf(cusolverDnHandle_t cusolver,
-      hpx::shared_future<double *> f_A,
-      const std::size_t N)
+potrf(
+    cusolverDnHandle_t cusolver,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_A,
+    const std::size_t N)
 {
-    // Get stream
-    cudaStream_t stream;
-    cusolverDnGetStream(cusolver, &stream);
-
     cusolverDnParams_t params;
     cusolverDnCreateParams(&params);
 
@@ -69,17 +67,16 @@ potrf(cusolverDnHandle_t cusolver,
 }
 
 hpx::shared_future<double *>
-trsm(cublasHandle_t cublas,
-     hpx::shared_future<double *> f_A,
-     hpx::shared_future<double *> f_B,
-     const std::size_t M,
-     const std::size_t N,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_SIDE side_A)
+trsm(
+    cublasHandle_t cublas,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_A,
+    hpx::shared_future<double *> f_B,
+    const std::size_t M,
+    const std::size_t N,
+    const BLAS_TRANSPOSE transpose_A,
+    const BLAS_SIDE side_A)
 {
-    cudaStream_t stream;
-    cublasGetStream_v2(cublas, &stream);
-
     // TRSM constants
     const double alpha = 1.0;
     double *d_A = f_A.get();
@@ -107,14 +104,13 @@ trsm(cublasHandle_t cublas,
 }
 
 hpx::shared_future<double *>
-syrk(cublasHandle_t cublas,
-     hpx::shared_future<double *> f_A,
-     hpx::shared_future<double *> f_C,
-     const std::size_t N)
+syrk(
+    cublasHandle_t cublas,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_A,
+    hpx::shared_future<double *> f_C,
+    const std::size_t N)
 {
-    cudaStream_t stream;
-    cublasGetStream_v2(cublas, &stream);
-
     // SYRK constants
     const double alpha = -1.0;
     const double beta = 1.0;
@@ -140,19 +136,18 @@ syrk(cublasHandle_t cublas,
 }
 
 hpx::shared_future<double *>
-gemm(cublasHandle_t cublas,
-     hpx::shared_future<double *> f_A,
-     hpx::shared_future<double *> f_B,
-     hpx::shared_future<double *> f_C,
-     const std::size_t M,
-     const std::size_t N,
-     const std::size_t K,
-     const BLAS_TRANSPOSE transpose_A,
-     const BLAS_TRANSPOSE transpose_B)
+gemm(
+    cublasHandle_t cublas,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_A,
+    hpx::shared_future<double *> f_B,
+    hpx::shared_future<double *> f_C,
+    const std::size_t M,
+    const std::size_t N,
+    const std::size_t K,
+    const BLAS_TRANSPOSE transpose_A,
+    const BLAS_TRANSPOSE transpose_B)
 {
-    cudaStream_t stream;
-    cublasGetStream_v2(cublas, &stream);
-
     const double alpha = -1.0;
     const double beta = 1.0;
     double *d_A = f_A.get();
@@ -181,15 +176,14 @@ gemm(cublasHandle_t cublas,
 // BLAS level 2 operations ------------------------------------------------- {{{
 
 hpx::shared_future<double *>
-trsv(cublasHandle_t cublas,
-     hpx::shared_future<double *> f_A,
-     hpx::shared_future<double *> f_b,
-     const std::size_t N,
-     const BLAS_TRANSPOSE transpose_A)
+trsv(
+    cublasHandle_t cublas,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_A,
+    hpx::shared_future<double *> f_b,
+    const std::size_t N,
+    const BLAS_TRANSPOSE transpose_A)
 {
-    cudaStream_t stream;
-    cublasGetStream_v2(cublas, &stream);
-
     double *d_A = f_A.get();
     double *d_b = f_b.get();
 
@@ -211,18 +205,17 @@ trsv(cublasHandle_t cublas,
 }
 
 hpx::shared_future<double *>
-gemv(cublasHandle_t cublas,
-     hpx::shared_future<double *> f_A,
-     hpx::shared_future<double *> f_x,
-     hpx::shared_future<double *> f_y,
-     const std::size_t M,
-     const std::size_t N,
-     const BLAS_ALPHA alpha,
-     const BLAS_TRANSPOSE transpose_A)
+gemv(
+    cublasHandle_t cublas,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_A,
+    hpx::shared_future<double *> f_x,
+    hpx::shared_future<double *> f_y,
+    const std::size_t M,
+    const std::size_t N,
+    const BLAS_ALPHA alpha,
+    const BLAS_TRANSPOSE transpose_A)
 {
-    cudaStream_t stream;
-    cublasGetStream_v2(cublas, &stream);
-
     auto d_A = f_A.get();
     auto d_x = f_x.get();
     auto d_y = f_y.get();
@@ -249,14 +242,12 @@ gemv(cublasHandle_t cublas,
 
 hpx::shared_future<double *>
 ger(cublasHandle_t cublas,
+    cudaStream_t stream,
     hpx::shared_future<double *> f_A,
     hpx::shared_future<double *> f_x,
     hpx::shared_future<double *> f_y,
     const std::size_t N)
 {
-    cudaStream_t stream;
-    cublasGetStream_v2(cublas, &stream);
-
     double *d_A = f_A.get();
     double *d_x = f_x.get();
     double *d_y = f_y.get();
@@ -278,7 +269,13 @@ ger(cublasHandle_t cublas,
     return hpx::make_ready_future(d_A);
 }
 
-__global__ void dot_diag_syrk_kernel(cublasHandle_t cublas, double *d_A, double *d_r, const std::size_t M, const std::size_t N)
+__global__ void
+dot_diag_syrk_kernel(
+    cublasHandle_t cublas,
+    double *d_A,
+    double *d_r,
+    const std::size_t M,
+    const std::size_t N)
 {
     int j = blockIdx.x * blockDim.x + threadIdx.x;
     if (j < N)
@@ -293,11 +290,13 @@ __global__ void dot_diag_syrk_kernel(cublasHandle_t cublas, double *d_A, double 
 }
 
 hpx::shared_future<double *>
-dot_diag_syrk(cublasHandle_t cublas,
-              hpx::shared_future<double *> f_A,
-              hpx::shared_future<double *> f_r,
-              const std::size_t M,
-              const std::size_t N)
+dot_diag_syrk(
+    cublasHandle_t cublas,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_A,
+    hpx::shared_future<double *> f_r,
+    const std::size_t M,
+    const std::size_t N)
 {
     auto d_A = f_A.get();
     auto d_r = f_r.get();
@@ -306,16 +305,19 @@ dot_diag_syrk(cublasHandle_t cublas,
     int blockSize = 256;
     int numBlocks = (N + blockSize - 1) / blockSize;
 
-    cudaStream_t stream;
-    cublasGetStream(cublas, &stream);
-
     dot_diag_syrk_kernel<<<numBlocks, blockSize, 0, stream>>>(cublas, d_A, d_r, M, N);
     cudaStreamSynchronize(stream);
 
     return hpx::make_ready_future(d_r);
 }
 
-__global__ void dot_diag_gemm_kernel(double *A, double *B, double *r, const std::size_t M, const std::size_t N)
+__global__ void
+dot_diag_gemm_kernel(
+    double *A,
+    double *B,
+    double *r,
+    const std::size_t M,
+    const std::size_t N)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i < M)
@@ -328,18 +330,17 @@ __global__ void dot_diag_gemm_kernel(double *A, double *B, double *r, const std:
 }
 
 hpx::shared_future<double *>
-dot_diag_gemm(cublasHandle_t cublas,
-              hpx::shared_future<double *> f_A,
-              hpx::shared_future<double *> f_B,
-              hpx::shared_future<double *> f_r,
-              const std::size_t M,
-              const std::size_t N)
+dot_diag_gemm(
+    cublasHandle_t cublas,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_A,
+    hpx::shared_future<double *> f_B,
+    hpx::shared_future<double *> f_r,
+    const std::size_t M,
+    const std::size_t N)
 {
     int blockSize = 256;
     int numBlocks = (M + blockSize - 1) / blockSize;
-
-    cudaStream_t stream;
-    cublasGetStream(cublas, &stream);
 
     double *d_A = f_A.get();
     double *d_B = f_B.get();
@@ -356,14 +357,13 @@ dot_diag_gemm(cublasHandle_t cublas,
 
 // BLAS level 1 operations ------------------------------------------------- {{{
 
-double dot(cublasHandle_t cublas,
-           hpx::shared_future<double *> f_a,
-           hpx::shared_future<double *> f_b,
-           const std::size_t N)
+double dot(
+    cublasHandle_t cublas,
+    cudaStream_t stream,
+    hpx::shared_future<double *> f_a,
+    hpx::shared_future<double *> f_b,
+    const std::size_t N)
 {
-    cudaStream_t stream;
-    cublasGetStream_v2(cublas, &stream);
-
     double *d_a = f_a.get();
     double *d_b = f_b.get();
     double result;

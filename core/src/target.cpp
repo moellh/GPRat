@@ -1,5 +1,6 @@
-#include "../include/target.hpp"
+#include "target.hpp"
 
+#include "cuda_utils.cuh"
 #include <iostream>
 
 #ifdef GPXPY_WITH_CUDA
@@ -39,18 +40,29 @@ bool CUDA_GPU::is_cpu() { return false; }
 bool CUDA_GPU::is_gpu() { return true; }
 
 #ifdef GPXPY_WITH_CUDA
+void CUDA_GPU::create()
+{
+    streams = std::vector<cudaStream_t>(n_streams);
+    cublas_handles = std::vector<cublasHandle_t>(n_streams);
+    for (size_t i = 0; i < streams.size(); ++i)
+    {
+        check_cuda_error(cudaStreamCreateWithFlags(&streams[i], cudaStreamNonBlocking));
+        cublasCreate(&cublas_handles[i]);
+    }
+}
+
+void CUDA_GPU::destroy()
+{
+    for (size_t i = 0; i < streams.size(); ++i)
+    {
+        check_cuda_error(cudaStreamDestroy(streams[i]));
+        cublasDestroy(cublas_handles[i]);
+    }
+}
+
 cudaStream_t CUDA_GPU::next_stream()
 {
     return streams[i_stream++ % n_streams];
-}
-
-void CUDA_GPU::create_streams()
-{
-    streams = std::vector<cudaStream_t>(n_streams);
-    for (cudaStream_t &stream : streams)
-    {
-        hpx::cuda::experimental::check_cuda_error(cudaStreamCreateWithFlags(&stream, cudaStreamNonBlocking));
-    };
 }
 
 void CUDA_GPU::sync_streams(std::vector<cudaStream_t> &subset_of_streams)
@@ -71,13 +83,16 @@ void CUDA_GPU::sync_streams(std::vector<cudaStream_t> &subset_of_streams)
     }
 }
 
-void CUDA_GPU::destroy_streams()
+std::pair<cublasHandle_t, cudaStream_t> CUDA_GPU::next_cublas_handle()
 {
-    for (cudaStream_t &stream : streams)
-    {
-        check_cuda_error(cudaStreamDestroy(stream));
-    }
+    std::size_t i = i_stream++;
+    cublasHandle_t cublas = cublas_handles[i % n_streams];
+    cudaStream_t stream = streams[i % n_streams];
+    cublasSetStream(cublas, stream);
+
+    return std::make_pair(cublas, stream);
 }
+
 #endif
 
 CPU get_cpu() { return CPU(); }

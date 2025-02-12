@@ -37,6 +37,7 @@ using cublas_executor = hpx::cuda::experimental::cublas_executor;
  */
 hpx::shared_future<double *>
 potrf(cusolverDnHandle_t cusolver,
+      cudaStream_t stream,
       hpx::shared_future<double *> f_A,
       const std::size_t N);
 
@@ -52,6 +53,7 @@ potrf(cusolverDnHandle_t cusolver,
  */
 hpx::shared_future<double *>
 trsm(cublasHandle_t cublas,
+     cudaStream_t stream,
      hpx::shared_future<double *> f_A,
      hpx::shared_future<double *> f_B,
      const std::size_t M,
@@ -70,6 +72,7 @@ trsm(cublasHandle_t cublas,
  */
 hpx::shared_future<double *>
 syrk(cublasHandle_t cublas,
+     cudaStream_t stream,
      hpx::shared_future<double *> f_A,
      hpx::shared_future<double *> f_C,
      const std::size_t N);
@@ -90,6 +93,7 @@ syrk(cublasHandle_t cublas,
  */
 hpx::shared_future<double *>
 gemm(cublasHandle_t cublas,
+     cudaStream_t stream,
      hpx::shared_future<double *> f_A,
      hpx::shared_future<double *> f_B,
      hpx::shared_future<double *> f_C,
@@ -115,6 +119,7 @@ gemm(cublasHandle_t cublas,
  */
 hpx::shared_future<double *>
 trsv(cublasHandle_t cublas,
+     cudaStream_t stream,
      hpx::shared_future<double *> f_A,
      hpx::shared_future<double *> f_b,
      const std::size_t N,
@@ -134,6 +139,7 @@ trsv(cublasHandle_t cublas,
  */
 hpx::shared_future<double *>
 gemv(cublasHandle_t cublas,
+     cudaStream_t stream,
      hpx::shared_future<double *> f_A,
      hpx::shared_future<double *> f_x,
      hpx::shared_future<double *> f_y,
@@ -154,6 +160,7 @@ gemv(cublasHandle_t cublas,
  */
 hpx::shared_future<double *>
 ger(cublasHandle_t cublas,
+    cudaStream_t stream,
     hpx::shared_future<double *> f_A,
     hpx::shared_future<double *> f_x,
     hpx::shared_future<double *> f_y,
@@ -171,6 +178,7 @@ ger(cublasHandle_t cublas,
  */
 hpx::shared_future<double *>
 dot_diag_syrk(cublasHandle_t cublas,
+              cudaStream_t stream,
               hpx::shared_future<double *> f_A,
               hpx::shared_future<double *> f_r,
               const std::size_t M,
@@ -188,6 +196,7 @@ dot_diag_syrk(cublasHandle_t cublas,
  */
 hpx::shared_future<double *>
 dot_diag_gemm(cublasHandle_t cublas,
+              cudaStream_t stream,
               hpx::shared_future<double *> f_A,
               hpx::shared_future<double *> f_B,
               hpx::shared_future<double *> f_r,
@@ -206,6 +215,7 @@ dot_diag_gemm(cublasHandle_t cublas,
  * @return f_a * f_b
  */
 double dot(cublasHandle_t cublas,
+           cudaStream_t stream,
            hpx::shared_future<double *> f_a,
            hpx::shared_future<double *> f_b,
            const std::size_t N);

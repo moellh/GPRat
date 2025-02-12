@@ -39,29 +39,9 @@ inline cusolverDnHandle_t create_cusolver_handle()
     return handle;
 }
 
-inline std::vector<cublasHandle_t> create_cublas_handles(const int n_handles)
-{
-    std::vector<cublasHandle_t> handles(n_handles);
-    for (int i = 0; i < n_handles; i++)
-    {
-        cublasCreate_v2(&handles[i]);
-    }
-    return handles;
-}
-
 inline void destroy(cusolverDnHandle_t handle)
 {
     cusolverDnDestroy(handle);
-}
-
-inline void destroy(std::vector<cublasHandle_t> &handles)
-{
-    // clang-format off
-    hpx::experimental::for_loop(hpx::execution::par, 0, handles.size(), [&](int i)
-    {
-        cublasDestroy_v2(handles[i]);
-    });
-    // clang-format on
 }
 
 inline void

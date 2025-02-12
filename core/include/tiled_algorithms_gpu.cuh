@@ -1,7 +1,7 @@
 #ifndef TILED_ALGORITHMS_GPU_H
 #define TILED_ALGORITHMS_GPU_H
 
-#include "gp_optimizer_gpu.cuh"
+#include "gp_hyperparameters.hpp"
 #include "target.hpp"
 #include <cusolverDn.h>
 #include <hpx/modules/async_cuda.hpp>
@@ -27,8 +27,7 @@ void right_looking_cholesky_tiled(
     const std::size_t N,
     const std::size_t n_tiles,
     gpxpy::CUDA_GPU &gpu,
-    const cusolverDnHandle_t &cusolver,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    const cusolverDnHandle_t &cusolver);
 
 // }}} ------------------------------------- end of Tiled Cholesky Algorithm
 
@@ -39,16 +38,14 @@ void forward_solve_tiled(
     std::vector<hpx::shared_future<double *>> &ft_rhs,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 void backward_solve_tiled(
     std::vector<hpx::shared_future<double *>> &ft_tiles,
     std::vector<hpx::shared_future<double *>> &ft_rhs,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // Tiled Triangular Solve Algorithms for matrices (K * X = B)
 void forward_solve_tiled_matrix(
@@ -58,8 +55,7 @@ void forward_solve_tiled_matrix(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 void backward_solve_tiled_matrix(
     std::vector<hpx::shared_future<double *>> &ft_tiles,
@@ -68,8 +64,7 @@ void backward_solve_tiled_matrix(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // }}} ---------------------------- end of Tiled Triangular Solve Algorithms
 
@@ -82,8 +77,7 @@ void forward_solve_KcK_tiled(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 void compute_gemm_of_invK_y(
     std::vector<hpx::shared_future<double *>> &ft_invK,
@@ -91,8 +85,7 @@ void compute_gemm_of_invK_y(
     std::vector<hpx::shared_future<double *>> &ft_alpha,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // Tiled Loss
 void compute_loss_tiled(
@@ -102,8 +95,7 @@ void compute_loss_tiled(
     hpx::shared_future<double> &loss,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // Tiled Prediction
 void prediction_tiled(
@@ -114,8 +106,7 @@ void prediction_tiled(
     const std::size_t N_col,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // Tiled Diagonal of Posterior Covariance Matrix
 void posterior_covariance_tiled(
@@ -125,8 +116,7 @@ void posterior_covariance_tiled(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // Tiled Diagonal of Posterior Covariance Matrix
 void full_cov_tiled(
@@ -136,8 +126,7 @@ void full_cov_tiled(
     const std::size_t m_tile_size,
     const std::size_t n_tiles,
     const std::size_t m_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handl);
+    gpxpy::CUDA_GPU &gpu);
 
 // Tiled Prediction Uncertainty
 void prediction_uncertainty_tiled(
@@ -146,8 +135,7 @@ void prediction_uncertainty_tiled(
     std::vector<hpx::shared_future<double *>> &ft_vector,
     const std::size_t m_tile_size,
     const std::size_t m_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // Tiled Prediction Uncertainty
 void pred_uncer_tiled(
@@ -155,8 +143,7 @@ void pred_uncer_tiled(
     std::vector<hpx::shared_future<double *>> &ft_vector,
     const std::size_t m_tile_size,
     const std::size_t m_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // Compute I-y*y^T*inv(K)
 void update_grad_K_tiled_mkl(
@@ -165,8 +152,7 @@ void update_grad_K_tiled_mkl(
     const std::vector<hpx::shared_future<double *>> &ft_v2,
     const std::size_t n_tile_size,
     const std::size_t n_tiles,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 double update_lengthscale(
     const std::vector<hpx::shared_future<double *>> &ft_invK,
@@ -181,8 +167,7 @@ double update_lengthscale(
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
     int iter,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 double update_vertical_lengthscale(
     const std::vector<hpx::shared_future<double *>> &ft_invK,
@@ -197,8 +182,7 @@ double update_vertical_lengthscale(
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
     int iter,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 // Update noise variance using gradient decent + Adam
 double update_noise_variance(
@@ -213,8 +197,7 @@ double update_noise_variance(
     const std::vector<hpx::shared_future<double>> &beta1_T,
     const std::vector<hpx::shared_future<double>> &beta2_T,
     int iter,
-    gpxpy::CUDA_GPU &gpu,
-    const std::vector<cublasHandle_t> &cublas_handles);
+    gpxpy::CUDA_GPU &gpu);
 
 }  // end of namespace gpu
 

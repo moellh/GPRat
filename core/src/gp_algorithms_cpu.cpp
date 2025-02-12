@@ -270,7 +270,6 @@ predict(const std::vector<double> &training_input,
                        training_output);
     }
 
-
     // Assemble MxN cross-covariance matrix vector
     cross_covariance_tiles.resize(m_tiles * n_tiles);
     for (std::size_t i = 0; i < m_tiles; i++)
