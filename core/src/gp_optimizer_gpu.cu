@@ -238,7 +238,7 @@ compute_loss(
 {
     auto [cublas, stream] = gpu.next_cublas_handle();
 
-    hpx::shared_future<double *> d_loss = hpx::dataflow(&dot, cublas, stream, y_tile, alpha_tile, N);
+    hpx::shared_future<double *> d_loss = dot(cublas, stream, y_tile, alpha_tile, N);
     add_log_squared_K_diag<<<1, 1, 0, stream>>>(K_diag_tile.get(), alpha_tile.get(), y_tile.get(), d_loss.get(), N);
 
     double h_loss;

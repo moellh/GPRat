@@ -127,7 +127,6 @@ int main(int argc, char *argv[])
                 double loss_cpu = gp_cpu.calculate_loss();
                 double loss_gpu = gp_gpu.calculate_loss();
                 double calc_loss_err = std::abs(loss_cpu - loss_gpu);
-                std::cout << "cpu: " << loss_cpu << ", gpu: " << loss_gpu << std::endl;
                 std::cout << "Calc Loss error: " << calc_loss_err << std::endl;
                 auto calc_loss_time = now() - start_calc_loss;  // -- }}}
 

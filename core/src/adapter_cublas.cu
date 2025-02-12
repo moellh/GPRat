@@ -365,12 +365,12 @@ dot(
     hpx::shared_future<double *> f_b,
     const std::size_t N)
 {
-    double *d_a = f_a.get();
-    double *d_b = f_b.get();
     double *result;
-
     check_cuda_error(cudaMalloc(&result, sizeof(double)));
     check_cuda_error(cudaMemset(result, 0, sizeof(double)));
+
+    double *d_a = f_a.get();
+    double *d_b = f_b.get();
 
     cublasDdot(cublas, N, d_a, 1, d_b, 1, result);
     check_cuda_error(cudaStreamSynchronize(stream));

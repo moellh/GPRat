@@ -321,7 +321,7 @@ gen_tile_output(const std::size_t row,
     double *d_tile;
     check_cuda_error(cudaMalloc(&d_tile, n_tile_size * sizeof(double)));
 
-    gen_tile_output_kernel<<<n_blocks, threads_per_block>>>(d_tile, d_output, row, n_tile_size);
+    gen_tile_output_kernel<<<n_blocks, threads_per_block, 0, stream>>>(d_tile, d_output, row, n_tile_size);
 
     check_cuda_error(cudaStreamSynchronize(stream));
 
@@ -819,8 +819,11 @@ compute_loss(const std::vector<double> &h_training_input,
 
     check_cuda_error(cudaFree(d_training_input));
     check_cuda_error(cudaFree(d_training_output));
+
+    loss_value.get();
     free_lower_tiled_matrix(d_K_tiles, n_tiles);
     free(d_alpha_tiles);
+    free(d_y_tiles);
     destroy(cusolver);
 
     gpu.destroy();
