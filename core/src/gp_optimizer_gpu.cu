@@ -1,7 +1,8 @@
-#include "../include/gp_optimizer_gpu.cuh"
+#include "gp_optimizer_gpu.cuh"
 
-#include "../include/adapter_mkl.hpp"
 #include <numeric>
+#include "cuda_utils.cuh"
+#include "cuda_kernels.cuh"
 
 namespace gpu
 {
@@ -187,21 +188,25 @@ gen_tile_grad_v_trans(std::size_t N, const std::vector<double> &grad_l_tile)
     return std::move(transposed);
 }
 
-std::vector<double>
-gen_tile_grad_l_trans(std::size_t N, const std::vector<double> &grad_l_tile)
+hpx::shared_future<double *>
+gen_tile_grad_l_trans(
+    std::size_t N,
+    const hpx::shared_future<double *> f_grad_l_tile,
+    gpxpy::CUDA_GPU &gpu)
 {
-    std::vector<double> transposed;
-    transposed.resize(N * N);
-    for (std::size_t i = 0; i < N; i++)
-    {
-        for (std::size_t j = 0; j < N; j++)
-        {
-            // Mapping (i, j) in the original matrix to (j, i) in the transposed
-            // matrix
-            transposed[j * N + i] = grad_l_tile[i * N + j];
-        }
-    }
-    return std::move(transposed);
+    double *transposed;
+    check_cuda_error(cudaMalloc(&transposed, N * N * sizeof(double)));
+    double *d_grad_l_tile = f_grad_l_tile.get();
+
+    cudaStream_t stream = gpu.next_stream();
+    dim3 threads_per_block(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 n_blocks((N + BLOCK_SIZE - 1) / BLOCK_SIZE, (N + BLOCK_SIZE - 1) / BLOCK_SIZE);
+
+    transpose<<<n_blocks, threads_per_block, 0, stream>>>(transposed, d_grad_l_tile, N, N);
+
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return hpx::make_ready_future(transposed);
 }
 
 double gen_beta_T(int t, double beta)
@@ -214,14 +219,15 @@ double compute_loss(const std::vector<double> &K_diag_tile,
                     const std::vector<double> &y_tile,
                     std::size_t N)
 {
-    double l = 0.0;
-    l += dot(y_tile, alpha_tile, N);
-    for (std::size_t i = 0; i < N; i++)
-    {
-        // Add the squared difference to the error
-        l += log(K_diag_tile[i * N + i] * K_diag_tile[i * N + i]);
-    }
-    return l;
+    // double l = 0.0;
+    // l += dot(y_tile, alpha_tile, N);
+    // for (std::size_t i = 0; i < N; i++)
+    // {
+    //     // Add the squared difference to the error
+    //     l += log(K_diag_tile[i * N + i] * K_diag_tile[i * N + i]);
+    // }
+    // return l;
+    return 0.0;
 }
 
 double
@@ -344,8 +350,9 @@ double sum_gradright(const std::vector<double> &inter_alpha,
                      double grad,
                      std::size_t N)
 {
-    grad += dot(inter_alpha, alpha, N);
-    return grad;
+    // grad += dot(inter_alpha, alpha, N);
+    // return grad;
+    return 0.0;
 }
 
 double sum_noise_gradleft(const std::vector<double> &ft_invK,
@@ -368,10 +375,11 @@ double sum_noise_gradright(const std::vector<double> &alpha,
                            gpxpy_hyper::SEKParams sek_params,
                            std::size_t N)
 {
-    double noise_der =
-        compute_sigmoid(to_unconstrained(sek_params.noise_variance, true));
-    grad += (noise_der * dot(alpha, alpha, N));
-    return grad;
+    // double noise_der =
+    //     compute_sigmoid(to_unconstrained(sek_params.noise_variance, true));
+    // grad += (noise_der * dot(alpha, alpha, N));
+    // return grad;
+    return 0.0;
 }
 
 }  // namespace gpu

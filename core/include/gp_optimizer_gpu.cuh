@@ -5,6 +5,7 @@
 #include "gp_kernels.hpp"
 #include <hpx/future.hpp>
 #include <vector>
+#include "target.hpp"
 
 namespace gpu
 {
@@ -86,8 +87,11 @@ gen_tile_grad_v_trans(std::size_t N, const std::vector<double> &grad_l_tile);
 /**
  * @brief Generate a derivative tile w.r.t. lengthscale.
  */
-std::vector<double>
-gen_tile_grad_l_trans(std::size_t N, const std::vector<double> &grad_l_tile);
+hpx::shared_future<double *>
+gen_tile_grad_l_trans(
+    std::size_t N,
+    const hpx::shared_future<double *> f_grad_l_tile,
+    gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Compute hyper-parameter beta_1 or beta_2 to power t.
