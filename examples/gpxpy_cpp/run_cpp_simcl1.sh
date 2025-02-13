@@ -12,4 +12,4 @@ set -ex
 module load clang/17.0.1
 module load cuda/12.2.2
 
-./run_cpp.sh
+./run_cpp.sh "$@"
