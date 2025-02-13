@@ -22,7 +22,7 @@ export MKL_CONFIG='-DMKL_ARCH=intel64 -DMKL_LINK=dynamic -DMKL_INTERFACE_FULL=in
 export CUDA_ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')
 
 export CMAKE_OPTIONS="
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=Debug
     -DHPX_WITH_DYNAMIC_HPX_MAIN=ON
     -DCMAKE_C_COMPILER=$(which clang)
     -DCMAKE_CXX_COMPILER=$(which clang++)

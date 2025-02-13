@@ -28,7 +28,7 @@ export CUDA_FLAGS="
 "
 
 export CMAKE_OPTIONS="
-    -DCMAKE_BUILD_TYPE=Release
+    -DCMAKE_BUILD_TYPE=Debug
     -DHPX_WITH_DYNAMIC_HPX_MAIN=ON
     -DCMAKE_C_COMPILER=$(which clang)
     -DCMAKE_CXX_COMPILER=$(which clang++)
