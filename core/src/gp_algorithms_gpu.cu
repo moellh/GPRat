@@ -4,6 +4,7 @@
 #include "cuda_utils.cuh"
 #include "gp_kernels.hpp"
 #include "gp_optimizer_gpu.cuh"
+#include "matrix_assembly.cuh"
 #include "target.hpp"
 #include "tiled_algorithms_gpu.cuh"
 #include <cuda_runtime.h>
@@ -328,16 +329,6 @@ gen_tile_output(const std::size_t row,
     return d_tile;
 }
 
-double *gen_tile_zeros(std::size_t n_tile_size, gpxpy::CUDA_GPU &gpu)
-{
-    double *d_tile;
-    cudaStream_t stream = gpu.next_stream();
-    check_cuda_error(cudaMalloc(&d_tile, n_tile_size * sizeof(double)));
-    check_cuda_error(cudaMemsetAsync(d_tile, 0, n_tile_size * sizeof(double), stream));
-    check_cuda_error(cudaStreamSynchronize(stream));
-    return d_tile;
-}
-
 double compute_error_norm(std::size_t n_tiles,
                           std::size_t n_tile_size,
                           const std::vector<double> &b,
@@ -528,6 +519,23 @@ assemble_y_tiles(
         d_y_tiles[i] = hpx::async(&gen_tile_output, i, n_tile_size, d_training_output, std::ref(gpu));
     }
     return d_y_tiles;
+}
+
+std::vector<hpx::shared_future<double *>>
+assemble_tiled_zero_matrix(
+    std::size_t n_tiles,
+    std::size_t n_tile_size,
+    gpxpy::CUDA_GPU &gpu)
+{
+    std::vector<hpx::shared_future<double *>> d_tiles(n_tiles);
+    for (std::size_t i = 0; i < n_tiles; i++)
+    {
+        for (std::size_t j = 0; j <= i; j++)
+        {
+            d_tiles[i * n_tiles + j] = hpx::dataflow(&gen_tile_zeros, n_tile_size * n_tile_size, std::ref(gpu));
+        }
+    }
+    return d_tiles;
 }
 
 std::vector<double>
@@ -832,227 +840,212 @@ compute_loss(const std::vector<double> &h_training_input,
 }
 
 hpx::shared_future<std::vector<double>>
-optimize(const std::vector<double> &training_input,
-         const std::vector<double> &training_output,
+optimize(const std::vector<double> &h_training_input,
+         const std::vector<double> &h_training_output,
          const std::size_t n_tiles,
          const std::size_t n_tile_size,
          const std::size_t n_regressors,
-         const gpxpy_hyper::SEKParams &sek_params,
+         gpxpy_hyper::SEKParams &sek_params,
          const std::vector<bool> trainable_params,
          const gpxpy_hyper::AdamParams &adam_params,
          gpxpy::CUDA_GPU &gpu)
 {
-    /* // declaretiled future data structures
-    std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> grad_v_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> grad_l_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> grad_K_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> grad_I_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> alpha_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> y_tiles;
-    // data holders for Adam
-    std::vector<hpx::shared_future<double>> m_T;
-    std::vector<hpx::shared_future<double>> v_T;
-    std::vector<hpx::shared_future<double>> beta1_T;
-    std::vector<hpx::shared_future<double>> beta2_T;
-    // data holder for loss
-    hpx::shared_future<double> loss_value;
-    // data holder for computed loss values
-    std::vector<double> losses;
-    losses.resize(adam_params.opt_iter);
-    //////////////////////////////////////////////////////////////////////////////
-    // Assemble beta1_t and beta2_t
-    beta1_T.resize(adam_params.opt_iter);
+    gpu.create();
+    cusolverDnHandle_t cusolver = create_cusolver_handle();
+
+    double *d_training_input = copy_to_device(h_training_input, gpu);
+    double *d_training_output = copy_to_device(h_training_output, gpu);
+
+    // Datastructures in host memory
+    std::vector<double> losses(adam_params.opt_iter);
+
+    std::vector<hpx::shared_future<double>> beta1_T(adam_params.opt_iter);
+    std::vector<hpx::shared_future<double>> beta2_T(adam_params.opt_iter);
     for (int i = 0; i < adam_params.opt_iter; i++)
     {
-        beta1_T[i] = hpx::async(
-            hpx::annotated_function(&gen_beta_T, "assemble_tiled"), i + 1, adam_params.beta1);
+        beta1_T[i] = hpx::async(&gen_beta_T, i + 1, adam_params.beta1);
+        beta2_T[i] = hpx::async(&gen_beta_T, i + 1, adam_params.beta2);
     }
-    beta2_T.resize(adam_params.opt_iter);
-    for (int i = 0; i < adam_params.opt_iter; i++)
-    {
-        beta2_T[i] = hpx::async(
-            hpx::annotated_function(&gen_beta_T, "assemble_tiled"), i + 1, adam_params.beta2);
-    }
-    // Assemble first and second momemnt vectors: m_T and v_T
-    m_T.resize(3);
-    v_T.resize(3);
+
+    std::vector<hpx::shared_future<double>> m_T(3);
+    std::vector<hpx::shared_future<double>> v_T(3);
     for (int i = 0; i < 3; i++)
     {
-        m_T[i] = hpx::async(
-            hpx::annotated_function(&gen_moment, "assemble_tiled"));
-        v_T[i] = hpx::async(
-            hpx::annotated_function(&gen_moment, "assemble_tiled"));
+        m_T[i] = hpx::async(hpx::annotated_function(&gen_moment, "assemble_tiled"));
+        v_T[i] = hpx::async(hpx::annotated_function(&gen_moment, "assemble_tiled"));
     }
 
-    // Assemble y
-    y_tiles.resize(n_tiles);
-    for (std::size_t i = 0; i < n_tiles; i++)
-    {
-        y_tiles[i] = hpx::async(
-            hpx::annotated_function(&gen_tile_output, "assemble_y"), i, n_tile_size, training_output);
-    }
+    auto d_K_tiles = assemble_tiled_zero_matrix(n_tiles, n_tile_size, gpu);
+    auto cov_dists = hpx::dataflow(&gen_tile_zeros, n_tile_size * n_tile_size, std::ref(gpu));
+    auto d_alpha_tiles = assemble_tiles_with_zeros(n_tiles, n_tile_size, gpu);
+    auto d_y_tiles = assemble_y_tiles(d_training_output, n_tiles, n_tile_size, gpu);
 
-    // Perform optimization
+    auto d_grad_v_tiles = assemble_tiled_zero_matrix(n_tiles, n_tile_size, gpu);
+    auto d_grad_l_tiles = assemble_tiled_zero_matrix(n_tiles, n_tile_size, gpu);
+    auto d_grad_K_tiles = assemble_tiled_zero_matrix(n_tiles, n_tile_size, gpu);
+    auto d_grad_I_tiles = assemble_tiled_zero_matrix(n_tiles, n_tile_size, gpu);
+
+    // Optimization iterations
     for (int iter = 0; iter < adam_params.opt_iter; iter++)
     {
         // Assemble covariance matrix vector, derivative of covariance
         // matrix vector w.r.t. to vertical lengthscale and derivative of
         // covariance matrix vector w.r.t. to lengthscale
-        K_tiles.resize(n_tiles * n_tiles);
-        grad_v_tiles.resize(n_tiles * n_tiles);
-        grad_l_tiles.resize(n_tiles * n_tiles);
         for (std::size_t i = 0; i < n_tiles; i++)
         {
             for (std::size_t j = 0; j <= i; j++)
             {
-                hpx::shared_future<std::vector<double>> cov_dists =
-                    hpx::async(
-                        hpx::annotated_function(&compute_cov_dist_vec,
-                                                "assemble_cov_dist"),
-                        i,
-                        j,
-                        n_tile_size,
-                        n_regressors,
-                        sek_params,
-                        training_input);
+                cov_dists = hpx::dataflow(&compute_cov_dist_vec, cov_dists, i, j, n_tile_size, n_regressors, sek_params, d_training_input, std::ref(gpu));
 
-                K_tiles[i * n_tiles + j] = hpx::dataflow(
-                    hpx::annotated_function(
-                        hpx::unwrapping(&gen_tile_covariance_opt),
-                        "assemble_K"),
+                d_K_tiles[i * n_tiles + j] = hpx::dataflow(&compute_tile_covariance_opt, d_K_tiles[i * n_tiles + j], i, j, n_tile_size, n_regressors, sek_params, cov_dists, std::ref(gpu));
+
+                d_grad_v_tiles[i * n_tiles + j] = hpx::dataflow(
+                    hpx::annotated_function(&compute_tile_grad_v, "assemble_grad_v"),
+                    d_grad_v_tiles[i * n_tiles + j],
                     i,
                     j,
                     n_tile_size,
                     n_regressors,
                     sek_params,
-                    cov_dists);
+                    cov_dists,
+                    std::ref(gpu));
 
-                grad_v_tiles[i * n_tiles + j] =
-                    hpx::dataflow(hpx::annotated_function(
-                                      hpx::unwrapping(&gen_tile_grad_v),
-                                      "assemble_gradv"),
-                                  i,
-                                  j,
-                                  n_tile_size,
-                                  n_regressors,
-                                  sek_params,
-                                  cov_dists);
-
-                grad_l_tiles[i * n_tiles + j] =
-                    hpx::dataflow(hpx::annotated_function(
-                                      hpx::unwrapping(&gen_tile_grad_l),
-                                      "assemble_gradl"),
-                                  i,
-                                  j,
-                                  n_tile_size,
-                                  n_regressors,
-                                  sek_params,
-                                  cov_dists);
+                d_grad_l_tiles[i * n_tiles + j] = hpx::dataflow(
+                    hpx::annotated_function(&compute_tile_grad_l, "assemble_grad_l"),
+                    d_grad_l_tiles[i * n_tiles + j],
+                    i,
+                    j,
+                    n_tile_size,
+                    n_regressors,
+                    sek_params,
+                    cov_dists,
+                    std::ref(gpu));
 
                 if (i != j)
                 {
-                    grad_v_tiles[j * n_tiles + i] = hpx::dataflow(
-                        hpx::annotated_function(
-                            hpx::unwrapping(&gen_tile_grad_v_trans),
-                            "assemble_gradv_t"),
+                    d_grad_v_tiles[j * n_tiles + i] = hpx::dataflow(
+                        hpx::annotated_function(&compute_transpose, "assemble_grad_v_t"),
                         n_tile_size,
-                        grad_v_tiles[i * n_tiles + j]);
+                        d_grad_v_tiles[i * n_tiles + j],
+                        d_grad_v_tiles[j * n_tiles + i],
+                        std::ref(gpu));
 
-                    grad_l_tiles[j * n_tiles + i] = hpx::dataflow(
-                        hpx::annotated_function(
-                            hpx::unwrapping(&gen_tile_grad_l_trans),
-                            "assemble_gradl_t"),
+                    d_grad_l_tiles[j * n_tiles + i] = hpx::dataflow(
+                        hpx::annotated_function(&compute_transpose, "assemble_grad_l_t"),
                         n_tile_size,
-                        grad_l_tiles[i * n_tiles + j]);
+                        d_grad_l_tiles[i * n_tiles + j],
+                        d_grad_l_tiles[j * n_tiles + i],
+                        std::ref(gpu));
                 }
             }
         }
-        // Assemble placeholder matrix for K^-1 * (I - y*y^T*K^-1)
-        grad_K_tiles.resize(n_tiles * n_tiles);
+
         for (std::size_t i = 0; i < n_tiles; i++)
         {
             for (std::size_t j = 0; j < n_tiles; j++)
             {
-                grad_K_tiles[i * n_tiles + j] =
-                    hpx::async(hpx::annotated_function(&gen_tile_identity,
-                                                       "assemble_tiled"),
-                               i,
-                               j,
-                               n_tile_size);
-            }
-        }
-        // Assemble alpha
-        alpha_tiles.resize(n_tiles);
-        for (std::size_t i = 0; i < n_tiles; i++)
-        {
-            alpha_tiles[i] = hpx::async(
-                hpx::annotated_function(&gen_tile_zeros, "assemble_tiled"),
-                n_tile_size);
-        }
-        // Assemble placeholder matrix for K^-1
-        grad_I_tiles.resize(n_tiles * n_tiles);
-        for (std::size_t i = 0; i < n_tiles; i++)
-        {
-            for (std::size_t j = 0; j < n_tiles; j++)
-            {
-                grad_I_tiles[i * n_tiles + j] = hpx::async(
-                    hpx::annotated_function(&gen_tile_identity,
-                                            "assemble_identity_matrix"),
+                d_grad_K_tiles[i * n_tiles + j] = hpx::async(
+                    hpx::annotated_function(&compute_tile_identity, "assemble_identity_matrix"),
+                    d_grad_K_tiles[i * n_tiles + j],
                     i,
                     j,
-                    n_tile_size);
+                    n_tile_size,
+                    std::ref(gpu));
             }
         }
 
-        //////////////////////////////////////////////////////////////////////////////
-        // Cholesky decomposition
-        right_looking_cholesky_tiled(target.cublas_executors, K_tiles, n_tile_size, n_tiles);
-        // Compute K^-1 through L*L^T*X = I
-        forward_solve_tiled_matrix(target.cublas_executors, K_tiles, grad_I_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles);
-        backward_solve_tiled_matrix(target.cublas_executors, K_tiles, grad_I_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles);
+        for (std::size_t i = 0; i < n_tiles; i++)
+        {
+            for (std::size_t j = 0; j < n_tiles; j++)
+            {
+                d_grad_I_tiles[i * n_tiles + j] = hpx::async(
+                    hpx::annotated_function(&compute_tile_identity, "assemble_identity_matrix"),
+                    d_grad_I_tiles[i * n_tiles + j],
+                    i,
+                    j,
+                    n_tile_size,
+                    std::ref(gpu));
+            }
+        }
 
-        // Triangular solve K_NxN * alpha = y
-        // forward_solve_tiled(grad_I_tiles, alpha_tiles, n_tile_size,
-        // n_tiles); backward_solve_tiled(grad_I_tiles, alpha_tiles,
-        // n_tile_size, n_tiles);
+        right_looking_cholesky_tiled(d_K_tiles, n_tile_size, n_tiles, gpu, cusolver);
+
+        // Compute K^-1 through L*L^T*X = I
+        forward_solve_tiled_matrix(d_K_tiles, d_grad_I_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles, gpu);
+        backward_solve_tiled_matrix(d_K_tiles, d_grad_I_tiles, n_tile_size, n_tile_size, n_tiles, n_tiles, gpu);
 
         // inv(K)*y
-        compute_gemm_of_invK_y(target.cublas_executors, grad_I_tiles, y_tiles, alpha_tiles, n_tile_size, n_tiles);
+        compute_gemm_of_invK_y(d_grad_I_tiles, d_y_tiles, d_alpha_tiles, n_tile_size, n_tiles, gpu);
 
         // Compute loss
-        compute_loss_tiled(target.cublas_executors, K_tiles, alpha_tiles, y_tiles, loss_value, n_tile_size, n_tiles);
+        hpx::shared_future<double> loss_value = compute_loss_tiled(d_K_tiles, d_alpha_tiles, d_y_tiles, n_tile_size, n_tiles, gpu);
         losses[iter] = loss_value.get();
 
-        // Compute I-y*y^T*inv(K) -> NxN matrix
-        // update_grad_K_tiled(grad_K_tiles, y_tiles, alpha_tiles,
-        // n_tile_size, n_tiles);
-
-        // Compute K^-1 *(I - y*y^T*K^-1)
-        // forward_solve_tiled_matrix(K_tiles, grad_K_tiles, n_tile_size,
-        // n_tile_size, n_tiles, n_tiles);
-        // backward_solve_tiled_matrix(K_tiles, grad_K_tiles, n_tile_size,
-        // n_tile_size, n_tiles, n_tiles);
-
-        // Update the hyperparameters
+        // Update hyperparameters
         if (trainable_params[0])
         {  // lengthscale
-            sek_params.lengthscale = update_lengthscale(grad_I_tiles, grad_l_tiles, alpha_tiles, sek_params, adam_params, n_tile_size, n_tiles, m_T, v_T, beta1_T, beta2_T, 0);
+            sek_params.lengthscale = update_lengthscale(
+                d_grad_I_tiles,
+                d_grad_l_tiles,
+                d_alpha_tiles,
+                sek_params,
+                adam_params,
+                n_tile_size,
+                n_tiles,
+                m_T,
+                v_T,
+                beta1_T,
+                beta2_T,
+                0,
+                gpu);
         }
         if (trainable_params[1])
         {  // vertical_lengthscale
-            sek_params.vertical_lengthscale = update_vertical_lengthscale(grad_I_tiles, grad_v_tiles, alpha_tiles, sek_params, adam_params, n_tile_size, n_tiles, m_T, v_T, beta1_T, beta2_T, 0);
+            sek_params.vertical_lengthscale = update_vertical_lengthscale(
+                d_grad_I_tiles,
+                d_grad_v_tiles,
+                d_alpha_tiles,
+                sek_params,
+                adam_params,
+                n_tile_size,
+                n_tiles,
+                m_T,
+                v_T,
+                beta1_T,
+                beta2_T,
+                0,
+                gpu);
         }
         if (trainable_params[2])
         {  // noise_variance
-            sek_params.noise_variance = update_noise_variance(grad_I_tiles, alpha_tiles, sek_params, adam_params, n_tile_size, n_tiles, m_T, v_T, beta1_T, beta2_T, iter);
+            sek_params.noise_variance = update_noise_variance(
+                d_grad_I_tiles,
+                d_alpha_tiles,
+                sek_params,
+                adam_params,
+                n_tile_size,
+                n_tiles,
+                m_T,
+                v_T,
+                beta1_T,
+                beta2_T,
+                iter,
+                gpu);
         }
     }
-    // Update hyperparameter attributes in Gaussian process model
+
+    check_cuda_error(cudaFree(d_training_input));
+    check_cuda_error(cudaFree(d_training_output));
+
+    free_lower_tiled_matrix(d_K_tiles, n_tiles);
+    free(d_alpha_tiles);
+    free(d_y_tiles);
+    destroy(cusolver);
+
+    gpu.destroy();
+
     // Return losses
-    return hpx::async([losses]()
-                      { return losses; }); */
-    return hpx::shared_future<std::vector<double>>();
+    return hpx::make_ready_future(losses);
 }
 
 hpx::shared_future<double>

@@ -40,23 +40,52 @@ double compute_covariance_dist_func(std::size_t i_global,
 /**
  * @brief Compute vector of distances devided by the lengthscale.
  */
-std::vector<double> compute_cov_dist_vec(std::size_t row,
-                                         std::size_t col,
-                                         std::size_t N,
-                                         std::size_t n_regressors,
-                                         gpxpy_hyper::SEKParams sek_params,
-                                         const std::vector<double> &input);
+hpx::shared_future<double *>
+compute_cov_dist_vec(
+    hpx::shared_future<double *> f_cov_dists,
+    std::size_t row,
+    std::size_t column,
+    std::size_t n_tile_size,
+    std::size_t n_regressors,
+    gpxpy_hyper::SEKParams sek_params,
+    const double *d_training_input,
+    gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Generate a tile of the covariance matrix.
  */
-std::vector<double>
-gen_tile_covariance_opt(std::size_t row,
-                        std::size_t col,
-                        std::size_t N,
-                        std::size_t n_regressors,
-                        gpxpy_hyper::SEKParams sek_params,
-                        const std::vector<double> &cov_dists);
+hpx::shared_future<double *>
+compute_tile_covariance_opt(
+    hpx::shared_future<double *> tile,
+    std::size_t row,
+    std::size_t col,
+    std::size_t n_tile_size,
+    std::size_t n_regressors,
+    gpxpy_hyper::SEKParams sek_params,
+    const hpx::shared_future<double *> &cov_dists,
+    gpxpy::CUDA_GPU &gpu);
+
+hpx::shared_future<double *>
+compute_tile_grad_v(
+    hpx::shared_future<double *> f_tile,
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    std::size_t n_regressors,
+    gpxpy_hyper::SEKParams sek_params,
+    const hpx::shared_future<double *> cov_dists,
+    gpxpy::CUDA_GPU &gpu);
+
+hpx::shared_future<double *>
+compute_tile_grad_l(
+    hpx::shared_future<double *> f_tile,
+    std::size_t row,
+    std::size_t col,
+    std::size_t n_tile_size,
+    std::size_t n_regressors,
+    gpxpy_hyper::SEKParams sek_params,
+    const hpx::shared_future<double *> cov_dists,
+    gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Generate a derivative tile w.r.t. vertical_lengthscale.
@@ -165,8 +194,20 @@ hpx::shared_future<double> update_param(const double unconstrained_hyperparam,
 /**
  * @brief Generate an identity tile if i==j.
  */
-std::vector<double>
-gen_tile_identity(std::size_t row, std::size_t col, std::size_t N);
+hpx::shared_future<double *>
+compute_tile_identity(
+    hpx::shared_future<double *> f_tile,
+    std::size_t tile_row,
+    std::size_t tile_column,
+    std::size_t n_tile_size,
+    gpxpy::CUDA_GPU &gpu);
+
+hpx::shared_future<double *>
+compute_transpose(
+    std::size_t N,
+    const hpx::shared_future<double *> f_tile,
+    const hpx::shared_future<double *> f_tile_trans,
+    gpxpy::CUDA_GPU &gpu);
 
 /**
  * @brief Generate an empty tile NxN.

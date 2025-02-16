@@ -1,5 +1,6 @@
 #include "tiled_algorithms_gpu.cuh"
 
+#include "matrix_assembly.cuh"
 #include "adapter_cublas.cuh"
 #include "gp_optimizer_gpu.cuh"
 #include "gp_uncertainty_gpu.cuh"
@@ -156,10 +157,9 @@ void forward_solve_tiled_matrix(
     const std::size_t m_tiles,
     gpxpy::CUDA_GPU &gpu)
 {
-    // clang-format off
-    for_loop(hpx::execution::seq, 0, m_tiles, [&](std::size_t c)
+    for (std::size_t c = 0; c < m_tiles; ++c)
     {
-        for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t k)
+        for (std::size_t k = 0; k < n_tiles; ++k)
         {
             auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -175,7 +175,7 @@ void forward_solve_tiled_matrix(
                 Blas_no_trans,
                 Blas_left);
 
-            for_loop(hpx::execution::seq, k + 1, n_tiles, [&](std::size_t m)
+            for (std::size_t m = k + 1; m < n_tiles; ++m)
             {
                 auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -192,10 +192,9 @@ void forward_solve_tiled_matrix(
                     n_tile_size,
                     Blas_no_trans,
                     Blas_no_trans);
-            });
-        });
-    });
-    // clang-format on
+            }
+        }
+    }
 }
 
 void backward_solve_tiled_matrix(
@@ -527,148 +526,140 @@ update_hyperparameter(
     int param_idx,  // 0 for lengthscale, 1 for vertical-lengthscale
     gpxpy::CUDA_GPU &gpu)
 {
-    // int cublas_counter = 0;
-    // auto next_cublas = [&]()
-    // { return cublas_handles[cublas_counter++ % gpu.n_streams]; };
-    //
-    // /// part 1: trace(inv(K)*grad_param)
-    // std::vector<hpx::shared_future<std::vector<double>>> diag_tiles;
-    // diag_tiles.resize(n_tiles);
-    // for (std::size_t d = 0; d < n_tiles; d++)
-    // {
-    //     diag_tiles[d] =
-    //         hpx::async(hpx::annotated_function(&gen_tile_zeros_diag,
-    //                                            "assemble_tiled"),
-    //                    n_tile_size);
-    // }
-    //
-    // // Compute diagonal elements of inv(K) * grad_hyperparam
-    // for (std::size_t i = 0; i < n_tiles; ++i)
-    // {
-    //     for (std::size_t j = 0; j < n_tiles; ++j)
-    //     {
-    //         diag_tiles[i] = hpx::dataflow(
-    //             hpx::annotated_function(&dot_diag_gemm,
-    //                                     "grad_left_tiled"),
-    //             ft_invK[i * n_tiles + j],
-    //             ft_gradparam[j * n_tiles + i],
-    //             diag_tiles[i],
-    //             n_tile_size,
-    //             n_tile_size);
-    //     }
-    // }
-    //
-    // // compute trace(inv(K) * grad_hyperparam)
-    // hpx::shared_future<double> grad_left =
-    //     hpx::make_ready_future(0.0)
-    //         .share();
-    // for (std::size_t j = 0; j < n_tiles; ++j)
-    // {
-    //     grad_left = hpx::dataflow(
-    //         hpx::annotated_function(hpx::unwrapping(&sum_gradleft),
-    //                                 "grad_left_tiled"),
-    //         diag_tiles[j],
-    //         grad_left);
-    // }
-    //
-    // /// part 2: alpha^T * grad_param * alpha
-    // std::vector<hpx::shared_future<std::vector<double>>> inter_alpha;
-    // inter_alpha.resize(n_tiles);
-    // for (std::size_t d = 0; d < n_tiles; d++)
-    // {
-    //     inter_alpha[d] =
-    //         hpx::async(hpx::annotated_function(&gen_tile_zeros_diag,
-    //                                            "assemble_tiled"),
-    //                    n_tile_size);
-    // }
-    //
-    // for (std::size_t k = 0; k < n_tiles; k++)
-    // {
-    //     for (std::size_t m = 0; m < n_tiles; m++)
-    //     {
-    //         cublasHandle_t cublas = next_cublas();
-    //         cublasSetStream(cublas, gpu.next_stream());
-    //
-    //         inter_alpha[k] = hpx::dataflow(
-    //             &gemv,
-    //             cublas,
-    //             ft_gradparam[k * n_tiles + m],
-    //             ft_alpha[m],
-    //             inter_alpha[k],
-    //             n_tile_size,
-    //             n_tile_size,
-    //             Blas_add,
-    //             Blas_no_trans);
-    //     }
-    // }
-    //
-    // hpx::shared_future<double> grad_right =
-    //     hpx::make_ready_future(0.0).share();
-    // for (std::size_t j = 0; j < n_tiles;
-    //      ++j)
-    // {  // Compute inner product to obtain diagonal elements of
-    //    // (K_MxN * (K^-1_NxN * K_NxM))
-    //     grad_right = hpx::dataflow(
-    //         hpx::annotated_function(hpx::unwrapping(&sum_gradright),
-    //                                 "grad_right_tiled"),
-    //         inter_alpha[j],
-    //         ft_alpha[j],
-    //         grad_right,
-    //         n_tile_size);
-    // }
-    //
-    // /// part 3: update parameter
-    //
-    // // compute gradient = grad_left + grad_r
-    // hpx::shared_future<double> gradient = hpx::dataflow(
-    //     hpx::annotated_function(hpx::unwrapping(&compute_gradient),
-    //                             "gradient_tiled"),
-    //     grad_left,
-    //     grad_right,
-    //     n_tile_size,
-    //     n_tiles);
-    //
-    // // transform hyperparameter to unconstrained form
-    // hpx::shared_future<double> unconstrained_param = hpx::dataflow(
-    //     hpx::annotated_function(hpx::unwrapping(&to_unconstrained),
-    //                             "gradient_tiled"),
-    //     hyperparameter,
-    //     false);
-    // // update moments
-    // m_T[param_idx] = hpx::dataflow(
-    //     hpx::annotated_function(hpx::unwrapping(&update_first_moment),
-    //                             "gradient_tiled"),
-    //     gradient,
-    //     m_T[param_idx],
-    //     adam_params.beta1);
-    // v_T[param_idx] = hpx::dataflow(
-    //     hpx::annotated_function(hpx::unwrapping(&update_second_moment),
-    //                             "gradient_tiled"),
-    //     gradient,
-    //     v_T[param_idx],
-    //     adam_params.beta2);
-    // // update unconstrained parameter
-    // hpx::shared_future<double> updated_param =
-    //     hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&update_param),
-    //                                           "gradient_tiled"),
-    //                   unconstrained_param,
-    //                   sek_params,
-    //                   adam_params,
-    //                   m_T[param_idx],
-    //                   v_T[param_idx],
-    //                   beta1_T,
-    //                   beta2_T,
-    //                   iter);
-    // // transform hyperparameter to constrained form
-    // return hpx::dataflow(
-    //            hpx::annotated_function(hpx::unwrapping(&to_constrained),
-    //                                    "gradient_tiled"),
-    //            updated_param,
-    //            false)
-    //     .get();
+    /// part 1: trace(inv(K)*grad_param)
+    std::vector<hpx::shared_future<double *>> diag_tiles = assemble_tiles_with_zeros(n_tiles, n_tile_size, gpu);
+    diag_tiles.resize(n_tiles);
+    for (std::size_t d = 0; d < n_tiles; d++)
+    {
+        diag_tiles[d] =
+            hpx::async(hpx::annotated_function(&gen_tile_zeros_diag,
+                                               "assemble_tiled"),
+                       n_tile_size);
+    }
 
-    // TODO: requires GPU implementation of included functions
-    return 0;
+    // Compute diagonal elements of inv(K) * grad_hyperparam
+    for (std::size_t i = 0; i < n_tiles; ++i)
+    {
+        for (std::size_t j = 0; j < n_tiles; ++j)
+        {
+            diag_tiles[i] = hpx::dataflow(
+                hpx::annotated_function(&dot_diag_gemm,
+                                        "grad_left_tiled"),
+                ft_invK[i * n_tiles + j],
+                ft_gradparam[j * n_tiles + i],
+                diag_tiles[i],
+                n_tile_size,
+                n_tile_size);
+        }
+    }
+
+    // compute trace(inv(K) * grad_hyperparam)
+    hpx::shared_future<double> grad_left = hpx::make_ready_future(0.0);
+
+    for (std::size_t j = 0; j < n_tiles; ++j)
+    {
+        grad_left = hpx::dataflow(
+            hpx::annotated_function(hpx::unwrapping(&sum_gradleft),
+                                    "grad_left_tiled"),
+            diag_tiles[j],
+            grad_left);
+    }
+
+    /// part 2: alpha^T * grad_param * alpha
+    std::vector<hpx::shared_future<std::vector<double>>> inter_alpha;
+    inter_alpha.resize(n_tiles);
+    for (std::size_t d = 0; d < n_tiles; d++)
+    {
+        inter_alpha[d] =
+            hpx::async(hpx::annotated_function(&gen_tile_zeros_diag,
+                                               "assemble_tiled"),
+                       n_tile_size);
+    }
+
+    for (std::size_t k = 0; k < n_tiles; k++)
+    {
+        for (std::size_t m = 0; m < n_tiles; m++)
+        {
+            auto [cublas, stream] = gpu.next_cublas_handle();
+
+            inter_alpha[k] = hpx::dataflow(
+                &gemv,
+                cublas,
+                stream,
+                ft_gradparam[k * n_tiles + m],
+                ft_alpha[m],
+                inter_alpha[k],
+                n_tile_size,
+                n_tile_size,
+                Blas_add,
+                Blas_no_trans);
+        }
+    }
+
+    hpx::shared_future<double> grad_right = hpx::make_ready_future(0.0);
+
+    for (std::size_t j = 0; j < n_tiles;
+         ++j)
+    {  // Compute inner product to obtain diagonal elements of
+       // (K_MxN * (K^-1_NxN * K_NxM))
+        grad_right = hpx::dataflow(
+            hpx::annotated_function(hpx::unwrapping(&sum_gradright),
+                                    "grad_right_tiled"),
+            inter_alpha[j],
+            ft_alpha[j],
+            grad_right,
+            n_tile_size);
+    }
+
+    /// part 3: update parameter
+
+    // compute gradient = grad_left + grad_r
+    hpx::shared_future<double> gradient = hpx::dataflow(
+        hpx::annotated_function(hpx::unwrapping(&compute_gradient),
+                                "gradient_tiled"),
+        grad_left,
+        grad_right,
+        n_tile_size,
+        n_tiles);
+
+    // transform hyperparameter to unconstrained form
+    hpx::shared_future<double> unconstrained_param = hpx::dataflow(
+        hpx::annotated_function(hpx::unwrapping(&to_unconstrained),
+                                "gradient_tiled"),
+        hyperparameter,
+        false);
+    // update moments
+    m_T[param_idx] = hpx::dataflow(
+        hpx::annotated_function(hpx::unwrapping(&update_first_moment),
+                                "gradient_tiled"),
+        gradient,
+        m_T[param_idx],
+        adam_params.beta1);
+    v_T[param_idx] = hpx::dataflow(
+        hpx::annotated_function(hpx::unwrapping(&update_second_moment),
+                                "gradient_tiled"),
+        gradient,
+        v_T[param_idx],
+        adam_params.beta2);
+    // update unconstrained parameter
+    hpx::shared_future<double> updated_param =
+        hpx::dataflow(hpx::annotated_function(hpx::unwrapping(&update_param),
+                                              "gradient_tiled"),
+                      unconstrained_param,
+                      sek_params,
+                      adam_params,
+                      m_T[param_idx],
+                      v_T[param_idx],
+                      beta1_T,
+                      beta2_T,
+                      iter);
+    // transform hyperparameter to constrained form
+    return hpx::dataflow(
+               hpx::annotated_function(hpx::unwrapping(&to_constrained),
+                                       "gradient_tiled"),
+               updated_param,
+               false)
+        .get();
 }
 
 double update_lengthscale(
@@ -700,11 +691,12 @@ double update_lengthscale(
         beta1_T,
         beta2_T,
         iter,
-        0,
+        0, // 0 for lengthscale
         gpu);
 }
 
-double update_vertical_lengthscale(
+double
+update_vertical_lengthscale(
     const std::vector<hpx::shared_future<double *>> &ft_invK,
     const std::vector<hpx::shared_future<double *>> &ft_gradparam,
     const std::vector<hpx::shared_future<double *>> &ft_alpha,
@@ -733,11 +725,12 @@ double update_vertical_lengthscale(
         beta1_T,
         beta2_T,
         iter,
-        1,
+        1, // 1 for vertical lengthsale
         gpu);
 }
 
-double update_noise_variance(
+double
+update_noise_variance(
     const std::vector<hpx::shared_future<double *>> &ft_invK,
     const std::vector<hpx::shared_future<double *>> &ft_alpha,
     gpxpy_hyper::SEKParams sek_params,

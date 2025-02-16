@@ -77,11 +77,6 @@ compute_error_norm(const std::size_t n_tiles,
                    const std::vector<std::vector<double>> &tiles);
 
 /**
- * @brief Generate an empty tile
- */
-double *gen_tile_zeros(std::size_t n_tile_size, gpxpy::CUDA_GPU &gpu);
-
-/**
  * @brief TODO: documentation
  */
 hpx::shared_future<std::vector<double>>
@@ -147,7 +142,7 @@ optimize(const std::vector<double> &training_input,
          const std::size_t n_tiles,
          const std::size_t n_tile_size,
          const std::size_t n_regressors,
-         const gpxpy_hyper::SEKParams &sek_params,
+         gpxpy_hyper::SEKParams &sek_params,
          const std::vector<bool> trainable_params,
          const gpxpy_hyper::AdamParams &adam_params,
          gpxpy::CUDA_GPU &gpu);

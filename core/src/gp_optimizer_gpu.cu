@@ -19,7 +19,8 @@ double to_constrained(const double parameter, bool noise)
     }
 }
 
-double to_unconstrained(const double parameter, bool noise)
+double
+to_unconstrained(const double parameter, bool noise)
 {
     if (noise)
     {
@@ -31,161 +32,250 @@ double to_unconstrained(const double parameter, bool noise)
     }
 }
 
-double compute_sigmoid(const double parameter)
+double
+compute_sigmoid(const double parameter)
 {
     return 1.0 / (1.0 + exp(-parameter));
 }
 
-double compute_covariance_dist_func(std::size_t i_global,
-                                    std::size_t j_global,
-                                    std::size_t n_regressors,
-                                    gpxpy_hyper::SEKParams sek_params,
-                                    const std::vector<double> &i_input,
-                                    const std::vector<double> &j_input)
+__global__ void
+compute_cov_dist_vec_kernel(
+    double *d_tile,
+    const double *d_input,
+    const std::size_t n_tile_size,
+    const std::size_t n_regressors,
+    const std::size_t tile_row,
+    const std::size_t tile_column,
+    const gpxpy_hyper::SEKParams sek_params)
 {
-    // C(z_i,z_j) = vertical_lengthscale * exp(-0.5*lengthscale*(z_i-z_j)^2)
-    double z_ik = 0.0;
-    double z_jk = 0.0;
-    double distance = 0.0;
-    for (std::size_t k = 0; k < n_regressors; k++)
-    {
-        int offset = -n_regressors + 1 + k;
-        int i_local = i_global + offset;
-        int j_local = j_global + offset;
-        if (i_local >= 0)
-        {
-            z_ik = i_input[i_local];
-        }
-        if (j_local >= 0)
-        {
-            z_jk = j_input[j_local];
-        }
-        distance += pow(z_ik - z_jk, 2);
-    }
+    // Compute the global indices of the thread
+    unsigned int i = blockIdx.y * blockDim.y + threadIdx.y;
+    unsigned int j = blockIdx.x * blockDim.x + threadIdx.x;
 
-    return -1.0 / (2.0 * pow(sek_params.lengthscale, 2.0)) * distance;
+    if (i < n_tile_size && j < n_tile_size)
+    {
+        std::size_t i_global = n_tile_size * tile_row + i;
+        std::size_t j_global = n_tile_size * tile_column + j;
+
+        double distance = 0.0;
+        for (std::size_t k = 0; k < n_regressors; ++k)
+        {
+            int offset = -n_regressors + 1 + k;
+            int i_local = i_global + offset;
+            int j_local = j_global + offset;
+
+            double z_ik = (i_local >= 0) ? d_input[i_local] : 0.0;
+            double z_jk = (j_local >= 0) ? d_input[j_local] : 0.0;
+            distance += (z_ik - z_jk) * (z_ik - z_jk);
+        }
+
+        // Compute the covariance value
+        double covariance = exp(-0.5 * distance / (sek_params.lengthscale * sek_params.lengthscale));
+
+        d_tile[i * n_tile_size + j] = covariance;
+    }
 }
 
-std::vector<double> compute_cov_dist_vec(std::size_t row,
-                                         std::size_t col,
-                                         std::size_t N,
-                                         std::size_t n_regressors,
-                                         gpxpy_hyper::SEKParams sek_params,
-                                         const std::vector<double> &input)
+hpx::shared_future<double *>
+compute_cov_dist_vec(
+    hpx::shared_future<double *> f_cov_dists,
+    std::size_t row,
+    std::size_t column,
+    std::size_t n_tile_size,
+    std::size_t n_regressors,
+    gpxpy_hyper::SEKParams sek_params,
+    const double *d_training_input,
+    gpxpy::CUDA_GPU &gpu)
+{
+    dim3 threads_per_block(16, 16);
+    dim3 n_blocks((n_tile_size + 15) / 16, (n_tile_size + 15) / 16);
+
+    cudaStream_t stream = gpu.next_stream();
+
+    double *d_tile = f_cov_dists.get();
+    compute_cov_dist_vec_kernel<<<n_blocks, threads_per_block, gpu.shared_memory_size, stream>>>(d_tile, d_training_input, n_tile_size, n_regressors, row, column, sek_params);
+
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return hpx::make_ready_future(d_tile);
+}
+
+__global__ void
+compute_tile_covariance_kernel(
+    double *tile,
+    std::size_t row,
+    std::size_t col,
+    std::size_t n_tile_size,
+    gpxpy_hyper::SEKParams sek_params,
+    const double *cov_dists)
+{
+    std::size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    std::size_t j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < n_tile_size && j < n_tile_size)
+    {
+        std::size_t i_global = n_tile_size * row + i;
+        std::size_t j_global = n_tile_size * col + j;
+
+        double covariance = sek_params.vertical_lengthscale * exp(cov_dists[i * n_tile_size + j]);
+        if (i_global == j_global)
+        {
+            covariance += sek_params.noise_variance;
+        }
+        tile[i * n_tile_size + j] = covariance;
+    }
+}
+
+hpx::shared_future<double *>
+compute_tile_covariance_opt(
+    hpx::shared_future<double *> f_tile,
+    std::size_t row,
+    std::size_t col,
+    std::size_t n_tile_size,
+    std::size_t n_regressors,
+    gpxpy_hyper::SEKParams sek_params,
+    const hpx::shared_future<double *> f_cov_dists,
+    gpxpy::CUDA_GPU &gpu)
 {
     std::size_t i_global, j_global;
-    double cov_dist;
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    for (std::size_t i = 0; i < N; i++)
-    {
-        i_global = N * row + i;
-        for (std::size_t j = 0; j < N; j++)
-        {
-            j_global = N * col + j;
-            // compute covariance function
-            cov_dist =
-                compute_covariance_dist_func(i_global, j_global, n_regressors, sek_params, input, input);
-            tile[i * N + j] = cov_dist;
-        }
-    }
-    return std::move(tile);
+    double *d_tile = f_tile.get();
+    double *d_cov_dists = f_cov_dists.get();
+
+    cudaStream_t stream = gpu.next_stream();
+    dim3 threads_per_block(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 n_blocks((n_tile_size + BLOCK_SIZE - 1) / BLOCK_SIZE, (n_tile_size + BLOCK_SIZE - 1) / BLOCK_SIZE);
+
+    compute_tile_covariance_kernel<<<n_blocks, threads_per_block, 0, stream>>>(d_tile, row, col, n_tile_size, sek_params, d_cov_dists);
+
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return hpx::make_ready_future(d_tile);
 }
 
-std::vector<double>
-gen_tile_covariance_opt(std::size_t row,
-                        std::size_t col,
-                        std::size_t N,
-                        std::size_t n_regressors,
-                        gpxpy_hyper::SEKParams sek_params,
-                        const std::vector<double> &cov_dists)
+__global__ void
+compute_tile_grad_v_kernel(
+    double *tile,
+    const double *cov_dists,
+    std::size_t N,
+    double *hyperparam)
 {
-    std::size_t i_global, j_global;
-    double covariance;
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    for (std::size_t i = 0; i < N; i++)
+    std::size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    std::size_t j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < N && j < N)
     {
-        i_global = N * row + i;
-        for (std::size_t j = 0; j < N; j++)
-        {
-            j_global = N * col + j;
-            // compute covariance function
-            covariance = sek_params.vertical_lengthscale * exp(cov_dists[i * N + j]);
-            if (i_global == j_global)
-            {
-                // noise variance on diagonal
-                covariance += sek_params.noise_variance;
-            }
-            tile[i * N + j] = covariance;
-        }
+        tile[i * N + j] = exp(cov_dists[i * N + j]) * *hyperparam;
     }
-    return std::move(tile);
 }
 
-std::vector<double> gen_tile_grad_v(std::size_t row,
-                                    std::size_t col,
-                                    std::size_t N,
-                                    std::size_t n_regressors,
-                                    gpxpy_hyper::SEKParams sek_params,
-                                    const std::vector<double> &cov_dists)
+hpx::shared_future<double *>
+compute_tile_grad_v(
+    hpx::shared_future<double *> f_tile,
+    std::size_t row,
+    std::size_t col,
+    std::size_t N,
+    std::size_t n_regressors,
+    gpxpy_hyper::SEKParams sek_params,
+    const hpx::shared_future<double *> cov_dists,
+    gpxpy::CUDA_GPU &gpu)
 {
+    cudaStream_t stream = gpu.next_stream();
+
     // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    double hyperparam_der =
-        compute_sigmoid(to_unconstrained(sek_params.vertical_lengthscale, false));
-    for (std::size_t i = 0; i < N; i++)
-    {
-        for (std::size_t j = 0; j < N; j++)
-        {
-            // compute covariance function
-            tile[i * N + j] = exp(cov_dists[i * N + j]) * hyperparam_der;
-        }
-    }
-    return std::move(tile);
+    double *d_tile = f_tile.get();
+    double *d_cov_dists = cov_dists.get();
+
+    double hyperparam_der = compute_sigmoid(to_unconstrained(sek_params.vertical_lengthscale, false));
+    double *d_hyperparam;
+    check_cuda_error(cudaMemcpyAsync(d_hyperparam, &hyperparam_der, sizeof(double), cudaMemcpyHostToDevice, stream));
+
+    dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 gridDim((N + BLOCK_SIZE - 1) / BLOCK_SIZE, (N + BLOCK_SIZE - 1) / BLOCK_SIZE);
+
+    compute_tile_grad_v_kernel<<<gridDim, blockDim, gpu.shared_memory_size, stream>>>(
+        d_tile,
+        d_cov_dists,
+        N,
+        d_hyperparam);
+
+    check_cuda_error(cudaStreamSynchronize(stream));
+    return hpx::make_ready_future(d_tile);
 }
 
-std::vector<double> gen_tile_grad_l(std::size_t row,
-                                    std::size_t col,
-                                    std::size_t N,
-                                    std::size_t n_regressors,
-                                    gpxpy_hyper::SEKParams sek_params,
-                                    const std::vector<double> &cov_dists)
+__global__ void
+compute_tile_grad_l_kernel(
+    double *tile,
+    const double *cov_dists,
+    std::size_t N,
+    double *lengthscale,
+    double *vertical_lengthscale,
+    double *hyperparam)
 {
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    double hyperparam_der =
-        compute_sigmoid(to_unconstrained(sek_params.lengthscale, false));
-    for (std::size_t i = 0; i < N; i++)
+    std::size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    std::size_t j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < N && j < N)
     {
-        for (std::size_t j = 0; j < N; j++)
-        {
-            // compute covariance function
-            tile[i * N + j] = -2.0 * (sek_params.vertical_lengthscale / sek_params.lengthscale) * cov_dists[i * N + j] * exp(cov_dists[i * N + j]) * hyperparam_der;
-        }
+        tile[i * N + j] = -2.0 * ((*vertical_lengthscale) / (*lengthscale)) * cov_dists[i * N + j] * exp(cov_dists[i * N + j]) * (*hyperparam);
     }
-    return std::move(tile);
 }
 
-std::vector<double>
-gen_tile_grad_v_trans(std::size_t N, const std::vector<double> &grad_l_tile)
+hpx::shared_future<double *>
+compute_tile_grad_l(
+    hpx::shared_future<double *> f_tile,
+    std::size_t row,
+    std::size_t col,
+    std::size_t n_tile_size,
+    std::size_t n_regressors,
+    gpxpy_hyper::SEKParams sek_params,
+    const hpx::shared_future<double *> cov_dists,
+    gpxpy::CUDA_GPU &gpu)
 {
-    std::vector<double> transposed;
-    transposed.resize(N * N);
-    for (std::size_t i = 0; i < N; i++)
-    {
-        for (std::size_t j = 0; j < N; j++)
-        {
-            // Mapping (i, j) in the original matrix to (j, i) in the transposed
-            // matrix
-            transposed[j * N + i] = grad_l_tile[i * N + j];
-        }
-    }
-    return std::move(transposed);
+    cudaStream_t stream = gpu.next_stream();
+
+    double *d_tile = f_tile.get();
+    double hyperparam_der = compute_sigmoid(to_unconstrained(sek_params.lengthscale, false));
+    double *d_hyperparam;
+    check_cuda_error(cudaMemcpyAsync(d_hyperparam, &hyperparam_der, sizeof(double), cudaMemcpyHostToDevice, stream));
+    double *d_lengthscale;
+    check_cuda_error(cudaMemcpyAsync(d_lengthscale, &sek_params.lengthscale, sizeof(double), cudaMemcpyHostToDevice, stream));
+    double *d_vertical_lengthscale;
+    check_cuda_error(cudaMemcpyAsync(d_vertical_lengthscale, &sek_params.vertical_lengthscale, sizeof(double), cudaMemcpyHostToDevice, stream));
+
+    dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 gridDim((n_tile_size + BLOCK_SIZE - 1) / BLOCK_SIZE, (n_tile_size + BLOCK_SIZE - 1) / BLOCK_SIZE);
+
+    compute_tile_grad_l_kernel<<<gridDim, blockDim, gpu.shared_memory_size, stream>>>(
+        d_tile,
+        cov_dists.get(),
+        n_tile_size,
+        d_lengthscale,
+        d_vertical_lengthscale,
+        d_hyperparam);
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return hpx::make_ready_future(d_tile);
+}
+
+hpx::shared_future<double *>
+compute_transpose(
+    std::size_t N,
+    const hpx::shared_future<double *> f_tile,
+    const hpx::shared_future<double *> f_tile_trans,
+    gpxpy::CUDA_GPU &gpu)
+{
+    double *d_tile = f_tile.get();
+    double *d_tile_trans = f_tile_trans.get();
+
+    cudaStream_t stream = gpu.next_stream();
+    dim3 threads_per_block(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 n_blocks((N + BLOCK_SIZE - 1) / BLOCK_SIZE, (N + BLOCK_SIZE - 1) / BLOCK_SIZE);
+
+    transpose<<<n_blocks, threads_per_block, 0, stream>>>(d_tile_trans, d_tile, N, N);
+
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return hpx::make_ready_future(d_tile_trans);
 }
 
 hpx::shared_future<double *>
@@ -324,27 +414,45 @@ hpx::shared_future<double> update_param(const double unconstrained_hyperparam,
     return hpx::make_ready_future(unconstrained_hyperparam - alpha_T * m_T / (sqrt(v_T) + adam_params.epsilon));
 }
 
-std::vector<double>
-gen_tile_identity(std::size_t row, std::size_t col, std::size_t N)
+__global__ void
+fill_identity_kernel(
+    double *tile,
+    std::size_t N,
+    std::size_t row,
+    std::size_t col)
 {
-    std::size_t i_global, j_global;
-    // Initialize tile
-    std::vector<double> tile;
-    tile.resize(N * N);
-    std::fill(tile.begin(), tile.end(), 0.0);
-    for (std::size_t i = 0; i < N; i++)
+    std::size_t i = blockIdx.x * blockDim.x + threadIdx.x;
+    std::size_t j = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (i < N && j < N)
     {
-        i_global = N * row + i;
-        for (std::size_t j = i; j <= i; j++)
-        {
-            j_global = N * col + j;
-            if (i_global == j_global)
-            {
-                tile[i * N + j] = 1.0;
-            }
-        }
+        std::size_t i_global = N * row + i;
+        std::size_t j_global = N * col + j;
+        tile[i * N + j] = (i_global == j_global) ? 1.0 : 0.0;
     }
-    return std::move(tile);
+}
+
+hpx::shared_future<double *>
+compute_tile_identity(
+    hpx::shared_future<double *> f_tile,
+    std::size_t tile_row,
+    std::size_t tile_column,
+    std::size_t n_tile_size,
+    gpxpy::CUDA_GPU &gpu)
+{
+    double *d_tile = f_tile.get();
+    dim3 blockDim(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 gridDim((n_tile_size + 15) / 16, (n_tile_size + 15) / 16);
+
+    cudaStream_t stream = gpu.next_stream();
+    fill_identity_kernel<<<gridDim, blockDim, gpu.shared_memory_size, stream>>>(
+        d_tile,
+        n_tile_size,
+        tile_row,
+        tile_column);
+    check_cuda_error(cudaStreamSynchronize(stream));
+
+    return hpx::make_ready_future(d_tile);
 }
 
 std::vector<double> gen_tile_zeros_diag(std::size_t N)
