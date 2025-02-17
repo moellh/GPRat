@@ -207,3 +207,6 @@ compile_commands.json
 **/plot.png
 data/generators/msd_simulator/data
 data/generators/msd_simulator/plots
+
+experiment/*/apex_profiles.csv
+experiment/*/apex/
