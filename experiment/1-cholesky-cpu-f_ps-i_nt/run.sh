@@ -4,7 +4,7 @@ source $HOME/spack/share/spack/setup-env.sh
 spack env activate gpxpy
 
 N_CORES=(6 12 24 48)
-N_TRAIN=(65536)
+N_TRAIN=(32768)
 N_TILES=(16 32 64 128 256)
 N_REG=(8)
 N_LOOPS=(10)
