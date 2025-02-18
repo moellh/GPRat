@@ -8,23 +8,23 @@
 #SBATCH --exclusive
 
 gprat_dir="/data/scratch/mllmannhk/GPRat"
-msd_dir="$GPRat/data/generators/msd_simulator"
+msd_dir="$gprat_dir/data/generators/msd_simulator"
 
 # Download GPRat repo
-rm -rf gprat_dir
-git clone git@github.com:moellh/GPRat.git $gprat_dir
+mkdir -p $gprat_dir
+rm -rf $gprat_dir
+git clone https://github.com/moellh/GPRat.git $gprat_dir
 cd $gprat_dir
 git checkout experiment
 
 # Generate data
 cd $msd_dir
 ./run_msd.sh
+
 cd $gprat_dir
-
-cd experiments/
-
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
+export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd 1-cholesky-cpu-f_ps-i_nt/
 ./run_simcl1.sh
 cp output.csv ~/results/1/output.csv
 cp -r apex/ ~/results/1/apex/
-cd $gprat_dir
