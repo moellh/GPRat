@@ -49,7 +49,7 @@ def execute(n_cores, n_train, n_tiles, n_reg, n_loops):
     # write headers
     if not file_exists:
         logger.info("Write output file header")
-        header = ["n_cores", "n_train", "n_tiles", "n_reg", "n_loops", "time"]
+        header = ["n_cores", "n_train", "n_tiles", "n_reg", "i_loop", "time"]
         output_writer.writerow(header)
 
     gpx.start_hpx([], n_cores)
