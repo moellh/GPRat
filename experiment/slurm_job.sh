@@ -25,6 +25,7 @@ cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
 export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/1-cholesky-cpu-f_ps-i_nt/
+mkdir apex
 ./run_simcl1.sh
 cp output.csv ~/results/1/output.csv
 cp -r apex/ ~/results/1/apex/
