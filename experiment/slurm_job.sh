@@ -3,7 +3,7 @@
 #SBATCH -w simcl1n1
 #SBATCH --job-name="gprat"
 #SBATCH --output=job_gprat.out
-#SBATCH --time=01:00:00
+#SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --exclusive
 
@@ -41,5 +41,12 @@ cp output.csv ${results_dir}/output.csv
 cp -r apex/ ${results_dir}/apex/
 
 echo "Test 1 done"
+
+# Test 2
+# Cholesky
+# CPU only
+# fixed problem size
+# optimal tile size
+# increasing cores
 
 echo "Slurm job finished"

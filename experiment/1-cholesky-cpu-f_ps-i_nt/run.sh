@@ -3,11 +3,11 @@
 source $HOME/spack/share/spack/setup-env.sh
 spack env activate gpxpy
 
-N_CORES=(8 12 16 24 32 48) # (1 2 3 4 6 8 12 16 24 32 48)
-N_TRAIN=(32768) # 32768, 65536
-N_TILES=(64)
+N_CORES=(6 12 24 48)
+N_TRAIN=(65536)
+N_TILES=(16 32 64 128 256)
 N_REG=(8)
-N_LOOPS=(5)
+N_LOOPS=(10)
 
 for core in "${N_CORES[@]}"; do
   for train in "${N_TRAIN[@]}"; do
