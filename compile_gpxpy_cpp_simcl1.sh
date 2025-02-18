@@ -12,6 +12,8 @@ set -ex
 
 # Load modules
 module load clang/17.0.1
-module load cuda/12.2.2
+if $1 == "-DGPXPY_WITH_CUDA=ON"; then
+    module load cuda/12.0.1
+fi
 
 ./compile_gpxpy_cpp.sh "$@"

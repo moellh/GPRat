@@ -7,7 +7,7 @@
 #SBATCH --nodes=1
 #SBATCH --exclusive
 
-gprat_dir="/data/scratch/mllmannhk/GPRat"
+gprat_dir="/data/scratch/mllmanhk/GPRat"
 msd_dir="$gprat_dir/data/generators/msd_simulator"
 
 # Download GPRat repo
@@ -15,7 +15,7 @@ mkdir -p $gprat_dir
 rm -rf $gprat_dir
 git clone https://github.com/moellh/GPRat.git $gprat_dir
 cd $gprat_dir
-git checkout experiment
+git switch experiment
 
 # Generate data
 cd $msd_dir
