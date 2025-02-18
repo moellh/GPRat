@@ -35,7 +35,7 @@ cd experiment/1-cholesky-cpu-f_ps-i_nt/
 mkdir apex
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
-results_dir="~/results/1/${timestamp}"
+results_dir=$HOME/results/1/${timestamp}
 mkdir -p ${results_dir}
 cp output.csv ${results_dir}/output.csv
 cp -r apex/ ${results_dir}/apex/
