@@ -63,7 +63,6 @@ def execute(n_cores, n_train, n_tiles, n_reg, n_loops):
         logger.info("moving csv")
 
 
-
 def single_run(csv, n_cores, n_train, n_tiles, n_reg, i_loop):
 
     n_tile_size = gpx.compute_train_tile_size(n_train, n_tiles)

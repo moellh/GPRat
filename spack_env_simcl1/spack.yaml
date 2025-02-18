@@ -25,6 +25,7 @@ spack:
       networking=none
       max_cpu_count=256
       +cuda
+      malloc=system
   - >
       intel-oneapi-mkl@2024.2.2
       %clang@17.0.1

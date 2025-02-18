@@ -276,7 +276,9 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
 
         if spec.satisfies("instrumentation=apex"):
             args += [
+                self.define("HPX_WITH_FETCH_APEX", True),
                 self.define("APEX_WITH_OTF2", True),
+                self.define("APEX_WITH_CUDA", True),
                 self.define("OTF2_ROOT", spec["otf2"].prefix),
             ]
 
@@ -291,6 +293,5 @@ class Hpx(CMakePackage, CudaPackage, ROCmPackage):
         args.append("-DNVCC_WRAPPER_DEFAULT_COMPILER=clang")
         args.append("-DCMAKE_CUDA_COMPILER=clang")
         args.append("-DCMAKE_CUDA_ARCHITECTURES=80")
-        args.append("-DHPX_WITH_FETCH_APEX=ON")
 
         return args
