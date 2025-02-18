@@ -39,3 +39,7 @@ results_dir="~/results/1/${timestamp}"
 mkdir -p ${results_dir}
 cp output.csv ${results_dir}/output.csv
 cp -r apex/ ${results_dir}/apex/
+
+echo "Test 1 done"
+
+echo "Slurm job finished"
