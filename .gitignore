@@ -210,3 +210,4 @@ data/generators/msd_simulator/plots
 
 experiment/*/apex_profiles.csv
 experiment/*/apex/
+examples/*/apex_profiles.csv

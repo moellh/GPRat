@@ -27,26 +27,39 @@ cd $msd_dir
 # fixed problem size
 # increasing tile size
 # increasing cores
-
+echo "=== Starting Test 1"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
 export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
-cd experiment/1-cholesky-cpu-f_ps-i_nt/
-mkdir apex
+cd experiment/1-cholesky-cpu/
+mkdir -p apex
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
 results_dir=$HOME/results/1/${timestamp}
 mkdir -p ${results_dir}
 cp output.csv ${results_dir}/output.csv
 cp -r apex/ ${results_dir}/apex/
-
-echo "Test 1 done"
+echo "=== Finished Test 1"
 
 # Test 2
 # Cholesky
 # CPU only
 # fixed problem size
-# optimal tile size
+# increasing tile size
 # increasing cores
+# split cholesky steps
+echo "=== Starting Test 2"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
+export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
+cd experiment/2-cholesky-cpu/
+mkdir -p apex
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/2/${timestamp}
+mkdir -p ${results_dir}
+cp output.csv ${results_dir}/output.csv
+cp -r apex/ ${results_dir}/apex/
+echo "=== Finished Test 2"
 
 echo "Slurm job finished"

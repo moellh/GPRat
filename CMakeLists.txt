@@ -30,17 +30,8 @@ option(GPXPY_WITH_CUDA "Enable GPU support with CUDA/cuBLAS" OFF)
 # Pass variable to C++ code
 add_compile_definitions(GPXPY_WITH_CUDA=$<BOOL:${GPXPY_WITH_CUDA}>)
 
-if(NOT GPXPY_WITH_CUDA)
-    # TODO: configuration without GPU support
-else()
-    # TODO: configuration with GPU support
-    # set(CMAKE_CUDA_STANDARD 17)
-    # find_package(CUDA REQUIRED)
-    # target_link_libraries(gpxpy PRIVATE CUDA::cublas CUDA::cusolver)
-    # set_target_properties(gpxpy PROPERTIES
-    #     CUDA_SEPARABLE_COMPILATION ON
-    # )
-endif()
+option(GPRAT_CHOLESKY_STEPS "Synchronizes between steps of cholesky function" OFF)
+add_compile_definitions(GPRAT_CHOLESKY_STEPS=$<BOOL:${GPRAT_CHOLESKY_STEPS}>)
 
 if(GPXPY_ENABLE_FORMAT_TARGETS)
   find_package(format QUIET)

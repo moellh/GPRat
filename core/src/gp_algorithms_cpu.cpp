@@ -4,6 +4,10 @@
 #include "gp_optimizer_cpu.hpp"
 #include <hpx/future.hpp>
 
+#ifdef GPRAT_CHOLESKY_STEPS
+    #include <apex_api.hpp>
+#endif
+
 namespace cpu
 {
 
@@ -1113,6 +1117,9 @@ cholesky(const std::vector<double> &training_input,
          int n_regressors,
          gpxpy_hyper::SEKParams sek_params)
 {
+#ifdef GPRAT_CHOLESKY_STEPS
+    auto cholesky_step_assembly_timer = apex::start("cholesky_step assembly");
+#endif
     // Tiled future data structure is matrix represented as vector of tiles.
     // Tiles are represented as vector, each wrapped in a shared_future.
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
@@ -1135,8 +1142,19 @@ cholesky(const std::vector<double> &training_input,
         }
     }
 
+#ifdef GPRAT_CHOLESKY_STEPS
+    hpx::wait_all(K_tiles);
+    apex::stop(cholesky_step_assembly_timer);
+    auto cholesky_step_cholesky_timer = apex::start("cholesky_step cholesky");
+#endif
+
     // Calculate Cholesky decomposition
     right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
+
+#ifdef GPRAT_CHOLESKY_STEPS
+    hpx::wait_all(K_tiles);
+    apex::stop(cholesky_step_cholesky_timer);
+#endif
 
     // Get & return predictions and uncertainty
     std::vector<std::vector<double>> result(n_tiles * n_tiles);

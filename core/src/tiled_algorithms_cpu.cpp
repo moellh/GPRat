@@ -20,7 +20,7 @@ void right_looking_cholesky_tiled(
     {
         // POTRF: Compute Cholesky factor L
         ft_tiles[k * n_tiles + k] =
-            hpx::dataflow(hpx::annotated_function(&potrf, "cholesky_tiled"),
+            hpx::dataflow(hpx::annotated_function(&potrf, "cholesky potrf"),
                           ft_tiles[k * n_tiles + k],
                           N);
 
@@ -28,7 +28,7 @@ void right_looking_cholesky_tiled(
         {
             // TRSM:  Solve X * L^T = A
             ft_tiles[m * n_tiles + k] = hpx::dataflow(
-                hpx::annotated_function(&trsm, "cholesky_tiled"),
+                hpx::annotated_function(&trsm, "cholesky trsm"),
                 ft_tiles[k * n_tiles + k],
                 ft_tiles[m * n_tiles + k],
                 N,
@@ -40,7 +40,7 @@ void right_looking_cholesky_tiled(
         {
             // SYRK:  A = A - B * B^T
             ft_tiles[m * n_tiles + m] = hpx::dataflow(
-                hpx::annotated_function(&syrk, "cholesky_tiled"),
+                hpx::annotated_function(&syrk, "cholesky syrk"),
                 ft_tiles[m * n_tiles + m],
                 ft_tiles[m * n_tiles + k],
                 N);
@@ -48,7 +48,7 @@ void right_looking_cholesky_tiled(
             {
                 // GEMM: C = C - A * B^T
                 ft_tiles[m * n_tiles + n] = hpx::dataflow(
-                    hpx::annotated_function(&gemm, "cholesky_tiled"),
+                    hpx::annotated_function(&gemm, "cholesky gemm"),
                     ft_tiles[m * n_tiles + k],
                     ft_tiles[n * n_tiles + k],
                     ft_tiles[m * n_tiles + n],
