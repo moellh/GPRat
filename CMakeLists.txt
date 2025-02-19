@@ -34,7 +34,7 @@ option(GPRAT_CHOLESKY_STEPS "Synchronizes between steps of cholesky function" OF
 add_compile_definitions(GPRAT_CHOLESKY_STEPS=$<BOOL:${GPRAT_CHOLESKY_STEPS}>)
 
 option(GPRAT_ASSEMBLY_ONLY "Only computes assembly of cholesky function" OFF)
-add_compile_definitions(GPRAT_ASSEMBLY_ONLY=$<BOOL:${GPRAT_CHOLESKY_STEPS}>)
+add_compile_definitions(GPRAT_ASSEMBLY_ONLY=$<BOOL:${GPRAT_ASSEMBLY_ONLY}>)
 
 if(GPXPY_ENABLE_FORMAT_TARGETS)
   find_package(format QUIET)

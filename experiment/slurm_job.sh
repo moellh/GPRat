@@ -115,14 +115,14 @@ echo "=== Note: Test 5 and 6 are part of Test 1-4"
 # Assembly
 # GPU, CPU
 # increasing problem size
-# increasing tile size
+# increasing n_tiles
 # increasing n_reg
 # opt n_cores and n_streams
 echo "=== Starting Test 7"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_ASSEMBLY_ONLY=ON
 export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
-cd experiment/7-cholesky-gpu/
+cd experiment/7-cholesky-assembly/
 mkdir -p apex-cpu
 mkdir -p apex-gpu
 ./run_simcl1.sh
@@ -134,6 +134,33 @@ cp output-gpu.csv ${results_dir}/output-gpu.csv
 cp -r apex-cpu/ ${results_dir}/apex-cpu/
 cp -r apex-gpu/ ${results_dir}/apex-gpu/
 echo "=== Finished Test 7"
+
+# Test 8
+# Cholesky
+# GPU, CPU, GPyTorch, Tensorflow (both with GPU, CPU)
+# increasing problem size
+# increasing n_tiles
+# opt n_cores and n_streams
+echo "=== Starting Test 7"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
+export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
+cd experiment/8-cholesky-only/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/8/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp output-gpytorch-cpu.csv ${results_dir}/output-gpytorch-cpu.csv
+cp output-gpytorch-gpu.csv ${results_dir}/output-gpytorch-gpu.csv
+cp output-tensorflow-cpu.csv ${results_dir}/output-tensorflow-cpu.csv
+cp output-tensorflow-gpu.csv ${results_dir}/output-tensorflow-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 8"
 
 
 echo "Slurm job finished"

@@ -5,7 +5,7 @@ spack env activate gpxpy
 
 N_CORES=(48)
 N_STREAMS=(4)
-N_REG=(1 2 4 8 16 32 64) # ...
+N_REG=(8)
 N_LOOPS=(10)
 
 run_experiment() {
@@ -26,7 +26,6 @@ run_experiment() {
 }
 
 N_TRAIN=(1024 2048 4096) # (1024 2048 4096 8192 16384 32768)
-N_TILES=(1 2 4 8 16 32) # ... 512
+N_TILES=(1 2 4 8 16 32 64 128)
 
 run_experiment
-
