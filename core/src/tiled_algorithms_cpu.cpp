@@ -76,7 +76,7 @@ void forward_solve_tiled(
     {
         // TRSM: Solve L * x = a
         ft_rhs[k] = hpx::dataflow(
-            hpx::annotated_function(&trsv, "triangular_solve_tiled"),
+            hpx::annotated_function(&trsv, "forward trsv"),
             ft_tiles[k * n_tiles + k],
             ft_rhs[k],
             N,
@@ -85,7 +85,7 @@ void forward_solve_tiled(
         {
             // GEMV: b = b - A * a
             ft_rhs[m] = hpx::dataflow(
-                hpx::annotated_function(&gemv, "triangular_solve_tiled"),
+                hpx::annotated_function(&gemv, "forward gemv"),
                 ft_tiles[m * n_tiles + k],
                 ft_rhs[k],
                 ft_rhs[m],
@@ -107,7 +107,7 @@ void backward_solve_tiled(
     {
         // TRSM: Solve L^T * x = a
         ft_rhs[k] = hpx::dataflow(
-            hpx::annotated_function(&trsv, "triangular_solve_tiled"),
+            hpx::annotated_function(&trsv, "backward trsv"),
             ft_tiles[k * n_tiles + k],
             ft_rhs[k],
             N,
@@ -116,7 +116,7 @@ void backward_solve_tiled(
         {
             // GEMV:b = b - A^T * a
             ft_rhs[m] = hpx::dataflow(
-                hpx::annotated_function(&gemv, "triangular_solve_tiled"),
+                hpx::annotated_function(&gemv, "backward gemv"),
                 ft_tiles[k * n_tiles + m],
                 ft_rhs[k],
                 ft_rhs[m],
@@ -322,7 +322,7 @@ void prediction_tiled(
         for (std::size_t m = 0; m < n_tiles; m++)
         {
             ft_rhs[k] = hpx::dataflow(
-                hpx::annotated_function(&gemv, "prediction_tiled"),
+                hpx::annotated_function(&gemv, "predict gemv"),
                 ft_tiles[k * n_tiles + m],
                 ft_vector[m],
                 ft_rhs[k],

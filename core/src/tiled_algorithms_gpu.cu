@@ -100,7 +100,7 @@ void forward_solve_tiled(
 
         // TRSM: Solve L * x = a
         ft_rhs[k] = hpx::dataflow(
-            &trsv,
+            hpx::annotated_function(&trsv, "forward trsv"),
             cublas,
             stream,
             ft_tiles[k * n_tiles + k],
@@ -114,7 +114,7 @@ void forward_solve_tiled(
 
             // GEMV: b = b - A * a
             ft_rhs[m] = hpx::dataflow(
-                &gemv,
+                hpx::annotated_function(&gemv, "forward gemv"),
                 cublas,
                 stream,
                 ft_tiles[m * n_tiles + k],
@@ -145,7 +145,7 @@ void backward_solve_tiled(
 
         // TRSM: Solve L^T * x = a
         ft_rhs[k] = hpx::dataflow(
-            &trsv,
+            hpx::annotated_function(&trsv, "backward trsv"),
             cublas,
             stream,
             ft_tiles[k * n_tiles + k],
@@ -159,7 +159,7 @@ void backward_solve_tiled(
 
             // GEMV: b = b - A^T * a
             ft_rhs[m] = hpx::dataflow(
-                &gemv,
+                hpx::annotated_function(&gemv, "backward gemv"),
                 cublas,
                 stream,
                 ft_tiles[k * n_tiles + m],
@@ -392,7 +392,7 @@ void prediction_tiled(
             auto [cublas, stream] = gpu.next_cublas_handle();
 
             ft_rhs[k] = hpx::dataflow(
-                &gemv,
+                hpx::annotated_function(&gemv, "predict gemv"),
                 cublas,
                 stream,
                 ft_tiles[k * n_tiles + m],
