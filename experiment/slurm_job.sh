@@ -2,8 +2,7 @@
 
 #SBATCH -w simcl1n1
 #SBATCH --job-name="gprat"
-#SBATCH --output=job_gprat.out
-#SBATCH --time=24:00:00
+#SBATCH --output=job_gprat.out #SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --exclusive
 
@@ -27,11 +26,11 @@ cd $msd_dir
 # fixed problem size
 # increasing tile size
 # increasing cores
-echo "=== Starting Test 1"
+echo "=== Starting Test 1 (incl. 5)"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
 export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
-cd experiment/1-cholesky-cpu/
+cd experiment/1-2-cholesky-cpu/
 mkdir -p apex
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
@@ -47,12 +46,12 @@ echo "=== Finished Test 1"
 # fixed problem size
 # increasing tile size
 # increasing cores
-# split cholesky steps, BLAS cally
-echo "=== Starting Test 2"
+# split cholesky steps, BLAS calls
+echo "=== Starting Test 2 (incl. 6)"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
 export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
-cd experiment/2-cholesky-cpu/
+cd experiment/1-2-cholesky-cpu/
 mkdir -p apex
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
@@ -68,11 +67,11 @@ echo "=== Finished Test 2"
 # fixed problem size
 # increasing tile size
 # increasing n_streams
-echo "=== Starting Test 3"
+echo "=== Starting Test 3 (incl. 5)"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
 export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
-cd experiment/3-cholesky-gpu/
+cd experiment/3-4-cholesky-gpu/
 mkdir -p apex
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
@@ -88,12 +87,12 @@ echo "=== Finished Test 3"
 # fixed problem size
 # increasing tile size
 # increasing n_streams
-# split cholesky steps, BLAS cally
-echo "=== Starting Test 4"
+# split cholesky steps, BLAS calls
+echo "=== Starting Test 4 (incl. 6)"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
 export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
-cd experiment/4-cholesky-gpu/
+cd experiment/3-4-cholesky-gpu/
 mkdir -p apex
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
@@ -102,5 +101,39 @@ mkdir -p ${results_dir}
 cp output.csv ${results_dir}/output.csv
 cp -r apex/ ${results_dir}/apex/
 echo "=== Finished Test 4"
+
+# Test 5,6
+# Cholesky
+# GPU, CPU
+# increasing problem size, incl. 2^16
+# increasing tile size
+# opt n_cores and n_streams
+# for test 6: split cholesky steps, BLAS calls
+echo "=== Note: Test 5 and 6 are part of Test 1-4"
+
+# Test 7
+# Assembly
+# GPU, CPU
+# increasing problem size
+# increasing tile size
+# increasing n_reg
+# opt n_cores and n_streams
+echo "=== Starting Test 7"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -GPRAT_ASSEMBLY_ONLY=ON
+export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
+cd experiment/7-cholesky-gpu/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/7/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 7"
+
 
 echo "Slurm job finished"

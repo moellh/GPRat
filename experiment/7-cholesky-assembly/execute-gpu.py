@@ -46,8 +46,8 @@ def execute(n_cores, n_train, n_tiles, n_reg, n_streams, n_loops):
     setup_logging(log_filename, True, logger)
 
     # append log to ./output.csv
-    file_exists = os.path.isfile("./output.csv")
-    output_file = open("./output.csv", "a", newline="")
+    file_exists = os.path.isfile("./output-gpu.csv")
+    output_file = open("./output-gpu.csv", "a", newline="")
     output_writer = writer(output_file)
 
     # write headers
@@ -62,7 +62,7 @@ def execute(n_cores, n_train, n_tiles, n_reg, n_streams, n_loops):
     gpx.stop_hpx()
     logger.info(f"completed run: {n_cores}, {n_train}, {n_tiles}, {n_reg}, {n_streams}, {n_loops}")
     if os.path.isfile("apex_profiles.csv"):
-        new_filename = f"apex/apex_profiles_{n_cores}_{n_train}_{n_tiles}_{n_reg}_{n_streams}_{n_loops}.csv"
+        new_filename = f"apex-gpu/apex_profiles_{n_cores}_{n_train}_{n_tiles}_{n_reg}_{n_streams}_{n_loops}.csv"
         os.rename("apex_profiles.csv", new_filename)
         logger.info("moving csv")
 
@@ -80,7 +80,7 @@ def single_run(csv, n_cores, n_train, n_tiles, n_reg, n_streams, i_loop):
     _ = gp_gpu.cholesky()
     chol_t = time.time() - chol_t
 
-    row_data = [n_cores, n_train, n_tiles, n_reg, i_loop, chol_t]
+    row_data = [n_cores, n_train, n_tiles, n_reg, n_streams, i_loop, chol_t]
     csv.writerow(row_data)
 
 
