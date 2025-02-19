@@ -10,6 +10,10 @@
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>
 
+#ifdef GPRAT_CHOLESKY_STEPS
+    #include <apex_api.hpp>
+#endif
+
 using hpx::experimental::for_loop;
 
 namespace gpu
@@ -1258,22 +1262,55 @@ cholesky(const std::vector<double> &h_training_input,
          const gpxpy_hyper::SEKParams sek_params,
          gpxpy::CUDA_GPU &gpu)
 {
+
+#ifdef GPRAT_CHOLESKY_STEPS
+    auto cholesky_step_ra_timer = apex::start("cholesky_step ressource allocation");
+#endif
     gpu.create();
+
+#ifdef GPRAT_CHOLESKY_STEPS
+    apex::stop(cholesky_step_ra_timer);
+#endif
+
+#ifdef GPRAT_CHOLESKY_STEPS
+    auto cholesky_step_assembly_timer = apex::start("cholesky_step assembly");
+#endif
 
     double *d_training_input = copy_to_device(h_training_input, gpu);
     // Assemble tiled covariance matrix on GPU.
     std::vector<hpx::shared_future<double *>> d_tiles = assemble_tiled_covariance_matrix(d_training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
 
+#ifdef GPRAT_CHOLESKY_STEPS
+    hpx::wait_all(d_tiles);
+    apex::stop(cholesky_step_assembly_timer);
+    auto cholesky_step_cholesky_timer = apex::start("cholesky_step cholesky");
+#endif
+
     // Compute Tiled Cholesky decomposition on device
     cusolverDnHandle_t cusolver = create_cusolver_handle();
     right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
+#ifdef GPRAT_CHOLESKY_STEPS
+    hpx::wait_all(d_tiles);
+    apex::stop(cholesky_step_cholesky_timer);
+    auto cholesky_step_copyback_timer = apex::start("cholesky_step copyback");
+#endif
+
     // Copy tiled matrix to host
     std::vector<std::vector<double>> h_tiles = move_lower_tiled_matrix_to_host(d_tiles, n_tile_size, n_tiles, gpu);
+
+#ifdef GPRAT_CHOLESKY_STEPS
+    apex::stop(cholesky_step_copyback_timer);
+    auto cholesky_step_rd_timer = apex::start("cholesky_step ressource destroy");
+#endif
 
     cudaFree(d_training_input);
     destroy(cusolver);
     gpu.destroy();
+
+#ifdef GPRAT_CHOLESKY_STEPS
+    apex::stop(cholesky_step_rd_timer);
+#endif
 
     return hpx::make_ready_future(h_tiles);
 }
