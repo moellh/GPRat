@@ -48,3 +48,9 @@ run_experiment
 # N_TRAIN=(32768)
 #
 # run_experiment
+##
+## cpu part of test 5 uses results from test 1 and this (n_train=65536, optimal n_streams)
+##
+## N_TRAIN=(65536)
+##
+## run_experiment
