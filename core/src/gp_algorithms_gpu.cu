@@ -10,7 +10,7 @@
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>
 
-#ifdef GPRAT_CHOLESKY_STEPS
+#if defined(GPRAT_CHOLESKY_STEPS) || defined(GPRAT_ASSEMBLY_ONLY)
     #include <apex_api.hpp>
 #endif
 
@@ -371,15 +371,21 @@ assemble_tiled_covariance_matrix(const double *d_training_input,
 {
     std::vector<hpx::shared_future<double *>> d_tiles(n_tiles * n_tiles);
 
-    // clang-format off
-    for_loop(hpx::execution::par, 0, n_tiles, [&](std::size_t tile_row)
+    for (std::size_t tile_row = 0; tile_row < n_tiles; ++tile_row)
     {
-        for_loop(hpx::execution::par, 0, tile_row + 1, [&](std::size_t tile_column)
+        for (std::size_t tile_column = 0; tile_column <= tile_row; ++tile_column)
         {
-            d_tiles[tile_row * n_tiles + tile_column] = hpx::async(&gen_tile_covariance, d_training_input, tile_row, tile_column, n_tile_size, n_regressors, sek_params, std::ref(gpu));
-        });
-    });
-    // clang-format on
+            d_tiles[tile_row * n_tiles + tile_column] = hpx::async(
+                hpx::annotated_function(&gen_tile_covariance, "assembly tile"),
+                d_training_input,
+                tile_row,
+                tile_column,
+                n_tile_size,
+                n_regressors,
+                sek_params,
+                std::ref(gpu));
+        }
+    }
 
     return d_tiles;
 }
@@ -1262,7 +1268,6 @@ cholesky(const std::vector<double> &h_training_input,
          const gpxpy_hyper::SEKParams sek_params,
          gpxpy::CUDA_GPU &gpu)
 {
-
 #ifdef GPRAT_CHOLESKY_STEPS
     auto cholesky_step_ra_timer = apex::start("cholesky_step ressource allocation");
 #endif
@@ -1272,7 +1277,7 @@ cholesky(const std::vector<double> &h_training_input,
     apex::stop(cholesky_step_ra_timer);
 #endif
 
-#ifdef GPRAT_CHOLESKY_STEPS
+#if defined(GPRAT_CHOLESKY_STEPS) || defined(GPRAT_ASSEMBLY_ONLY)
     auto cholesky_step_assembly_timer = apex::start("cholesky_step assembly");
 #endif
 
@@ -1280,6 +1285,11 @@ cholesky(const std::vector<double> &h_training_input,
     // Assemble tiled covariance matrix on GPU.
     std::vector<hpx::shared_future<double *>> d_tiles = assemble_tiled_covariance_matrix(d_training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
 
+#ifdef GPRAT_ASSEMBLY_ONLY
+    hpx::wait_all(d_tiles);
+    apex::stop(cholesky_step_assembly_timer);
+    return hpx::make_ready_future(std::vector<std::vector<double>>());
+#endif
 #ifdef GPRAT_CHOLESKY_STEPS
     hpx::wait_all(d_tiles);
     apex::stop(cholesky_step_assembly_timer);

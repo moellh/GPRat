@@ -33,6 +33,9 @@ add_compile_definitions(GPXPY_WITH_CUDA=$<BOOL:${GPXPY_WITH_CUDA}>)
 option(GPRAT_CHOLESKY_STEPS "Synchronizes between steps of cholesky function" OFF)
 add_compile_definitions(GPRAT_CHOLESKY_STEPS=$<BOOL:${GPRAT_CHOLESKY_STEPS}>)
 
+option(GPRAT_ASSEMBLY_ONLY "Only computes assembly of cholesky function" OFF)
+add_compile_definitions(GPRAT_ASSEMBLY_ONLY=$<BOOL:${GPRAT_CHOLESKY_STEPS}>)
+
 if(GPXPY_ENABLE_FORMAT_TARGETS)
   find_package(format QUIET)
   if(NOT format_FOUND)

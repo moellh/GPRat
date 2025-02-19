@@ -120,7 +120,7 @@ echo "=== Note: Test 5 and 6 are part of Test 1-4"
 # opt n_cores and n_streams
 echo "=== Starting Test 7"
 cd $gprat_dir
-./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -GPRAT_ASSEMBLY_ONLY=ON
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_ASSEMBLY_ONLY=ON
 export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/7-cholesky-gpu/
 mkdir -p apex-cpu
