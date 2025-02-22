@@ -617,7 +617,7 @@ predict(const std::vector<double> &h_training_input,
     gpu.create();
     cusolverDnHandle_t cusolver = create_cusolver_handle();
 #ifdef GPRAT_PREDICT_STEPS
-    apex::stop(predict_step_rd_timer);
+    apex::stop(predict_step_ra_timer);
     auto predict_step_assembly_timer = apex::start("predict_step assembly");
 #endif
     double *d_training_input = copy_to_device(h_training_input, gpu);
@@ -639,7 +639,7 @@ predict(const std::vector<double> &h_training_input,
 
 #ifdef GPRAT_PREDICT_STEPS
     hpx::wait_all(d_tiles);
-    apex::stop(predict_step_cholesky_timer_timer);
+    apex::stop(predict_step_cholesky_timer);
     auto predict_step_forward_timer = apex::start("predict_step forward");
 #endif
 

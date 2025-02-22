@@ -340,7 +340,6 @@ predict(const std::vector<double> &training_input,
 #ifdef GPRAT_PREDICT_STEPS
     hpx::wait_all(prediction_tiles);
     apex::stop(predict_step_prediction_timer);
-    auto predict_step_prediction_timer = apex::start("predict_step predict");
 #endif
 
     // Get predictions and uncertainty to return them
