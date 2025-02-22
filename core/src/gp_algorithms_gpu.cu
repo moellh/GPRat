@@ -10,7 +10,7 @@
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>
 
-#if defined(GPRAT_CHOLESKY_STEPS) || defined(GPRAT_ASSEMBLY_ONLY)
+#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     #include <apex_api.hpp>
 #endif
 
@@ -1326,7 +1326,7 @@ cholesky(const std::vector<double> &h_training_input,
     apex::stop(cholesky_step_ra_timer);
 #endif
 
-#if defined(GPRAT_CHOLESKY_STEPS) || defined(GPRAT_ASSEMBLY_ONLY)
+#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     auto cholesky_step_assembly_timer = apex::start("cholesky_step assembly");
 #endif
 

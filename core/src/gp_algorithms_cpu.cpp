@@ -4,7 +4,7 @@
 #include "gp_optimizer_cpu.hpp"
 #include <hpx/future.hpp>
 
-#if defined(GPRAT_CHOLESKY_STEPS) || defined(GPRAT_ASSEMBLY_ONLY)
+#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     #include <apex_api.hpp>
 #endif
 
@@ -237,7 +237,7 @@ predict(const std::vector<double> &training_input,
         int n_regressors,
         gpxpy_hyper::SEKParams sek_params)
 {
-#if defined(GPRAT_PREDICT_STEPS)
+#if GPRAT_PREDICT_STEPS
     auto predict_step_assembly_timer = apex::start("predict_step assembly");
 #endif
     // declare tiled future data structures
@@ -1147,7 +1147,7 @@ cholesky(const std::vector<double> &training_input,
          int n_regressors,
          gpxpy_hyper::SEKParams sek_params)
 {
-#if defined(GPRAT_CHOLESKY_STEPS) || defined(GPRAT_ASSEMBLY_ONLY)
+#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     auto cholesky_step_assembly_timer = apex::start("cholesky_step assembly");
 #endif
     // Tiled future data structure is matrix represented as vector of tiles.
