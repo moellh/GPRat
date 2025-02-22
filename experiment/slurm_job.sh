@@ -8,6 +8,7 @@
 
 gprat_dir="/data/scratch/mllmanhk/GPRat"
 msd_dir="$gprat_dir/data/generators/msd_simulator"
+export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 
 # Download GPRat repo
 mkdir -p $gprat_dir
@@ -29,7 +30,6 @@ cd $msd_dir
 echo "=== Starting Test 1 (incl. 5)"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
-export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/1-2-cholesky-cpu/
 mkdir -p apex
 ./run_simcl1.sh
@@ -50,7 +50,6 @@ echo "=== Finished Test 1"
 echo "=== Starting Test 2 (incl. 6)"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
-export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/1-2-cholesky-cpu/
 mkdir -p apex
 ./run_simcl1.sh
@@ -70,7 +69,6 @@ echo "=== Finished Test 2"
 echo "=== Starting Test 3 (incl. 5)"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
-export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/3-4-cholesky-gpu/
 mkdir -p apex
 ./run_simcl1.sh
@@ -91,7 +89,6 @@ echo "=== Finished Test 3"
 echo "=== Starting Test 4 (incl. 6)"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
-export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/3-4-cholesky-gpu/
 mkdir -p apex
 ./run_simcl1.sh
@@ -121,7 +118,6 @@ echo "=== Note: Test 5 and 6 are part of Test 1-4"
 echo "=== Starting Test 7"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_ASSEMBLY_ONLY=ON
-export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/7-cholesky-assembly/
 mkdir -p apex-cpu
 mkdir -p apex-gpu
@@ -144,7 +140,6 @@ echo "=== Finished Test 7"
 echo "=== Starting Test 7"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
-export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/8-cholesky-only/
 mkdir -p apex-cpu
 mkdir -p apex-gpu
@@ -167,7 +162,6 @@ echo "=== Finished Test 8"
 echo "=== Starting Test 9"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
-export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/9-10-predict/
 mkdir -p apex-cpu
 mkdir -p apex-gpu
@@ -191,7 +185,6 @@ echo "=== Finished Test 9"
 echo "=== Starting Test 10"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_PREDICT_STEPS=ON
-export PYTHONPATH=$PYTHONPATH:${gprat_dir}/examples/gpxpy_python/install_python/
 cd experiment/9-10-predict/
 mkdir -p apex-cpu
 mkdir -p apex-gpu
@@ -205,5 +198,56 @@ cp -r apex-cpu/ ${results_dir}/apex-cpu/
 cp -r apex-gpu/ ${results_dir}/apex-gpu/
 echo "=== Finished Test 10"
 
+# Test 11,12
+# Predict
+# CPU with increasing n_cores, GPU with increasing n_streams
+# increasing problem size, incl. 2^16
+# increasing tile size
+echo "=== Note: Test 11 and 12 are part of Test 9"
+
+# Test 13
+# Predict with Uncertainty
+# GPU, CPU
+# increasing problem size
+# increasing n_tiles
+# opt n_cores and n_streams
+echo "=== Starting Test 13"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
+cd experiment/13-14-predict-uncer/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/13/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 9"
+
+# Test 13
+# Predict with Uncertainty
+# GPU, CPU
+# increasing problem size
+# increasing n_tiles
+# steps, BLAS
+# opt n_cores and n_streams
+echo "=== Starting Test 14"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_PREDICT_UNCER_STEPS=ON
+cd experiment/13-14-predict-uncer/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/14/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 14"
 
 echo "Slurm job finished"
