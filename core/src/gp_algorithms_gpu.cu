@@ -611,12 +611,12 @@ predict(const std::vector<double> &h_training_input,
         const gpxpy_hyper::SEKParams sek_params,
         gpxpy::CUDA_GPU &gpu)
 {
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     auto predict_step_ra_timer = apex::start("predict_step ressource allocation");
 #endif
     gpu.create();
     cusolverDnHandle_t cusolver = create_cusolver_handle();
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     apex::stop(predict_step_ra_timer);
     auto predict_step_assembly_timer = apex::start("predict_step assembly");
 #endif
@@ -629,7 +629,7 @@ predict(const std::vector<double> &h_training_input,
     auto cross_covariance_tiles = assemble_cross_covariance_tiles(d_test_input, d_training_input, m_tiles, n_tiles, m_tile_size, n_tile_size, n_regressors, sek_params, gpu);
     auto prediction_tiles = assemble_tiles_with_zeros(m_tile_size, m_tiles, gpu);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(d_tiles, alpha_tiles, cross_covariance_tiles, prediction_tiles);
     apex::stop(predict_step_assembly_timer);
     auto predict_step_cholesky_timer = apex::start("predict_step cholesky");
@@ -637,7 +637,7 @@ predict(const std::vector<double> &h_training_input,
 
     right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(d_tiles);
     apex::stop(predict_step_cholesky_timer);
     auto predict_step_forward_timer = apex::start("predict_step forward");
@@ -646,7 +646,7 @@ predict(const std::vector<double> &h_training_input,
     // Triangular solve K_NxN * alpha = y
     forward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(alpha_tiles);
     apex::stop(predict_step_forward_timer);
     auto predict_step_backward_timer = apex::start("predict_step backward");
@@ -654,7 +654,7 @@ predict(const std::vector<double> &h_training_input,
 
     backward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(alpha_tiles);
     apex::stop(predict_step_backward_timer);
     auto predict_step_prediction_timer = apex::start("predict_step prediction");
@@ -662,14 +662,14 @@ predict(const std::vector<double> &h_training_input,
 
     prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles, gpu);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(prediction_tiles);
     apex::stop(predict_step_prediction_timer);
     auto predict_step_copyback_timer = apex::start("predict_step copyback");
 #endif
     std::vector<double> prediction = copy_tiled_vector_to_host_vector(prediction_tiles, m_tile_size, m_tiles, gpu);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     apex::stop(predict_step_copyback_timer);
     auto predict_step_rd_timer = apex::start("cholesky_step ressource destroy");
 #endif
@@ -681,7 +681,7 @@ predict(const std::vector<double> &h_training_input,
 
     gpu.destroy();
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     apex::stop(predict_step_rd_timer);
 #endif
 
@@ -1316,13 +1316,13 @@ cholesky(const std::vector<double> &h_training_input,
          const gpxpy_hyper::SEKParams sek_params,
          gpxpy::CUDA_GPU &gpu)
 {
-#ifdef GPRAT_CHOLESKY_STEPS
+#if GPRAT_CHOLESKY_STEPS
     auto cholesky_step_ra_timer = apex::start("cholesky_step ressource allocation");
 #endif
     gpu.create();
     cusolverDnHandle_t cusolver = create_cusolver_handle();
 
-#ifdef GPRAT_CHOLESKY_STEPS
+#if GPRAT_CHOLESKY_STEPS
     apex::stop(cholesky_step_ra_timer);
 #endif
 
@@ -1334,12 +1334,12 @@ cholesky(const std::vector<double> &h_training_input,
     // Assemble tiled covariance matrix on GPU.
     std::vector<hpx::shared_future<double *>> d_tiles = assemble_tiled_covariance_matrix(d_training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
 
-#ifdef GPRAT_ASSEMBLY_ONLY
+#if GPRAT_ASSEMBLY_ONLY
     hpx::wait_all(d_tiles);
     apex::stop(cholesky_step_assembly_timer);
     return hpx::make_ready_future(std::vector<std::vector<double>>());
 #endif
-#ifdef GPRAT_CHOLESKY_STEPS
+#if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(d_tiles);
     apex::stop(cholesky_step_assembly_timer);
     auto cholesky_step_cholesky_timer = apex::start("cholesky_step cholesky");
@@ -1348,7 +1348,7 @@ cholesky(const std::vector<double> &h_training_input,
     // Compute Tiled Cholesky decomposition on device
     right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
-#ifdef GPRAT_CHOLESKY_STEPS
+#if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(d_tiles);
     apex::stop(cholesky_step_cholesky_timer);
     auto cholesky_step_copyback_timer = apex::start("cholesky_step copyback");
@@ -1357,7 +1357,7 @@ cholesky(const std::vector<double> &h_training_input,
     // Copy tiled matrix to host
     std::vector<std::vector<double>> h_tiles = move_lower_tiled_matrix_to_host(d_tiles, n_tile_size, n_tiles, gpu);
 
-#ifdef GPRAT_CHOLESKY_STEPS
+#if GPRAT_CHOLESKY_STEPS
     apex::stop(cholesky_step_copyback_timer);
     auto cholesky_step_rd_timer = apex::start("cholesky_step ressource destroy");
 #endif
@@ -1366,7 +1366,7 @@ cholesky(const std::vector<double> &h_training_input,
     destroy(cusolver);
     gpu.destroy();
 
-#ifdef GPRAT_CHOLESKY_STEPS
+#if GPRAT_CHOLESKY_STEPS
     apex::stop(cholesky_step_rd_timer);
 #endif
 

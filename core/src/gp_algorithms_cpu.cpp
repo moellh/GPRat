@@ -302,7 +302,7 @@ predict(const std::vector<double> &training_input,
             m_tile_size);
     }
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(K_tiles, alpha_tiles, cross_covariance_tiles, prediction_tiles);
     apex::stop(predict_step_assembly_timer);
     auto predict_step_cholesky_timer = apex::start("predict_step cholesky");
@@ -311,7 +311,7 @@ predict(const std::vector<double> &training_input,
     // Compute Cholesky decomposition
     right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(K_tiles);
     apex::stop(predict_step_cholesky_timer);
     auto predict_step_forward_timer = apex::start("predict_step forward");
@@ -320,7 +320,7 @@ predict(const std::vector<double> &training_input,
     // Triangular solve K_NxN * alpha = y
     forward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(alpha_tiles);
     apex::stop(predict_step_forward_timer);
     auto predict_step_backward_timer = apex::start("predict_step backward");
@@ -328,7 +328,7 @@ predict(const std::vector<double> &training_input,
 
     backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(alpha_tiles);
     apex::stop(predict_step_backward_timer);
     auto predict_step_prediction_timer = apex::start("predict_step prediction");
@@ -337,7 +337,7 @@ predict(const std::vector<double> &training_input,
     // Compute predictions
     prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles);
 
-#ifdef GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_STEPS
     hpx::wait_all(prediction_tiles);
     apex::stop(predict_step_prediction_timer);
 #endif
@@ -1172,12 +1172,12 @@ cholesky(const std::vector<double> &training_input,
         }
     }
 
-#ifdef GPRAT_ASSEMBLY_ONLY
+#if GPRAT_ASSEMBLY_ONLY
     hpx::wait_all(K_tiles);
     apex::stop(cholesky_step_assembly_timer);
     return hpx::make_ready_future(std::vector<std::vector<double>>());
 #endif
-#ifdef GPRAT_CHOLESKY_STEPS
+#if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(K_tiles);
     apex::stop(cholesky_step_assembly_timer);
     auto cholesky_step_cholesky_timer = apex::start("cholesky_step cholesky");
@@ -1186,7 +1186,7 @@ cholesky(const std::vector<double> &training_input,
     // Calculate Cholesky decomposition
     right_looking_cholesky_tiled(K_tiles, n_tile_size, n_tiles);
 
-#ifdef GPRAT_CHOLESKY_STEPS
+#if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(K_tiles);
     apex::stop(cholesky_step_cholesky_timer);
 #endif

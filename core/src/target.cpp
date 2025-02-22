@@ -3,7 +3,7 @@
 #include "cuda_utils.cuh"
 #include <iostream>
 
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
 using hpx::cuda::experimental::check_cuda_error;
 #endif
 
@@ -23,7 +23,7 @@ CUDA_GPU::CUDA_GPU(int id, int n_streams) :
     i_stream(0),
     shared_memory_size(0)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     int deviceCount;
     cudaGetDeviceCount(&deviceCount);
     if (id >= deviceCount)
@@ -39,7 +39,7 @@ bool CUDA_GPU::is_cpu() { return false; }
 
 bool CUDA_GPU::is_gpu() { return true; }
 
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
 void CUDA_GPU::create()
 {
     streams = std::vector<cudaStream_t>(n_streams);
@@ -99,7 +99,7 @@ CPU get_cpu() { return CPU(); }
 
 CUDA_GPU get_gpu(int id, int n_executors)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     return CUDA_GPU(id, n_executors);
 #else
     throw not_compiled_with_cuda_exception();
@@ -108,7 +108,7 @@ CUDA_GPU get_gpu(int id, int n_executors)
 
 CUDA_GPU get_gpu()
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     return CUDA_GPU(0, 1);
 #else
     throw not_compiled_with_cuda_exception();
@@ -117,7 +117,7 @@ CUDA_GPU get_gpu()
 
 void print_available_gpus()
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     int deviceCount;
     cudaGetDeviceCount(&deviceCount);
     for (int i = 0; i < deviceCount; ++i)
@@ -149,7 +149,7 @@ void print_available_gpus()
 
 int gpu_count()
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     int deviceCount;
     cudaGetDeviceCount(&deviceCount);
     return deviceCount;

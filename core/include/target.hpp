@@ -1,7 +1,7 @@
 #ifndef TARGET_H
 #define TARGET_H
 
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     #include <cuda_runtime.h>
     #include <hpx/async_cuda/cublas_executor.hpp>
 #endif
@@ -62,7 +62,7 @@ struct CUDA_GPU : public Target
 
     bool is_gpu() override;
 
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     void create();
     void destroy();
 

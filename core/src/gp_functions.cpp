@@ -6,7 +6,7 @@
 #include <vector>
 
 // for GPU algorithms
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     #include "gp_algorithms_gpu.cuh"
 #endif
 
@@ -22,7 +22,7 @@ predict_on_target(const std::vector<double> &training_input,
                   gpxpy_hyper::SEKParams sek_params,
                   std::shared_ptr<gpxpy::Target> target)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     if (target->is_gpu())
     {
         return gpu::predict(training_input, training_output, test_input, n_tiles, n_tile_size, m_tiles, m_tile_size, n_regressors, sek_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
@@ -48,7 +48,7 @@ predict_with_uncertainty_on_target(const std::vector<double> &training_input,
                                    gpxpy_hyper::SEKParams sek_params,
                                    std::shared_ptr<gpxpy::Target> target)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     if (target->is_gpu())
     {
         return gpu::predict_with_uncertainty(training_input, training_output, test_input, n_tiles, n_tile_size, m_tiles, m_tile_size, n_regressors, sek_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
@@ -74,7 +74,7 @@ predict_with_full_cov_on_target(const std::vector<double> &training_input,
                                 gpxpy_hyper::SEKParams sek_params,
                                 std::shared_ptr<gpxpy::Target> target)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     if (target->is_gpu())
     {
         return gpu::predict_with_full_cov(training_input, training_output, test_input, n_tiles, n_tile_size, m_tiles, m_tile_size, n_regressors, sek_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
@@ -97,7 +97,7 @@ compute_loss_on_target(const std::vector<double> &training_input,
                        gpxpy_hyper::SEKParams sek_params,
                        std::shared_ptr<gpxpy::Target> target)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     if (target->is_gpu())
     {
         return gpu::compute_loss(training_input, training_output, n_tiles, n_tile_size, n_regressors, sek_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
@@ -122,7 +122,7 @@ optimize_on_target(const std::vector<double> &training_input,
                    const gpxpy_hyper::AdamParams &adam_params,
                    std::shared_ptr<gpxpy::Target> target)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     if (target->is_gpu())
     {
         return gpu::optimize(training_input, training_output, n_tiles, n_tile_size, n_regressors, sek_params, trainable_params, adam_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
@@ -148,7 +148,7 @@ optimize_step_on_target(const std::vector<double> &training_input,
                         gpxpy_hyper::AdamParams &adam_params,
                         std::shared_ptr<gpxpy::Target> target)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     if (target->is_gpu())
     {
         return gpu::optimize_step(training_input, training_output, n_tiles, n_tile_size, n_regressors, iter, sek_params, trainable_params, adam_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
@@ -170,7 +170,7 @@ cholesky_on_target(const std::vector<double> &training_input,
                    gpxpy_hyper::SEKParams sek_params,
                    std::shared_ptr<gpxpy::Target> target)
 {
-#ifdef GPXPY_WITH_CUDA
+#if GPXPY_WITH_CUDA
     if (target->is_gpu())
     {
         return gpu::cholesky(training_input, n_tiles, n_tile_size, n_regressors, sek_params, *std::dynamic_pointer_cast<gpxpy::CUDA_GPU>(target));
