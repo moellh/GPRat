@@ -225,7 +225,7 @@ cp output-cpu.csv ${results_dir}/output-cpu.csv
 cp output-gpu.csv ${results_dir}/output-gpu.csv
 cp -r apex-cpu/ ${results_dir}/apex-cpu/
 cp -r apex-gpu/ ${results_dir}/apex-gpu/
-echo "=== Finished Test 9"
+echo "=== Finished Test 13"
 
 # Test 13
 # Predict with Uncertainty

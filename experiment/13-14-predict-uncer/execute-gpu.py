@@ -83,7 +83,7 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, n_streams, i_loop)
     gp_gpu = gpx.GP(train_in.data, train_out.data, n_tiles, n_tile_size, trainable=[True, True, True], n_streams=n_streams)
 
     pred_t = time.time()
-    _ = gp_gpu.predict(test_in, m_tiles, m_tile_size)
+    _ = gp_gpu.predict_with_uncertainty(test_in, m_tiles, m_tile_size)
     pred_t = time.time() - pred_t
 
     row_data = [n_cores, n_train, n_test, n_tiles, n_reg, n_streams, i_loop, pred_t]

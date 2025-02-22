@@ -39,6 +39,12 @@ add_compile_definitions(GPRAT_ASSEMBLY_ONLY=$<BOOL:${GPRAT_ASSEMBLY_ONLY}>)
 option(GPRAT_PREDICT_STEPS "Synchronizes between steps of predict function" OFF)
 add_compile_definitions(GPRAT_PREDICT_STEPS=$<BOOL:${GPRAT_PREDICT_STEPS}>)
 
+option(GPRAT_PREDICT_UNCER_STEPS "Synchronizes between steps of predict_with_uncertainty function" OFF)
+add_compile_definitions(GPRAT_PREDICT_UNCER_STEPS=$<BOOL:${GPRAT_PREDICT_UNCER_STEPS}>)
+
+option(GPRAT_PREDICT_FULL_COV_STEPS "Synchronizes between steps of predict_with_full_cov function" OFF)
+add_compile_definitions(GPRAT_PREDICT_FULL_COV_STEPS=$<BOOL:${GPRAT_PREDICT_FULL_COV_STEPS}>)
+
 if(GPXPY_ENABLE_FORMAT_TARGETS)
   find_package(format QUIET)
   if(NOT format_FOUND)
