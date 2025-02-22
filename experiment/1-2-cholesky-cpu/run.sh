@@ -17,33 +17,41 @@ run_experiment() {
   done
 }
 
-N_CORES=(6 12 24 48)
-N_TRAIN=(1024)
-N_TILES=(1 2 4 8 16 32 64)
-N_REG=(8)
-N_LOOPS=(10)
+# N_CORES=(6 12 24 48)
+# N_TRAIN=(1024)
+# N_TILES=(1 2 4 8 16 32 64)
+# N_REG=(8)
+# N_LOOPS=(10)
+#
+# run_experiment
+#
+# N_CORES=(6 12 24 48)
+# N_TRAIN=(2048)
+# N_TILES=(1 2 4 8 16 32 64 128)
+# N_REG=(8)
+# N_LOOPS=(10)
+#
+# run_experiment
+#
+# N_CORES=(6 12 24 48)
+# N_TRAIN=(4096)
+# N_TILES=(2 4 8 16 32 64 128)
+# N_REG=(8)
+# N_LOOPS=(10)
+#
+# run_experiment
+#
+# N_CORES=(6 12 24 48)
+# N_TRAIN=(8192)
+# N_TILES=(4 8 16 32 64 128 256)
+# N_REG=(8)
+# N_LOOPS=(10)
+#
+# run_experiment
 
-run_experiment
-
-N_CORES=(6 12 24 48)
-N_TRAIN=(2048)
-N_TILES=(1 2 4 8 16 32 64 128)
-N_REG=(8)
-N_LOOPS=(10)
-
-run_experiment
-
-N_CORES=(6 12 24 48)
-N_TRAIN=(4096)
-N_TILES=(2 4 8 16 32 64 128)
-N_REG=(8)
-N_LOOPS=(10)
-
-run_experiment
-
-N_CORES=(6 12 24 48)
+N_CORES=(48)
 N_TRAIN=(8192)
-N_TILES=(4 8 16 32 64 128 256)
+N_TILES=(128 256)
 N_REG=(8)
 N_LOOPS=(10)
 
