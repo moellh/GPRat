@@ -294,7 +294,7 @@ void forward_solve_KcK_tiled(
 
             // TRSM: solve L * X = A
             ft_rhs[c * m_tiles + r] = hpx::dataflow(
-                &trsm,
+                hpx::annotated_function(&trsm, "forward_KcK trsm"),
                 cublas,
                 stream,
                 ft_tiles[c * n_tiles + c],
@@ -310,7 +310,7 @@ void forward_solve_KcK_tiled(
 
                 // GEMM: C = C - A * B
                 ft_rhs[m * m_tiles + r] = hpx::dataflow(
-                    &gemm,
+                    hpx::annotated_function(&gemm, "forward_KcK gemm"),
                     cublas,
                     stream,
                     ft_tiles[m * n_tiles + c],
@@ -424,7 +424,7 @@ void posterior_covariance_tiled(
             // Compute inner product to obtain diagonal elements of
             // (K_MxN * (K^-1_NxN * K_NxM))
             ft_inter_tiles[i] = hpx::dataflow(
-                &dot_diag_syrk,
+                hpx::annotated_function(&dot_diag_syrk, "posterior_covariance dot_diag_syrk"),
                 cublas,
                 stream,
                 ft_tCC_tiles[n * m_tiles + i],
@@ -454,7 +454,7 @@ void full_cov_tiled(
 
                 // GEMM:  C = C - A^T * B
                 ft_priorK[c * m_tiles + k] = hpx::dataflow(
-                    &gemm,
+                    hpx::annotated_function(&gemm, "full_cov gemm"),
                     cublas,
                     stream,
                     ft_tCC_tiles[m * m_tiles + c],
@@ -481,7 +481,7 @@ void prediction_uncertainty_tiled(
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         ft_vector[i] = hpx::dataflow(
-            &diag_posterior,
+            hpx::annotated_function(&diag_posterior, "prediction_uncertainty diag_posterior"),
             ft_priorK[i],
             ft_inter[i],
             m_tile_size,
@@ -499,7 +499,7 @@ void pred_uncer_tiled(
     for (std::size_t i = 0; i < m_tiles; i++)
     {
         ft_vector[i] = hpx::dataflow(
-            &diag_tile,
+            hpx::annotated_function(&diag_tile, "pred_uncer diag_tile"),
             ft_priorK[i * m_tiles + i],
             m_tile_size,
             std::ref(gpu));

@@ -230,7 +230,7 @@ void forward_solve_KcK_tiled(
             // TRSM: solve L * X = A
             ft_rhs[c * m_tiles + r] = hpx::dataflow(
                 hpx::annotated_function(&trsm,
-                                        "triangular_solve_tiled_matrix_KK"),
+                                        "forward_KcK trsm"),
                 ft_tiles[c * n_tiles + c],
                 ft_rhs[c * m_tiles + r],
                 N,
@@ -242,7 +242,7 @@ void forward_solve_KcK_tiled(
                 // GEMM: C = C - A * B
                 ft_rhs[m * m_tiles + r] = hpx::dataflow(
                     hpx::annotated_function(
-                        &gemm, "triangular_solve_tiled_matrix_KK"),
+                        &gemm, "forward_KcK gemm"),
                     ft_tiles[m * n_tiles + c],
                     ft_rhs[c * m_tiles + r],
                     ft_rhs[m * m_tiles + r],
@@ -349,7 +349,7 @@ void posterior_covariance_tiled(
         {  // Compute inner product to obtain diagonal elements of
            // (K_MxN * (K^-1_NxN * K_NxM))
             ft_inter_tiles[i] = hpx::dataflow(
-                hpx::annotated_function(&dot_diag_syrk, "posterior_tiled"),
+                hpx::annotated_function(&dot_diag_syrk, "posterior_covariance dot_diag_syrk"),
                 ft_tCC_tiles[n * m_tiles + i],
                 ft_inter_tiles[i],
                 N,
@@ -375,7 +375,7 @@ void full_cov_tiled(
                 // GEMM:  C = C - A^T * B
                 ft_priorK[c * m_tiles + k] = hpx::dataflow(
                     hpx::annotated_function(
-                        &gemm, "triangular_solve_tiled_matrix"),
+                        &gemm, "full_cov gemm"),
                     ft_tCC_tiles[m * m_tiles + c],
                     ft_tCC_tiles[m * m_tiles + k],
                     ft_priorK[c * m_tiles + k],
@@ -400,7 +400,7 @@ void prediction_uncertainty_tiled(
     {
         ft_vector[i] = hpx::dataflow(
             hpx::annotated_function(hpx::unwrapping(&diag_posterior),
-                                    "uncertainty_tiled"),
+                                    "predict_uncer diag_posterior"),
             ft_priorK[i],
             ft_inter[i],
             M);
@@ -417,7 +417,7 @@ void pred_uncer_tiled(
     {
         ft_vector[i] = hpx::dataflow(
             hpx::annotated_function(hpx::unwrapping(&diag_tile),
-                                    "uncertainty_tiled"),
+                                    "pred_uncer diag_tile"),
             ft_priorK[i * m_tiles + i],
             M);
     }
