@@ -1,12 +1,13 @@
+import argparse
+import logging
+import os
 import sys
 import time
-import os
-import logging
 from csv import writer
-from hpx_logger import setup_logging
-import argparse
 
 import gpxpy as gpx
+
+from hpx_logger import setup_logging
 
 logger = logging.getLogger()
 log_filename = "./hpx_logs.log"
@@ -41,6 +42,7 @@ args = parser.parse_args()
 TRAIN_IN_FILE = "../../data/generators/msd_simulator/data/input_data.txt"
 TRAIN_OUT_FILE = "../../data/generators/msd_simulator/data/output_data.txt"
 TEST_IN_FILE = "../../data/generators/msd_simulator/data/input_data.txt"
+
 
 def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
     # setup logging
@@ -84,7 +86,6 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
 
     row_data = [n_cores, n_train, n_test, n_tiles, n_reg, i_loop, pred_t]
     csv.writerow(row_data)
-
 
 
 if __name__ == "__main__":
