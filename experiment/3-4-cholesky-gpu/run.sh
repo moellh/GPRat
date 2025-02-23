@@ -52,3 +52,8 @@ N_TRAIN=(32768)
 N_STREAMS=(1 2 4 8 16 32 64) # TODO: more? 128
 N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
 run_experiment
+
+N_TRAIN=(65536)
+N_STREAMS=(32) # TODO: opt n_streams
+N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
+run_experiment

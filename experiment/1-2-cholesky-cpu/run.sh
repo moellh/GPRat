@@ -44,3 +44,8 @@ run_experiment
 N_TRAIN=(32768)
 N_TILES=(16 32 64 128 256)
 run_experiment
+
+N_CORES=(48)
+N_TRAIN=(65536)
+N_TILES=(16 32 64 128 256)
+run_experiment
