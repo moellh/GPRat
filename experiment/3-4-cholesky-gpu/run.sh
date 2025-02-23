@@ -5,9 +5,7 @@ spack env activate gpxpy
 
 N_CORES=(48)
 N_REG=(8)
-N_STREAMS=(1 2 4 8 16 32 64 128)
-N_TILES=(1 2 4 8 16 32 64)
-N_LOOPS=(10)
+N_LOOPS=(11)
 
 run_experiment() {
   for core in "${N_CORES[@]}"; do
@@ -26,32 +24,31 @@ run_experiment() {
 }
 
 N_TRAIN=(1024)
-
+N_STREAMS=(1 2 4 8 16 32 64 128)
+N_TILES=(1 2 4 8 16 32)
 run_experiment
 
 N_TRAIN=(2048)
-
+N_STREAMS=(1 2 4 8 16 32 64 128)
+N_TILES=(1 2 4 8 16 32 64)
 run_experiment
 
 N_TRAIN=(4096)
-
+N_STREAMS=(1 2 4 8 16 32 64 128)
+N_TILES=(1 2 4 8 16 32 64 128)
 run_experiment
 
 N_TRAIN=(8192)
-
+N_STREAMS=(1 2 4 8 16 32 64 128)
+N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
 run_experiment
 
 N_TRAIN=(16384)
-
+N_STREAMS=(1 2 4 8 16 32 64) # TODO: more?: 128
+N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
 run_experiment
 
 N_TRAIN=(32768)
-
-run_experiment
-
-# cpu part of test 5 uses results from test 1 and this (n_train=65536, optimal n_streams)
-
-N_TRAIN=(65536)
-N_TILES=(4 8 16 32 64)
-
+N_STREAMS=(1 2 4 8 16 32 64) # TODO: more? 128
+N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
 run_experiment
