@@ -3,19 +3,18 @@
 source $HOME/spack/share/spack/setup-env.sh
 spack env activate gpxpy
 
-# Test 13
-# Predict with Uncertainty
-# CPU only
+# Test 15,16
+# Predict
+# CPU, GPU
 # increasing problem size
 # increasing n_tiles
-# increasing n_cores
-N_CORES=(6 12 24 48)
-N_STREAMS=(4) # set opt
+N_CORES=(48)
+N_STREAMS=(4)
 N_REG=(8)
 N_LOOPS=(10)
-N_TRAIN=(1024 2048 4096) # TODO: increase as needed
-N_TEST=(1024 2048 4096) # TODO: increase as needed
-N_TILES=(1 2 4 8 16 32 64 128) # TODO: set range as needed
+N_TRAIN=(1024 2048 4096) # (1024 2048 4096 8192 16384 32768, 65536 fuer 4+ tiles)
+N_TEST=(1024 2048 4096) # ...
+N_TILES=(1 2 4 8 16 32 64 128)
 
 for core in "${N_CORES[@]}"; do
   for train in "${N_TRAIN[@]}"; do

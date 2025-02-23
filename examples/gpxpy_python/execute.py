@@ -28,7 +28,7 @@ def gpx_run(config, output_csv_obj, n_train, l, cores):
 
     ###### GP object ######
     init_t = time.time()
-    gp_cpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True])
+    # gp_cpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True])
     gp_gpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True], gpu_id=0, n_streams=1)
     init_t = time.time() - init_t
 
@@ -37,7 +37,7 @@ def gpx_run(config, output_csv_obj, n_train, l, cores):
 
     # Calculate Cholesky decomposition
     chol_t = time.time()
-    matrix_cpu = gp_cpu.cholesky()
+    # matrix_cpu = gp_cpu.cholesky()
     matrix_gpu = gp_gpu.cholesky()
     chol_t = time.time() - chol_t
 

@@ -144,8 +144,7 @@ def train(model, likelihood, X_train, Y_train, training_iter=10):
 
     return None
 
-
-def predict_with_var(model, likelihood, X_test):
+def predict_with_uncer(model, likelihood, X_test):
     """
     Predict the mean and variance of latent function values and observed target values.
 
@@ -174,6 +173,36 @@ def predict_with_var(model, likelihood, X_test):
     '''
 
     return f_mean, f_var
+
+def predict_with_full_cov(model, likelihood, X_test):
+    """
+    Predict the mean and variance of latent function values and observed target values.
+
+    Args:
+        model (gpytorch.models.ExactGP): The trained Gaussian process regression model.
+        likelihood (gpytorch.likelihoods.GaussianLikelihood): The likelihood function.
+        X_test (torch.Tensor): The test input data.
+
+    Returns:
+        - f_mean (torch.Tensor): Mean of latent function values.
+        - f_var (torch.Tensor): Variance of latent function values.
+    """
+    model.eval()
+    likelihood.eval()
+
+    with torch.no_grad(), gpytorch.settings.fast_pred_var(), gpytorch.settings.lazily_evaluate_kernels(False):
+        f_pred = model(X_test)
+        f_mean = f_pred.mean
+        f_full_cov = f_pred.covariance_matrix
+
+    '''
+    for future plot generation:
+    # Get upper and lower confidence bounds
+    observed_pred = likelihood(model(test_x))
+    lower, upper = observed_pred.confidence_region()
+    '''
+
+    return f_mean, f_full_cov
 
 def predict(model, likelihood, X_test):
     """

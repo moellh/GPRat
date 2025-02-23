@@ -203,7 +203,21 @@ echo "=== Finished Test 10"
 # CPU with increasing n_cores, GPU with increasing n_streams
 # increasing problem size, incl. 2^16
 # increasing tile size
-echo "=== Note: Test 11 and 12 are part of Test 9"
+echo "=== Starting Test 11,12"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
+cd experiment/11-12-predict/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/11-12/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 11,12"
 
 # Test 13
 # Predict with Uncertainty
@@ -227,7 +241,7 @@ cp -r apex-cpu/ ${results_dir}/apex-cpu/
 cp -r apex-gpu/ ${results_dir}/apex-gpu/
 echo "=== Finished Test 13"
 
-# Test 13
+# Test 14
 # Predict with Uncertainty
 # GPU, CPU
 # increasing problem size
@@ -249,5 +263,75 @@ cp output-gpu.csv ${results_dir}/output-gpu.csv
 cp -r apex-cpu/ ${results_dir}/apex-cpu/
 cp -r apex-gpu/ ${results_dir}/apex-gpu/
 echo "=== Finished Test 14"
+
+# Test 15
+# Predict with full covariance
+# GPU, CPU
+# increasing problem size
+# increasing n_tiles
+# opt n_cores and n_streams
+echo "=== Starting Test 15"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
+cd experiment/15-16-predict-fullcov/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/15/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 15"
+
+# Test 15
+# GPyTorch, GPflow
+# TODO:
+
+# Test 16
+# Predict with full covariance
+# GPU, CPU
+# increasing problem size
+# increasing n_tiles
+# steps, BLAS
+# opt n_cores and n_streams
+echo "=== Starting Test 16"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_PREDICT_UNCER_STEPS=ON
+cd experiment/15-16-predict-fullcov/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/16/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 16"
+
+# Test 17,18
+# Predict Full Cov
+# CPU with increasing n_cores, GPU with increasing n_streams
+# increasing problem size, incl. 2^16
+# increasing tile size
+echo "=== Starting Test 17,18"
+cd $gprat_dir
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
+cd experiment/17-18-predict-fullcov/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
+./run_simcl1.sh
+timestamp=$(date +"%m-%d_%H-%M-%S")
+results_dir=$HOME/results/17-18/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 17,18"
 
 echo "Slurm job finished"
