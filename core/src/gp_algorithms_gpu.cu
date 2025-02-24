@@ -852,7 +852,7 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
                       gpxpy_hyper::SEKParams sek_params,
                       gpxpy::CUDA_GPU &gpu)
 {
-#if GPRAT_PREDICT_UNCER_STEPS
+#if GPRAT_PREDICT_FULL_COV_STEPS
     auto predict_full_cov_step_ra_timer = apex::start("predict_full_cov_step ressource allocation");
 #endif
     gpu.create();
@@ -946,7 +946,7 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
     // Compute predicition uncertainty
     pred_uncer_tiled(d_prior_K_tiles, d_prediction_uncertainty_tiles, m_tile_size, m_tiles, gpu);
 
-#if GPRAT_PREDICT_UNCER_STEPS
+#if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_prediction_uncertainty_tiles);
     apex::stop(predict_full_cov_step_pred_uncer_timer);
     auto predict_full_cov_step_copyback_timer = apex::start("predict_full_cov_step copyback");
@@ -956,7 +956,7 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
     std::vector<double> prediction = copy_tiled_vector_to_host_vector(d_prediction_tiles, m_tile_size, m_tiles, gpu);
     std::vector<double> pred_var_full = copy_tiled_vector_to_host_vector(d_prediction_uncertainty_tiles, m_tile_size, m_tiles, gpu);
 
-#if GPRAT_PREDICT_UNCER_STEPS
+#if GPRAT_PREDICT_FULL_COV_STEPS
     apex::stop(predict_full_cov_step_copyback_timer);
     auto predict_full_cov_step_rd_timer = apex::start("predict_full_cov_step ressource destroy");
 #endif
