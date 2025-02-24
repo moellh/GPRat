@@ -173,22 +173,11 @@ double GP::calculate_loss()
 
 std::vector<std::vector<double>> GP::cholesky()
 {
-    auto start_time = std::chrono::high_resolution_clock::now();
     std::vector<std::vector<double>> result;
     hpx::run_as_hpx_thread([this, &result]()
-                           {
-                            auto start_time = std::chrono::high_resolution_clock::now();
-                           result =
+                           { result =
                                  cholesky_on_target(_training_input, _n_tiles, _n_tile_size, n_regressors, sek_params, target)
-                                     .get();
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
-    std::cout << "Inner: " << duration << " ns" << std::endl; });
-
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
-    std::cout << "Outer: " << duration << " ns" << std::endl;
-
+                                     .get(); });
     return result;
 }
 
