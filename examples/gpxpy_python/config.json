@@ -7,7 +7,7 @@
     "END": 1024,
     "STEP": 128,
     "N_TILES": 1,
-    "N_CORES": 8,
+    "N_CORES": 4,
     "N_TEST": 1024,
     "N_REG": 8,
     "LOOP": 1,

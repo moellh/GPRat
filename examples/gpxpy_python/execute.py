@@ -28,8 +28,8 @@ def gpx_run(config, output_csv_obj, n_train, l, cores):
 
     ###### GP object ######
     init_t = time.time()
-    # gp_cpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True])
-    gp_gpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True], gpu_id=0, n_streams=1)
+    gp_cpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True])
+    # gp_gpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True], gpu_id=0, n_streams=1)
     init_t = time.time() - init_t
 
     gpx.suspend_hpx()
@@ -37,8 +37,8 @@ def gpx_run(config, output_csv_obj, n_train, l, cores):
 
     # Calculate Cholesky decomposition
     chol_t = time.time()
-    # matrix_cpu = gp_cpu.cholesky()
-    matrix_gpu = gp_gpu.cholesky()
+    matrix_cpu = gp_cpu.cholesky()
+    # matrix_gpu = gp_gpu.cholesky()
     chol_t = time.time() - chol_t
 
     # Perform optmization
@@ -123,7 +123,7 @@ def execute():
     # runs tests on exponentially increasing number of cores, for linearly
     # increasing data size, for multiple loops (each loop starts with *s)
     # for core in range(1, config["N_CORES"]):
-    core = 3
+    core = 2
     for data_size in range(start, end+step, step):
         for l in range(config["LOOP"]):
             logger.info("*" * 40)
