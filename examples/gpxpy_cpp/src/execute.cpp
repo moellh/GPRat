@@ -12,27 +12,27 @@ auto now = std::chrono::high_resolution_clock::now;
 int main(int argc, char *argv[])
 {
     // number of training points, number of rows/columns in the kernel matrix
-    const int N_TRAIN_START = 1 << 7;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
-    const int N_TRAIN_END = 1 << 7;    // 7,   8,   9,   10,   11,   12,   13,   14,  15
+    const int N_TRAIN_START = 1 << 10;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
+    const int N_TRAIN_END = 1 << 10;    // 7,   8,   9,   10,   11,   12,   13,   14,  15
 
     const int N_TEST = 8;
 
-    const int LOOPS = 1;
+    const int LOOPS = 11;
     const int OPTIMIZE_ITERATIONS = 1;
 
     // 2^NUM_CORES_EXPONENT CPU cores are used by HPX
-    const std::size_t NUM_CORES = 4;
+    const std::size_t NUM_CORES = 8;
 
     const int N_REGRESSORS = 8;
 
     // number of tiles per dimension
-    const int N_TRAIN_TILES = 4;
+    const int N_TRAIN_TILES = 1;
 
     // number of regressors, i.e. number of previous points incl. current point
     // considered for each entry in the kernel matrix
 
-    std::string train_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
-    std::string train_out_path = "../../../data/generators/msd_simulator/data/output_data.txt";
+    std::string train_in_path = "../../../data/data_1024/training_input.txt";
+    std::string train_out_path = "../../../data/data_1024/training_output.txt";
     std::string test_in_path = "../../../data/data_1024/test_input.txt";
 
     // Add number of threads to arguments
@@ -93,8 +93,8 @@ int main(int argc, char *argv[])
                 // Cholesky factorization time ----------------------------- {{{
                 auto start_cholesky = now();
 
-                // std::vector<std::vector<double>> cpu_tiles = gp_cpu.cholesky();
-                std::vector<std::vector<double>> gpu_tiles = gp_gpu.cholesky();
+                std::vector<std::vector<double>> cpu_tiles = gp_cpu.cholesky();
+                // std::vector<std::vector<double>> gpu_tiles = gp_gpu.cholesky();
                 // double chol_err = 0;
                 // for (std::size_t i = 0; i < cpu_tiles.size(); i++)
                 // {

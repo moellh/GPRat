@@ -122,12 +122,13 @@ def execute():
 
     # runs tests on exponentially increasing number of cores, for linearly
     # increasing data size, for multiple loops (each loop starts with *s)
-    for core in range(1, config["N_CORES"]):
-        for data_size in range(start, end+step, step):
-            for l in range(config["LOOP"]):
-                logger.info("*" * 40)
-                logger.info(f"Core: {2**core}, Train Size: {data_size}, Loop: {l}")
-                gpx_run(config, output_csv_obj, data_size, l, 2**core)
+    # for core in range(1, config["N_CORES"]):
+    core = 3
+    for data_size in range(start, end+step, step):
+        for l in range(config["LOOP"]):
+            logger.info("*" * 40)
+            logger.info(f"Core: {2**core}, Train Size: {data_size}, Loop: {l}")
+            gpx_run(config, output_csv_obj, data_size, l, 2**core)
 
 
 if __name__ == "__main__":

@@ -1256,6 +1256,8 @@ cholesky(const std::vector<double> &training_input,
 {
 #if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     auto cholesky_step_assembly_timer = apex::start("cholesky_step assembly");
+    std::cout << "cholesky_step assembly start" << std::endl;
+    auto start_time = std::chrono::high_resolution_clock::now();
 #endif
     // Tiled future data structure is matrix represented as vector of tiles.
     // Tiles are represented as vector, each wrapped in a shared_future.
@@ -1285,7 +1287,16 @@ cholesky(const std::vector<double> &training_input,
     return hpx::make_ready_future(std::vector<std::vector<double>>());
 #endif
 #if GPRAT_CHOLESKY_STEPS
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    std::cout << "Duration1: " << duration << " ns" << std::endl;
     hpx::wait_all(K_tiles);
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    std::cout << "Duration2: " << duration << " ns" << std::endl;
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count();
+    std::cout << "CheckDuration2: " << duration << " ns" << std::endl;
     apex::stop(cholesky_step_assembly_timer);
     auto cholesky_step_cholesky_timer = apex::start("cholesky_step cholesky");
 #endif
