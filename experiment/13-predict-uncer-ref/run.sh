@@ -3,17 +3,14 @@
 source $HOME/spack/share/spack/setup-env.sh
 spack env activate gpxpy
 
-# Test 15
-# Predict with Full Cov
-# CPU, GPU with GPyTorch
-# increasing problem size
-# increasing n_tiles
-N_CORES=(6 12 24 48)
 N_REG=(8)
-N_LOOPS=(10)
-N_TRAIN=(1024 2048 4096) # (1024 2048 4096 8192 16384 32768, 65536 fuer 4+ tiles)
-N_TEST=(1024 2048 4096) # ...
-N_TILES=(1 2 4 8 16 32 64 128)
+N_LOOPS=(11)
+
+# Test 13 for GPyTorch
+N_CORES=(6 12 24 48)
+N_TRAIN=(1024) # TODO: higher
+N_TEST=(1024) # TODO: higher
+N_TILES=(1 2 4 8 16 32 64) # TODO: adapt for other n_train, ..
 
 cd gpytorch
 
@@ -34,17 +31,11 @@ done
 
 cd ..
 
-# Test 15
-# Predict with Full Cov
-# CPU, GPU with GPflow
-# increasing problem size
-# increasing n_tiles
+# Test 13 for GPflow
 N_CORES=(6 12 24 48)
-N_REG=(8)
-N_LOOPS=(10)
-N_TRAIN=(1024 2048 4096) # (1024 2048 4096 8192 16384 32768, 65536 fuer 4+ tiles)
-N_TEST=(1024 2048 4096) # ...
-N_TILES=(1 2 4 8 16 32 64 128)
+N_TRAIN=(1024) # TODO: higher
+N_TEST=(1024) # TODO: higher
+N_TILES=(1 2 4 8 16 32 64) # TODO: adapt for other n_train, ..
 
 cd gpflow
 

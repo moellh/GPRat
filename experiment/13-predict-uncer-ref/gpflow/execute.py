@@ -72,7 +72,7 @@ def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
     else:
         logger.info("No GPUs found. Using CPU.")
 
-    file_path = "./output.csv"
+    file_path = "./output-gpu.csv" if args.use_gpu else "./output-cpu.csv"
     file_exists = os.path.isfile(file_path)
 
     with open(file_path, "a") as output_file:

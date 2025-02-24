@@ -53,7 +53,7 @@ TEST_OUT_FILE = "../../../data/generators/msd_simulator/data/output_data.txt"
 def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
     setup_logging(log_filename, True, logger)
 
-    file_path = "./output.csv"
+    file_path = "./output-gpu.csv" if args.use_gpu else "./output-cpu.csv"
     file_exists = os.path.isfile(file_path)
 
     with open(file_path, "a") as output_file:
