@@ -79,7 +79,7 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
     gp_cpu = gpx.GP(train_in.data, train_out.data, n_tiles, n_tile_size, trainable=[True, True, True])
 
     pred_t = time.time()
-    _ = gp_cpu.predict_with_full_cov(test_in, m_tiles, m_tile_size)
+    _ = gp_cpu.predict_with_full_cov(test_in.data, m_tiles, m_tile_size)
     pred_t = time.time() - pred_t
 
     row_data = [n_cores, n_train, n_test, n_tiles, n_reg, i_loop, pred_t]

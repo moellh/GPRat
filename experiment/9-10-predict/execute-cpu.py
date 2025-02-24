@@ -68,7 +68,7 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
     )
 
     pred_t = time.time()
-    _ = gp_cpu.predict(test_in, m_tiles, m_tile_size)
+    _ = gp_cpu.predict(test_in.data, m_tiles, m_tile_size)
     pred_t = time.time() - pred_t
 
     row_data = [n_cores, n_train, n_test, n_tiles, n_reg, i_loop, pred_t]
