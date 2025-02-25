@@ -6,30 +6,48 @@ spack env activate gpxpy
 N_REG=(8)
 N_LOOPS=(11)
 
-# Test 11
-# N_CORES=(6 12 24 48)
-# N_TRAIN=(32768)
-# N_TEST=(8192)
-# N_TILES=(16 32 64 128 256)
-
-N_CORES=(6 12 24 48)
-N_TRAIN=(32768)
-N_TEST=(8192)
-N_TILES=(256)
-
-for core in "${N_CORES[@]}"; do
-  for train in "${N_TRAIN[@]}"; do
-    for test in "${N_TEST[@]}"; do
-      for tile in "${N_TILES[@]}"; do
-        for reg in "${N_REG[@]}"; do
-          for loop in "${N_LOOPS[@]}"; do
-            python3 execute-cpu.py --n_cores $core --n_train $train --n_test $test --n_tiles $tile --n_reg $reg --n_loops $loop
+run_experiment_cpu() {
+  for core in "${N_CORES[@]}"; do
+    for train in "${N_TRAIN[@]}"; do
+      for test in "${N_TEST[@]}"; do
+        for tile in "${N_TILES[@]}"; do
+          for reg in "${N_REG[@]}"; do
+            for loop in "${N_LOOPS[@]}"; do
+              python3 execute-cpu.py --n_cores $core --n_train $train --n_test $test --n_tiles $tile --n_reg $reg --n_loops $loop
+            done
           done
         done
       done
     done
   done
-done
+}
+
+run_experiment_gpu() {
+  for core in "${N_CORES[@]}"; do
+    for train in "${N_TRAIN[@]}"; do
+      for test in "${N_TEST[@]}"; do
+        for tile in "${N_TILES[@]}"; do
+          for reg in "${N_REG[@]}"; do
+            for streams in "${N_STREAMS[@]}"; do
+              for loop in "${N_LOOPS[@]}"; do
+                python3 execute-gpu.py --n_cores $core --n_train $train --n_test $test --n_tiles $tile --n_reg $reg --n_loops $loop --n_streams $streams
+              done
+            done
+          done
+        done
+      done
+    done
+  done
+}
+
+
+# Test 11
+# N_CORES=(6 12 24 48)
+# N_TRAIN=(32768)
+# N_TEST=(8192)
+# N_TILES=(16 32 64 128 256)
+#
+# run_experiment_cpu
 
 # Test 12
 # N_TRAIN=(32768)
@@ -41,21 +59,15 @@ done
 N_CORES=(48)
 N_TRAIN=(32768)
 N_TEST=(8192)
-N_TILES=(1 2 4 8 16 32 64)
-N_STREAMS=(32 64 128)
+N_TILES=(32 64)
+N_STREAMS=(1 2 4 8 16)
 
-for core in "${N_CORES[@]}"; do
-  for train in "${N_TRAIN[@]}"; do
-    for test in "${N_TEST[@]}"; do
-      for tile in "${N_TILES[@]}"; do
-        for reg in "${N_REG[@]}"; do
-          for streams in "${N_STREAMS[@]}"; do
-            for loop in "${N_LOOPS[@]}"; do
-              python3 execute-gpu.py --n_cores $core --n_train $train --n_test $test --n_tiles $tile --n_reg $reg --n_loops $loop --n_streams $streams
-            done
-          done
-        done
-      done
-    done
-  done
-done
+run_experiment_gpu
+
+N_CORES=(48)
+N_TRAIN=(32768)
+N_TEST=(8192)
+N_TILES=(128)
+N_STREAMS=(1 2 4 8 16 32 64 128)
+
+run_experiment_gpu
