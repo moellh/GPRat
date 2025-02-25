@@ -7,10 +7,15 @@ N_REG=(8)
 N_LOOPS=(11)
 
 # Test 11
+# N_CORES=(6 12 24 48)
+# N_TRAIN=(32768)
+# N_TEST=(8192)
+# N_TILES=(16 32 64 128 256)
+
 N_CORES=(6 12 24 48)
 N_TRAIN=(32768)
 N_TEST=(8192)
-N_TILES=(16 32 64 128) # TODO: other?
+N_TILES=(256)
 
 for core in "${N_CORES[@]}"; do
   for train in "${N_TRAIN[@]}"; do
@@ -27,11 +32,17 @@ for core in "${N_CORES[@]}"; do
 done
 
 # Test 12
+# N_TRAIN=(32768)
+# N_CORES=(48)
+# N_TEST=(8192)
+# N_TILES=(1 2 4 8 16 32 64)
+# N_STREAMS=(1 2 4 8 16 32 64 128)
+
 N_CORES=(48)
 N_TRAIN=(32768)
 N_TEST=(8192)
-N_TILES=(1 2 4 8 16 32 64) # TODO: other?
-N_STREAMS=(1 2 4 8 16 32 64 128) # TODO: other?
+N_TILES=(1 2 4 8 16 32 64)
+N_STREAMS=(32 64 128)
 
 for core in "${N_CORES[@]}"; do
   for train in "${N_TRAIN[@]}"; do
