@@ -23,37 +23,52 @@ run_experiment() {
   done
 }
 
-N_TRAIN=(1024)
-N_STREAMS=(1 2 4 8 16 32 64 128)
-N_TILES=(1 2 4 8 16 32)
-run_experiment
+# N_TRAIN=(1024)
+# N_STREAMS=(1 2 4 8 16 32 64 128)
+# N_TILES=(1 2 4 8 16 32)
+# run_experiment
+#
+# N_TRAIN=(2048)
+# N_STREAMS=(1 2 4 8 16 32 64 128)
+# N_TILES=(1 2 4 8 16 32)
+# run_experiment
+#
+# N_TRAIN=(4096)
+# N_STREAMS=(1 2 4 8 16 32 64 128)
+# N_TILES=(1 2 4 8 16 32 64)
+# run_experiment
+#
+# N_TRAIN=(8192)
+# N_STREAMS=(1 2 4 8 16 32 64 128)
+# N_TILES=(1 2 4 8 16 32 64)
+# run_experiment
+#
+# N_TRAIN=(16384)
+# N_STREAMS=(1 2 4 8 16 32 64 128)
+# N_TILES=(1 2 4 8 16 32 64)
+# run_experiment
+#
+# N_TRAIN=(32768)
+# N_STREAMS=(1 2 4 8 16 32 64 128)
+# N_TILES=(1 2 4 8 16 32 64 128)
+# run_experiment
+#
+# N_TRAIN=(65536)
+# N_STREAMS=(1 2 4 8 16 32 64 128)
+# N_TILES=(4 8 16 32 64 128) # 1,2 require too much memory
+# run_experiment
 
-N_TRAIN=(2048)
-N_STREAMS=(1 2 4 8 16 32 64 128)
+N_TRAIN=(16384)
+N_STREAMS=(128)
 N_TILES=(1 2 4 8 16 32 64)
 run_experiment
 
-N_TRAIN=(4096)
-N_STREAMS=(1 2 4 8 16 32 64 128)
+N_TRAIN=(32768)
+N_STREAMS=(128)
 N_TILES=(1 2 4 8 16 32 64 128)
 run_experiment
 
-N_TRAIN=(8192)
-N_STREAMS=(1 2 4 8 16 32 64 128)
-N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
-run_experiment
-
-N_TRAIN=(16384)
-N_STREAMS=(1 2 4 8 16 32 64) # TODO: more?: 128
-N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
-run_experiment
-
-N_TRAIN=(32768)
-N_STREAMS=(1 2 4 8 16 32 64) # TODO: more? 128
-N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
-run_experiment
-
 N_TRAIN=(65536)
-N_STREAMS=(32) # TODO: opt n_streams
-N_TILES=(1 2 4 8 16 32 64 128) # TODO: more?
+N_STREAMS=(1 2 4 8 16 64 128)
+N_TILES=(4 8 16 32 64 128) # 1,2 require too much memory
 run_experiment
