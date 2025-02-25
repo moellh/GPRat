@@ -11,10 +11,8 @@
 #include <hpx/async_cuda/cuda_exception.hpp>
 
 #if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY || GPRAT_PREDICT_STEPS || GPRAT_PREDICT_UNCER_STEPS || GPRAT_PREDICT_FULL_COV_STEPS
-    #include <apex_api.hpp>
+    #include <apex_utils.hpp>
 #endif
-
-using hpx::experimental::for_loop;
 
 namespace gpu
 {
@@ -622,13 +620,14 @@ predict(const std::vector<double> &h_training_input,
         gpxpy::CUDA_GPU &gpu)
 {
 #if GPRAT_PREDICT_STEPS
-    auto predict_step_ra_timer = apex::start("predict_step ressource allocation");
+    auto predict_step_ra_timer = now();
 #endif
     gpu.create();
     cusolverDnHandle_t cusolver = create_cusolver_handle();
 #if GPRAT_PREDICT_STEPS
-    apex::stop(predict_step_ra_timer);
-    auto predict_step_assembly_timer = apex::start("predict_step assembly");
+    apex::sample_value("predict_step ressource allocation", diff(predict_step_ra_timer));
+    // ---
+    auto predict_step_assembly_timer = now();
 #endif
     double *d_training_input = copy_to_device(h_training_input, gpu);
     double *d_training_output = copy_to_device(h_training_output, gpu);
@@ -641,16 +640,18 @@ predict(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(d_tiles, alpha_tiles, cross_covariance_tiles, prediction_tiles);
-    apex::stop(predict_step_assembly_timer);
-    auto predict_step_cholesky_timer = apex::start("predict_step cholesky");
+    apex::sample_value("predict_step assembly", diff(predict_step_assembly_timer));
+    // ---
+    auto predict_step_cholesky_timer = now();
 #endif
 
     right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(d_tiles);
-    apex::stop(predict_step_cholesky_timer);
-    auto predict_step_forward_timer = apex::start("predict_step forward");
+    apex::sample_value("predict_step cholesky", diff(predict_step_cholesky_timer));
+    // ---
+    auto predict_step_forward_timer = now();
 #endif
 
     // Triangular solve K_NxN * alpha = y
@@ -658,30 +659,34 @@ predict(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(alpha_tiles);
-    apex::stop(predict_step_forward_timer);
-    auto predict_step_backward_timer = apex::start("predict_step backward");
+    apex::sample_value("predict_step forward", diff(predict_step_forward_timer));
+    // ---
+    auto predict_step_backward_timer = now();
 #endif
 
     backward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu);
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(alpha_tiles);
-    apex::stop(predict_step_backward_timer);
-    auto predict_step_prediction_timer = apex::start("predict_step prediction");
+    apex::sample_value("predict_step backward", diff(predict_step_backward_timer));
+    // ---
+    auto predict_step_prediction_timer = now();
 #endif
 
     prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles, gpu);
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(prediction_tiles);
-    apex::stop(predict_step_prediction_timer);
-    auto predict_step_copyback_timer = apex::start("predict_step copyback");
+    apex::sample_value("predict_step prediction", diff(predict_step_prediction_timer));
+    // ---
+    auto predict_step_copyback_timer = now();
 #endif
     std::vector<double> prediction = copy_tiled_vector_to_host_vector(prediction_tiles, m_tile_size, m_tiles, gpu);
 
 #if GPRAT_PREDICT_STEPS
-    apex::stop(predict_step_copyback_timer);
-    auto predict_step_rd_timer = apex::start("predict_step ressource destroy");
+    apex::sample_value("predict_step copyback", diff(predict_step_copyback_timer));
+    // ---
+    auto predict_step_rd_timer = now();
 #endif
     free_lower_tiled_matrix(d_tiles, n_tiles);
     free(alpha_tiles);
@@ -692,7 +697,7 @@ predict(const std::vector<double> &h_training_input,
     gpu.destroy();
 
 #if GPRAT_PREDICT_STEPS
-    apex::stop(predict_step_rd_timer);
+    apex::sample_value("predict_step ressource destroy", diff(predict_step_rd_timer));
 #endif
 
     return hpx::make_ready_future(prediction);
@@ -711,13 +716,14 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
                          gpxpy::CUDA_GPU &gpu)
 {
 #if GPRAT_PREDICT_UNCER_STEPS
-    auto predict_uncer_step_ra_timer = apex::start("predict_uncer_step ressource allocation");
+    auto predict_uncer_step_ra_timer = now();
 #endif
     gpu.create();
     cusolverDnHandle_t cusolver = create_cusolver_handle();
 #if GPRAT_PREDICT_STEPS
-    apex::stop(predict_uncer_step_ra_timer);
-    auto predict_uncer_step_assembly_timer = apex::start("predict_uncer_step assembly");
+    apex::sample_value("predict_uncer_step ressource allocation", diff(predict_uncer_step_ra_timer));
+    // ---
+    auto predict_uncer_step_assembly_timer = now();
 #endif
 
     double *d_training_input = copy_to_device(h_training_input, gpu);
@@ -745,16 +751,18 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_K_tiles, d_alpha_tiles, d_cross_covariance_tiles, d_prediction_tiles, d_prior_K_tiles, d_prior_inter_tiles, d_t_cross_covariance_tiles);
-    apex::stop(predict_uncer_step_assembly_timer);
-    auto predict_uncer_step_cholesky_timer = apex::start("predict_uncer_step cholesky");
+    apex::sample_value("predict_uncer_step assembly", diff(predict_uncer_step_assembly_timer));
+    // ---
+    auto predict_uncer_step_cholesky_timer = now();
 #endif
 
     right_looking_cholesky_tiled(d_K_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_K_tiles);
-    apex::stop(predict_uncer_step_cholesky_timer);
-    auto predict_uncer_step_forward_timer = apex::start("predict_uncer_step forward");
+    apex::sample_value("predict_uncer_step cholesky", diff(predict_uncer_step_cholesky_timer));
+    // ---
+    auto predict_uncer_step_forward_timer = now();
 #endif
 
     // Triangular solve K_NxN * alpha = y
@@ -762,16 +770,17 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_alpha_tiles);
-    apex::stop(predict_uncer_step_forward_timer);
-    auto predict_uncer_step_backward_timer = apex::start("predict_uncer_step backward");
+    apex::sample_value("predict_uncer_step forward", diff(predict_uncer_step_forward_timer));
+    // ---
+    auto predict_uncer_step_backward_timer = now();
 #endif
 
     backward_solve_tiled(d_K_tiles, d_alpha_tiles, n_tile_size, n_tiles, gpu);
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_alpha_tiles);
-    apex::stop(predict_uncer_step_backward_timer);
-    auto predict_uncer_step_forward_KcK_timer = apex::start("predict_uncer_step forward KcK");
+    apex::sample_value("predict_uncer_step backward", diff(predict_uncer_step_backward_timer));
+    auto predict_uncer_step_forward_KcK_timer = now();
 #endif
 
     // Triangular solve A_M,N * K_NxN = K_MxN -> A_MxN = K_MxN * K^-1_NxN
@@ -779,8 +788,9 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_t_cross_covariance_tiles);
-    apex::stop(predict_uncer_step_forward_KcK_timer);
-    auto predict_uncer_step_prediction_timer = apex::start("predict_uncer_step prediction");
+    apex::sample_value("predict_uncer_step forward KcK", diff(predict_uncer_step_forward_KcK_timer));
+    // ---
+    auto predict_uncer_step_prediction_timer = now();
 #endif
 
     // Compute predictions
@@ -788,8 +798,9 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_prediction_tiles);
-    apex::stop(predict_step_prediction_timer);
-    auto predict_uncer_step_posterior_covariance_timer = apex::start("predict_uncer_step posterior covariance");
+    apex::sample_value("predict_uncer_step prediction", diff(predict_step_prediction_timer));
+    // ---
+    auto predict_uncer_step_posterior_covariance_timer = now();
 #endif
 
     // posterior covariance matrix - (K_MxN * K^-1_NxN) * K_NxM
@@ -797,8 +808,9 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_prior_inter_tiles);
-    apex::stop(predict_uncer_step_posterior_covariance_timer);
-    auto predict_uncer_step_prediction_uncertainty_timer = apex::start("predict_uncer_step prediction uncertainty");
+    apex::sample_value("predict_uncer_step posterior covariance", diff(predict_uncer_step_posterior_covariance_timer));
+    // ---
+    auto predict_uncer_step_prediction_uncertainty_timer = now();
 #endif
 
     // Compute predicition uncertainty
@@ -806,8 +818,9 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_prediction_uncertainty_tiles);
-    apex::stop(predict_uncer_step_prediction_uncertainty_timer);
-    auto predict_uncer_step_copyback_timer = apex::start("predict_uncer_step copyback");
+    apex::sample_value("predict_uncer_step prediction uncertainty", diff(predict_uncer_step_prediction_uncertainty_timer));
+    // ---
+    auto predict_uncer_step_copyback_timer = now();
 #endif
 
     // Get predictions and uncertainty to return them
@@ -815,8 +828,9 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
     std::vector<double> pred_var_full = copy_tiled_vector_to_host_vector(d_prediction_uncertainty_tiles, m_tile_size, m_tiles, gpu);
 
 #if GPRAT_PREDICT_STEPS
-    apex::stop(predict_uncer_step_copyback_timer);
-    auto predict_uncer_step_rd_timer = apex::start("predict_uncer_step ressource destroy");
+    apex::sample_value("predict_uncer_step copyback", diff(predict_uncer_step_copyback_timer));
+    // ---
+    auto predict_uncer_step_rd_timer = now();
 #endif
     check_cuda_error(cudaFree(d_training_input));
     check_cuda_error(cudaFree(d_training_output));
@@ -834,7 +848,7 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
     gpu.destroy();
 
 #if GPRAT_PREDICT_STEPS
-    apex::stop(predict_uncer_step_rd_timer);
+    apex::sample_value("predict_uncer_step ressource destroy", diff(predict_uncer_step_rd_timer));
 #endif
 
     return hpx::make_ready_future(std::vector<std::vector<double>>{ prediction, pred_var_full });
@@ -853,13 +867,14 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
                       gpxpy::CUDA_GPU &gpu)
 {
 #if GPRAT_PREDICT_FULL_COV_STEPS
-    auto predict_full_cov_step_ra_timer = apex::start("predict_full_cov_step ressource allocation");
+    auto predict_full_cov_step_ra_timer = now();
 #endif
     gpu.create();
     cusolverDnHandle_t cusolver = create_cusolver_handle();
 #if GPRAT_PREDICT_STEPS
-    apex::stop(predict_full_cov_step_ra_timer);
-    auto predict_full_cov_step_assembly_timer = apex::start("predict_full_cov_step assembly");
+    apex::sample_value("predict_full_cov_step ressource allocation", diff(predict_full_cov_step_ra_timer));
+    // ---
+    auto predict_full_cov_step_assembly_timer = now();
 #endif
 
     double *d_training_input = copy_to_device(h_training_input, gpu);
@@ -887,16 +902,18 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_K_tiles, d_alpha_tiles, d_cross_covariance_tiles, d_prediction_tiles, d_prior_K_tiles, d_t_cross_covariance_tiles, d_prior_inter_tiles, d_prediction_uncertainty_tiles);
-    apex::stop(predict_full_cov_step_assembly_timer);
-    auto predict_full_cov_step_cholesky_timer = apex::start("predict_full_cov_step cholesky");
+    apex::sample_value("predict_full_cov_step assembly", diff(predict_full_cov_step_assembly_timer));
+    // ---
+    auto predict_full_cov_step_cholesky_timer = now();
 #endif
 
     right_looking_cholesky_tiled(d_K_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_K_tiles);
-    apex::stop(predict_full_cov_step_cholesky_timer);
-    auto predict_full_cov_step_forward_timer = apex::start("predict_full_cov_step forward");
+    apex::sample_value("predict_full_cov_step cholesky", diff(predict_full_cov_step_cholesky_timer));
+    // ---
+    auto predict_full_cov_step_forward_timer = now();
 #endif
 
     // Triangular solve K_NxN * alpha = y
@@ -904,16 +921,18 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_alpha_tiles);
-    apex::stop(predict_full_cov_step_forward_timer);
-    auto predict_full_cov_step_backward_timer = apex::start("predict_full_cov_step backward");
+    apex::sample_value("predict_full_cov_step forward", diff(predict_full_cov_step_forward_timer));
+    // ---
+    auto predict_full_cov_step_backward_timer = now();
 #endif
 
     backward_solve_tiled(d_K_tiles, d_alpha_tiles, n_tile_size, n_tiles, gpu);
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_alpha_tiles);
-    apex::stop(predict_full_cov_step_backward_timer);
-    auto predict_full_cov_step_forward_KcK_timer = apex::start("predict_full_cov_step forward KcK");
+    apex::sample_value("predict_full_cov_step backward", diff(predict_full_cov_step_backward_timer));
+    // ---
+    auto predict_full_cov_step_forward_KcK_timer = now();
 #endif
 
     // Triangular solve A_M,N * K_NxN = K_MxN -> A_MxN = K_MxN * K^-1_NxN
@@ -921,8 +940,9 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_t_cross_covariance_tiles);
-    apex::stop(predict_full_cov_step_forward_KcK_timer);
-    auto predict_full_cov_step_prediction_timer = apex::start("predict_full_cov_step prediction");
+    apex::sample_value("predict_full_cov_step forward KcK", diff(predict_full_cov_step_forward_KcK_timer));
+    // --
+    auto predict_full_cov_step_prediction_timer = now();
 #endif
 
     // Compute predictions
@@ -930,8 +950,9 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_prediction_tiles);
-    apex::stop(predict_full_cov_step_prediction_timer);
-    auto predict_full_cov_step_full_cov_timer = apex::start("predict_full_cov_step full cov");
+    apex::sample_value("predict_full_cov_step prediction", diff(predict_full_cov_step_prediction_timer));
+    // ---
+    auto predict_full_cov_step_full_cov_timer = now();
 #endif
 
     // posterior covariance matrix - (K_MxN * K^-1_NxN) * K_NxM
@@ -939,8 +960,9 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_prior_K_tiles);
-    apex::stop(predict_full_cov_step_full_cov_timer);
-    auto predict_full_cov_step_pred_uncer_timer = apex::start("predict_full_cov_step pred uncer");
+    apex::sample_value("predict_full_cov_step full cov", diff(predict_full_cov_step_full_cov_timer));
+    // ---
+    auto predict_full_cov_step_pred_uncer_timer = now();
 #endif
 
     // Compute predicition uncertainty
@@ -948,8 +970,9 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(d_prediction_uncertainty_tiles);
-    apex::stop(predict_full_cov_step_pred_uncer_timer);
-    auto predict_full_cov_step_copyback_timer = apex::start("predict_full_cov_step copyback");
+    apex::sample_value("predict_full_cov_step pred uncer", diff(predict_full_cov_step_pred_uncer_timer));
+    // ---
+    auto predict_full_cov_step_copyback_timer = now();
 #endif
 
     // Get predictions and uncertainty to return them
@@ -957,8 +980,9 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
     std::vector<double> pred_var_full = copy_tiled_vector_to_host_vector(d_prediction_uncertainty_tiles, m_tile_size, m_tiles, gpu);
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
-    apex::stop(predict_full_cov_step_copyback_timer);
-    auto predict_full_cov_step_rd_timer = apex::start("predict_full_cov_step ressource destroy");
+    apex::sample_value("predict_full_cov_step copyback", diff(predict_full_cov_step_copyback_timer));
+    // ---
+    auto predict_full_cov_step_rd_timer = now();
 #endif
 
     check_cuda_error(cudaFree(d_training_input));
@@ -977,7 +1001,7 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
     gpu.destroy();
 
 #if GPRAT_PREDICT_UNCER_STEPS
-    apex::stop(predict_full_cov_step_rd_timer);
+    apex::sample_value("predict_full_cov_step ressource destroy", diff(predict_full_cov_step_rd_timer));
 #endif
 
     return hpx::make_ready_future(std::vector<std::vector<double>>{ prediction, pred_var_full });
@@ -1456,17 +1480,17 @@ cholesky(const std::vector<double> &h_training_input,
          gpxpy::CUDA_GPU &gpu)
 {
 #if GPRAT_CHOLESKY_STEPS
-    auto cholesky_step_ra_timer = apex::start("cholesky_step ressource allocation");
+    auto cholesky_step_ra_timer = now();
 #endif
     gpu.create();
     cusolverDnHandle_t cusolver = create_cusolver_handle();
 
 #if GPRAT_CHOLESKY_STEPS
-    apex::stop(cholesky_step_ra_timer);
+    apex::sample_value("cholesky_step ressource allocation", diff(cholesky_step_ra_timer));
 #endif
 
 #if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
-    auto cholesky_step_assembly_timer = apex::start("cholesky_step assembly");
+    auto cholesky_step_assembly_timer = now();
 #endif
 
     double *d_training_input = copy_to_device(h_training_input, gpu);
@@ -1475,13 +1499,14 @@ cholesky(const std::vector<double> &h_training_input,
 
 #if GPRAT_ASSEMBLY_ONLY
     hpx::wait_all(d_tiles);
-    apex::stop(cholesky_step_assembly_timer);
+    apex::sample_value("cholesky_step assembly", diff(cholesky_step_assembly_timer));
     return hpx::make_ready_future(std::vector<std::vector<double>>());
 #endif
 #if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(d_tiles);
-    apex::stop(cholesky_step_assembly_timer);
-    auto cholesky_step_cholesky_timer = apex::start("cholesky_step cholesky");
+    apex::sample_value("cholesky_step assembly", diff(cholesky_step_assembly_timer));
+    // ---
+    auto cholesky_step_cholesky_timer = now();
 #endif
 
     // Compute Tiled Cholesky decomposition on device
@@ -1489,16 +1514,18 @@ cholesky(const std::vector<double> &h_training_input,
 
 #if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(d_tiles);
-    apex::stop(cholesky_step_cholesky_timer);
-    auto cholesky_step_copyback_timer = apex::start("cholesky_step copyback");
+    apex::sample_value("cholesky_step cholesky", diff(cholesky_step_cholesky_timer));
+    // ---
+    auto cholesky_step_copyback_timer = now();
 #endif
 
     // Copy tiled matrix to host
     std::vector<std::vector<double>> h_tiles = move_lower_tiled_matrix_to_host(d_tiles, n_tile_size, n_tiles, gpu);
 
 #if GPRAT_CHOLESKY_STEPS
-    apex::stop(cholesky_step_copyback_timer);
-    auto cholesky_step_rd_timer = apex::start("cholesky_step ressource destroy");
+    apex::sample_value("cholesky_step copyback", diff(cholesky_step_copyback_timer));
+    // ---
+    auto cholesky_step_rd_timer = now();
 #endif
 
     cudaFree(d_training_input);
@@ -1506,7 +1533,7 @@ cholesky(const std::vector<double> &h_training_input,
     gpu.destroy();
 
 #if GPRAT_CHOLESKY_STEPS
-    apex::stop(cholesky_step_rd_timer);
+    apex::sample_value("cholesky_step ressource destroy", diff(cholesky_step_rd_timer));
 #endif
 
     return hpx::make_ready_future(h_tiles);

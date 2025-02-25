@@ -5,7 +5,7 @@
 #include <hpx/future.hpp>
 
 #if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY || GPRAT_PREDICT_STEPS || GPRAT_PREDICT_UNCER_STEPS || GPRAT_PREDICT_FULL_COV_STEPS
-    #include <apex_api.hpp>
+#include "apex_utils.hpp"
 #endif
 
 namespace cpu
@@ -238,7 +238,7 @@ predict(const std::vector<double> &training_input,
         gpxpy_hyper::SEKParams sek_params)
 {
 #if GPRAT_PREDICT_STEPS
-    auto predict_step_assembly_timer = apex::start("predict_step assembly");
+    auto predict_step_assembly_timer = now();
 #endif
     // declare tiled future data structures
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
@@ -304,8 +304,9 @@ predict(const std::vector<double> &training_input,
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(K_tiles, alpha_tiles, cross_covariance_tiles, prediction_tiles);
-    apex::stop(predict_step_assembly_timer);
-    auto predict_step_cholesky_timer = apex::start("predict_step cholesky");
+    apex::sample_value("predict_step assembly", diff(predict_step_assembly_timer));
+    // ---
+    auto predict_step_cholesky_timer = now();
 #endif
 
     // Compute Cholesky decomposition
@@ -313,8 +314,9 @@ predict(const std::vector<double> &training_input,
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(K_tiles);
-    apex::stop(predict_step_cholesky_timer);
-    auto predict_step_forward_timer = apex::start("predict_step forward");
+    apex::sample_value("predict_step cholesky", diff(predict_step_cholesky_timer));
+    // ---
+    auto predict_step_forward_timer = now();
 #endif
 
     // Triangular solve K_NxN * alpha = y
@@ -322,25 +324,22 @@ predict(const std::vector<double> &training_input,
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(alpha_tiles);
-    apex::stop(predict_step_forward_timer);
-    auto predict_step_backward_timer = apex::start("predict_step backward");
+    apex::sample_value("predict_step forward", diff(predict_step_forward_timer));
+    // ---
+    auto predict_step_backward_timer = now();
 #endif
 
     backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
 #if GPRAT_PREDICT_STEPS
     hpx::wait_all(alpha_tiles);
-    apex::stop(predict_step_backward_timer);
-    auto predict_step_prediction_timer = apex::start("predict_step prediction");
+    apex::sample_value("predict_step backward", diff(predict_step_backward_timer));
+    // ---
+    auto predict_step_prediction_timer = now();
 #endif
 
     // Compute predictions
     prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles);
-
-#if GPRAT_PREDICT_STEPS
-    hpx::wait_all(prediction_tiles);
-    apex::stop(predict_step_prediction_timer);
-#endif
 
     // Get predictions and uncertainty to return them
     std::vector<double> pred;
@@ -349,6 +348,10 @@ predict(const std::vector<double> &training_input,
     {
         pred.insert(pred.end(), prediction_tiles[i].get().begin(), prediction_tiles[i].get().end());
     }
+
+#if GPRAT_PREDICT_STEPS
+    apex::sample_value("predict_step prediction", diff(predict_step_prediction_timer));
+#endif
 
     // Return computed data
     return hpx::async([pred]()
@@ -359,7 +362,7 @@ hpx::shared_future<std::vector<std::vector<double>>>
 predict_with_uncertainty(const std::vector<double> &training_input, const std::vector<double> &training_output, const std::vector<double> &test_input, int n_tiles, int n_tile_size, int m_tiles, int m_tile_size, int n_regressors, gpxpy_hyper::SEKParams sek_params)
 {
 #if GPRAT_PREDICT_UNCER_STEPS
-    auto predict_uncer_step_assembly_timer = apex::start("predict_uncer_step assembly");
+    auto predict_uncer_step_assembly_timer = now();
 #endif
     // declare tiled future data structures
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
@@ -463,8 +466,9 @@ predict_with_uncertainty(const std::vector<double> &training_input, const std::v
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(K_tiles, alpha_tiles, cross_covariance_tiles, prediction_tiles, prior_K_tiles, prior_inter_tiles, t_cross_covariance_tiles);
-    apex::stop(predict_uncer_step_assembly_timer);
-    auto predict_uncer_step_cholesky_timer = apex::start("predict_uncer_step cholesky");
+    apex::sample_value("predict_uncer_step assembly", diff(predict_uncer_step_assembly_timer));
+    // ---
+    auto predict_uncer_step_cholesky_timer = now();
 #endif
 
     //////////////////////////////////////////////////////////////////////////////
@@ -473,8 +477,9 @@ predict_with_uncertainty(const std::vector<double> &training_input, const std::v
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(K_tiles);
-    apex::stop(predict_uncer_step_cholesky_timer);
-    auto predict_uncer_step_forward_timer = apex::start("predict_uncer_step forward");
+    apex::sample_value("predict_uncer_step cholesky", diff(predict_uncer_step_cholesky_timer));
+    // ---
+    auto predict_uncer_step_forward_timer = now();
 #endif
 
     //// Triangular solve K_NxN * alpha = y
@@ -482,16 +487,17 @@ predict_with_uncertainty(const std::vector<double> &training_input, const std::v
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(alpha_tiles);
-    apex::stop(predict_uncer_step_forward_timer);
-    auto predict_uncer_step_backward_timer = apex::start("predict_uncer_step backward");
+    apex::sample_value("predict_uncer_step forward", diff(predict_uncer_step_forward_timer));
+    // ---
+    auto predict_uncer_step_backward_timer = now();
 #endif
 
     backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(alpha_tiles);
-    apex::stop(predict_uncer_step_backward_timer);
-    auto predict_uncer_step_forward_KcK_timer = apex::start("predict_uncer_step forward KcK");
+    apex::sample_value("predict_uncer_step backward", diff(predict_uncer_step_backward_timer));
+    auto predict_uncer_step_forward_KcK_timer = now();
 #endif
 
     //// Triangular solve A_M,N * K_NxN = K_MxN -> A_MxN = K_MxN * K^-1_NxN
@@ -501,18 +507,28 @@ predict_with_uncertainty(const std::vector<double> &training_input, const std::v
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(t_cross_covariance_tiles);
-    apex::stop(predict_uncer_step_forward_KcK_timer);
-    auto predict_uncer_step_prediction_timer = apex::start("predict_uncer_step prediction");
+    apex::sample_value("predict_uncer_step forward KcK", diff(predict_uncer_step_forward_KcK_timer));
+    // ---
+    auto predict_uncer_step_prediction_timer = now();
 #endif
 
     //////////////////////////////////////////////////////////////////////////////
     //// Compute predictions
     prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles);
 
+    //// Get predictions and uncertainty to return them
+    std::vector<double> pred_full;
+    pred_full.reserve(test_input.size());      // preallocate memory
+    for (std::size_t i = 0; i < m_tiles; i++)
+    {
+        pred_full.insert(pred_full.end(), prediction_tiles[i].get().begin(), prediction_tiles[i].get().end());
+    }
+
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(prediction_tiles);
-    apex::stop(predict_uncer_step_prediction_timer);
-    auto predict_uncer_step_posterior_covariance_timer = apex::start("predict_uncer_step posterior covariance");
+    apex::sample_value("predict_uncer_step prediction", diff(predict_uncer_step_prediction_timer));
+    // ---
+    auto predict_uncer_step_posterior_covariance_timer = now();
 #endif
 
     // posterior covariance matrix - (K_MxN * K^-1_NxN) * K_NxM
@@ -520,30 +536,28 @@ predict_with_uncertainty(const std::vector<double> &training_input, const std::v
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(prior_inter_tiles);
-    apex::stop(predict_uncer_step_posterior_covariance_timer);
-    auto predict_uncer_step_prediction_uncertainty_timer = apex::start("predict_uncer_step prediction uncertainty");
+    apex::sample_value("predict_uncer_step posterior covariance", diff(predict_uncer_step_posterior_covariance_timer));
+    auto predict_uncer_step_prediction_uncertainty_timer = now();
 #endif
 
     //// Compute predicition uncertainty
     prediction_uncertainty_tiled(prior_K_tiles, prior_inter_tiles, prediction_uncertainty_tiles, m_tile_size, m_tiles);
 
-#if GPRAT_PREDICT_UNCER_STEPS
-    hpx::wait_all(prediction_uncertainty_tiles);
-    apex::stop(predict_uncer_step_prediction_uncertainty_timer);
-#endif
-
     //// Get predictions and uncertainty to return them
-    std::vector<double> pred_full;
     std::vector<double> pred_var_full;
-    pred_full.reserve(test_input.size());      // preallocate memory
     pred_var_full.reserve(test_input.size());  // preallocate memory
     for (std::size_t i = 0; i < m_tiles; i++)
     {
-        pred_full.insert(pred_full.end(), prediction_tiles[i].get().begin(), prediction_tiles[i].get().end());
         pred_var_full.insert(pred_var_full.end(),
                              prediction_uncertainty_tiles[i].get().begin(),
                              prediction_uncertainty_tiles[i].get().end());
     }
+
+#if GPRAT_PREDICT_UNCER_STEPS
+    hpx::wait_all(prediction_uncertainty_tiles);
+    apex::sample_value("predict_uncer_step prediction uncertainty", diff(predict_uncer_step_prediction_uncertainty_timer));
+#endif
+
 
     // Return computed data
     return hpx::async([pred_full, pred_var_full]()
@@ -566,7 +580,7 @@ predict_with_full_cov(const std::vector<double> &training_input,
                       gpxpy_hyper::SEKParams sek_params)
 {
 #if GPRAT_PREDICT_FULL_COV_STEPS
-    auto predict_full_cov_step_assembly_timer = apex::start("predict_full_cov_step assembly");
+    auto predict_full_cov_step_assembly_timer = now();
 #endif
     double hyperparameters[3];
 
@@ -683,8 +697,9 @@ predict_with_full_cov(const std::vector<double> &training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(K_tiles, alpha_tiles, cross_covariance_tiles, prediction_tiles, prior_K_tiles, t_cross_covariance_tiles, prior_inter_tiles, prediction_uncertainty_tiles);
-    apex::stop(predict_full_cov_step_assembly_timer);
-    auto predict_full_cov_step_cholesky_timer = apex::start("predict_full_cov_step cholesky");
+    apex::sample_value("predict_full_cov_step assembly", diff(predict_full_cov_step_assembly_timer));
+    // ---
+    auto predict_full_cov_step_cholesky_timer = now();
 #endif
     //////////////////////////////////////////////////////////////////////////////
     //// Compute Cholesky decomposition
@@ -692,8 +707,9 @@ predict_with_full_cov(const std::vector<double> &training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(K_tiles);
-    apex::stop(predict_full_cov_step_cholesky_timer);
-    auto predict_full_cov_step_forward_timer = apex::start("predict_full_cov_step forward");
+    apex::sample_value("predict_full_cov_step cholesky", diff(predict_full_cov_step_cholesky_timer));
+    // ---
+    auto predict_full_cov_step_forward_timer = now();
 #endif
 
     //// Triangular solve K_NxN * alpha = y
@@ -701,16 +717,18 @@ predict_with_full_cov(const std::vector<double> &training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(alpha_tiles);
-    apex::stop(predict_full_cov_step_forward_timer);
-    auto predict_full_cov_step_backward_timer = apex::start("predict_full_cov_step backward");
+    apex::sample_value("predict_full_cov_step forward", diff(predict_full_cov_step_forward_timer));
+    // ---
+    auto predict_full_cov_step_backward_timer = now();
 #endif
 
     backward_solve_tiled(K_tiles, alpha_tiles, n_tile_size, n_tiles);
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(alpha_tiles);
-    apex::stop(predict_full_cov_step_backward_timer);
-    auto predict_full_cov_step_forward_KcK_timer = apex::start("predict_full_cov_step forward KcK");
+    apex::sample_value("predict_full_cov_step backward", diff(predict_full_cov_step_backward_timer));
+    // ---
+    auto predict_full_cov_step_forward_KcK_timer = now();
 #endif
 
     //// Triangular solve A_M,N * K_NxN = K_MxN -> A_MxN = K_MxN * K^-1_NxN
@@ -718,18 +736,28 @@ predict_with_full_cov(const std::vector<double> &training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(t_cross_covariance_tiles);
-    apex::stop(predict_full_cov_step_forward_KcK_timer);
-    auto predict_full_cov_step_prediction_timer = apex::start("predict_full_cov_step prediction");
+    apex::sample_value("predict_full_cov_step forward KcK", diff(predict_full_cov_step_forward_KcK_timer));
+    // ---
+    auto predict_full_cov_step_prediction_timer = now();
 #endif
 
     //////////////////////////////////////////////////////////////////////////////
     //// Compute predictions
     prediction_tiled(cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles);
 
+    //// Get predictions and uncertainty to return them
+    std::vector<double> pred;
+    pred.reserve(test_input.size());      // preallocate memory
+    for (std::size_t i = 0; i < m_tiles; i++)
+    {
+        pred.insert(pred.end(), prediction_tiles[i].get().begin(), prediction_tiles[i].get().end());
+    }
+
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(prediction_tiles);
-    apex::stop(predict_full_cov_step_prediction_timer);
-    auto predict_full_cov_step_full_cov_timer = apex::start("predict_full_cov_step full cov");
+    apex::sample_value("predict_full_cov_step prediction", diff(predict_full_cov_step_prediction_timer));
+    // ---
+    auto predict_full_cov_step_full_cov_timer = now();
 #endif
 
     // posterior covariance matrix K_MxM - (K_MxN * K^-1_NxN) * K_NxM
@@ -737,30 +765,28 @@ predict_with_full_cov(const std::vector<double> &training_input,
 
 #if GPRAT_PREDICT_FULL_COV_STEPS
     hpx::wait_all(prior_K_tiles);
-    apex::stop(predict_full_cov_step_full_cov_timer);
+    apex::sample_value("predict_full_cov_step full cov", diff(predict_full_cov_step_full_cov_timer));
+    // ---
     auto predict_full_cov_step_pred_uncer_timer = apex::start("predict_full_cov_step pred uncer");
 #endif
 
     //// Compute predicition uncertainty
     pred_uncer_tiled(prior_K_tiles, prediction_uncertainty_tiles, m_tile_size, m_tiles);
 
-#if GPRAT_PREDICT_FULL_COV_STEPS
-    hpx::wait_all(prediction_uncertainty_tiles);
-    apex::stop(predict_full_cov_step_pred_uncer_timer);
-#endif
-
     //// Get predictions and uncertainty to return them
-    std::vector<double> pred;
     std::vector<double> pred_var;
-    pred.reserve(test_input.size());      // preallocate memory
     pred_var.reserve(test_input.size());  // preallocate memory
     for (std::size_t i = 0; i < m_tiles; i++)
     {
-        pred.insert(pred.end(), prediction_tiles[i].get().begin(), prediction_tiles[i].get().end());
         pred_var.insert(pred_var.end(),
                         prediction_uncertainty_tiles[i].get().begin(),
                         prediction_uncertainty_tiles[i].get().end());
     }
+
+#if GPRAT_PREDICT_FULL_COV_STEPS
+    hpx::wait_all(prediction_uncertainty_tiles);
+    apex::sample_value("predict_full_cov_step pred uncer", diff(predict_full_cov_step_pred_uncer_timer));
+#endif
 
     // Return computed data
     return hpx::async([pred, pred_var]()
@@ -1255,7 +1281,7 @@ cholesky(const std::vector<double> &training_input,
          gpxpy_hyper::SEKParams sek_params)
 {
 #if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
-    auto cholesky_step_assembly_timer = apex::start("cholesky_step assembly");
+    auto cholesky_step_assembly_timer = now();
 #endif
     // Tiled future data structure is matrix represented as vector of tiles.
     // Tiles are represented as vector, each wrapped in a shared_future.
@@ -1281,13 +1307,14 @@ cholesky(const std::vector<double> &training_input,
 
 #if GPRAT_ASSEMBLY_ONLY
     hpx::wait_all(K_tiles);
-    apex::stop(cholesky_step_assembly_timer);
+    apex::sample_value("cholesky_step assembly", diff(cholesky_step_assembly_timer));
     return hpx::make_ready_future(std::vector<std::vector<double>>());
 #endif
 #if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(K_tiles);
-    apex::stop(cholesky_step_assembly_timer);
-    auto cholesky_step_cholesky_timer = apex::start("cholesky_step cholesky");
+    apex::sample_value("cholesky_step assembly", diff(cholesky_step_assembly_timer));
+    // ---
+    auto cholesky_step_cholesky_timer = now();
 #endif
 
     // Calculate Cholesky decomposition
@@ -1295,7 +1322,7 @@ cholesky(const std::vector<double> &training_input,
 
 #if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(K_tiles);
-    apex::stop(cholesky_step_cholesky_timer);
+    apex::sample_value("cholesky_step cholesky", diff(cholesky_step_cholesky_timer));
 #endif
 
     // Get & return predictions and uncertainty
