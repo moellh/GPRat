@@ -11,9 +11,8 @@ run_experiment_cpu() {
       for test in "${N_TEST[@]}"; do
         for tile in "${N_TILES[@]}"; do
           for reg in "${N_REG[@]}"; do
-              for loop in "${N_LOOPS[@]}"; do
-                python3 execute-cpu.py --n_cores $core --n_train $train --n_test $test --n_tiles $tile --n_reg $reg --n_loops $loop
-              done
+            for loop in "${N_LOOPS[@]}"; do
+              python3 execute-cpu.py --n_cores $core --n_train $train --n_test $test --n_tiles $tile --n_reg $reg --n_loops $loop
             done
           done
         done
@@ -28,9 +27,8 @@ run_experiment_gpu() {
       for test in "${N_TEST[@]}"; do
         for tile in "${N_TILES[@]}"; do
           for reg in "${N_REG[@]}"; do
-              for loop in "${N_LOOPS[@]}"; do
-                python3 execute-gpu.py --n_cores $core --n_train $train --n_test $test --n_tiles $tile --n_reg $reg --n_loops $loop --n_streams $streams
-              done
+            for loop in "${N_LOOPS[@]}"; do
+              python3 execute-gpu.py --n_cores $core --n_train $train --n_test $test --n_tiles $tile --n_reg $reg --n_loops $loop --n_streams $streams
             done
           done
         done
