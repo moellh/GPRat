@@ -798,7 +798,7 @@ predict_with_uncertainty(const std::vector<double> &h_training_input,
 
 #if GPRAT_PREDICT_UNCER_STEPS
     hpx::wait_all(d_prediction_tiles);
-    apex::sample_value("predict_uncer_step prediction", diff(predict_step_prediction_timer));
+    apex::sample_value("predict_uncer_step prediction", diff(predict_uncer_step_prediction_timer));
     // ---
     auto predict_uncer_step_posterior_covariance_timer = now();
 #endif
@@ -871,7 +871,7 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 #endif
     gpu.create();
     cusolverDnHandle_t cusolver = create_cusolver_handle();
-#if GPRAT_PREDICT_STEPS
+#if GPRAT_PREDICT_FULL_COV_STEPS
     apex::sample_value("predict_full_cov_step ressource allocation", diff(predict_full_cov_step_ra_timer));
     // ---
     auto predict_full_cov_step_assembly_timer = now();
@@ -1000,7 +1000,7 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 
     gpu.destroy();
 
-#if GPRAT_PREDICT_UNCER_STEPS
+#if GPRAT_PREDICT_FULL_COV_STEPS
     apex::sample_value("predict_full_cov_step ressource destroy", diff(predict_full_cov_step_rd_timer));
 #endif
 
@@ -1471,7 +1471,7 @@ optimize_step(const std::vector<double> &training_input,
     return hpx::shared_future<double>();
 }
 
-std::vector<std::vector<double>>
+hpx::shared_future<std::vector<std::vector<double>>>
 cholesky(const std::vector<double> &h_training_input,
          const std::size_t n_tiles,
          const std::size_t n_tile_size,
@@ -1536,7 +1536,7 @@ cholesky(const std::vector<double> &h_training_input,
     apex::sample_value("cholesky_step ressource destroy", diff(cholesky_step_rd_timer));
 #endif
 
-    return h_tiles;
+    return hpx::make_ready_future(h_tiles);
 }
 
 }  // end of namespace gpu
