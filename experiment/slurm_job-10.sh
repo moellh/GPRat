@@ -24,7 +24,7 @@ cd $msd_dir
 # Test 10
 echo "=== Starting Test 10"
 cd $gprat_dir
-./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_PREDICT_STEPS=ON
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_PREDICT_UNCER_STEPS=ON
 cd experiment/9-10-predict/
 mkdir -p apex-cpu
 mkdir -p apex-gpu

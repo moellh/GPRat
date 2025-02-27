@@ -12,16 +12,16 @@ auto now = std::chrono::high_resolution_clock::now;
 int main(int argc, char *argv[])
 {
     // number of training points, number of rows/columns in the kernel matrix
-    const int N_TRAIN_START = 1 << 10;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
-    const int N_TRAIN_END = 1 << 10;    // 7,   8,   9,   10,   11,   12,   13,   14,  15
+    const int N_TRAIN_START = 1 << 12;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
+    const int N_TRAIN_END = 1 << 12;    // 7,   8,   9,   10,   11,   12,   13,   14,  15
 
     const int N_TEST = 8;
 
-    const int LOOPS = 11;
+    const int LOOPS = 3;
     const int OPTIMIZE_ITERATIONS = 1;
 
     // 2^NUM_CORES_EXPONENT CPU cores are used by HPX
-    const std::size_t NUM_CORES = 8;
+    const std::size_t NUM_CORES = 4;
 
     const int N_REGRESSORS = 8;
 
@@ -31,9 +31,9 @@ int main(int argc, char *argv[])
     // number of regressors, i.e. number of previous points incl. current point
     // considered for each entry in the kernel matrix
 
-    std::string train_in_path = "../../../data/data_1024/training_input.txt";
-    std::string train_out_path = "../../../data/data_1024/training_output.txt";
-    std::string test_in_path = "../../../data/data_1024/test_input.txt";
+    std::string train_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
+    std::string train_out_path = "../../../data/generators/msd_simulator/data/output_data.txt";
+    std::string test_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
 
     // Add number of threads to arguments
     std::vector<std::string> args(argv, argv + argc);
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
     // Start HPX runtime with arguments
     utils::start_hpx_runtime(hpx_argc, hpx_argv);
 
-    for (std::size_t n_train_tiles = N_TRAIN_TILES; n_train_tiles <= N_TRAIN_TILES; n_train_tiles *= 2)  // NOTE: currently all cores
+    for (std::size_t n_train_tiles = 1; n_train_tiles <= 64; n_train_tiles *= 2)
     {
         for (std::size_t n_train = N_TRAIN_START; n_train <= N_TRAIN_END; n_train *= 2)
         {

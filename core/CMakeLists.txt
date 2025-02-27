@@ -64,6 +64,7 @@ set(HEADER_FILES
     include/adapter_mkl.hpp
     include/gp_algorithms_cpu.hpp
     include/gp_functions.hpp
+    include/apex_utils.hpp
     include/gp_kernels.hpp
     include/gp_hyperparameters.hpp
     include/gp_optimizer_cpu.hpp
