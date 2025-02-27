@@ -1,13 +1,14 @@
-#include "../include/gpxpy_c.hpp"
+#include "gpxpy_c.hpp"
 
-#include "../include/gp_functions.hpp"
-#include "../include/target.hpp"
-#include "../include/utils_c.hpp"
+#include "gp_functions.hpp"
+#include "target.hpp"
+#include "utils_c.hpp"
 #include <cstdio>
 #include <hpx/future.hpp>
 #include <iomanip>
 #include <memory>
 #include <sstream>
+#include "apex_utils.hpp"
 
 // namespace for GPXPy library entities
 namespace gpxpy
@@ -173,11 +174,13 @@ double GP::calculate_loss()
 
 std::vector<std::vector<double>> GP::cholesky()
 {
+    auto cholesky_timer = now();
     std::vector<std::vector<double>> result;
     hpx::run_as_hpx_thread([this, &result]()
                            { result =
                                  cholesky_on_target(_training_input, _n_tiles, _n_tile_size, n_regressors, sek_params, target)
                                      .get(); });
+    apex::sample_value("cholesky", diff(cholesky_timer));
     return result;
 }
 
