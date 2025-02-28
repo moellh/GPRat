@@ -17,6 +17,7 @@ void start_hpx_wrapper(std::vector<std::string> args, std::size_t n_cores)
 {
     // Add the --hpx:threads argument to the args vector
     args.push_back("--hpx:threads=" + std::to_string(n_cores));
+    args.push_back("--hpx:ini=hpx.stacks.use_guard_pages=0");
 
     // Convert std::vector<std::string> to char* array
     std::vector<char *> argv;
