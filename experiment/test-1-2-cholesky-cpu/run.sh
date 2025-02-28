@@ -19,7 +19,7 @@ run_experiment() {
 
 N_CORES=(6 12 24 48)
 N_TRAIN=(32768)
-N_TILES=(512)
+N_TILES=(1 2 4 8 16 32 64 128 256 512)
 N_REG=(8)
 N_LOOPS=(11)
 run_experiment
