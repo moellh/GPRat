@@ -25,7 +25,7 @@ cd $msd_dir
 echo "=== Starting Test 4"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
-cd experiment/test-3-4-cholesky-gpu/
+cd experiment/test-4-cholesky-gpu/
 mkdir -p apex
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
