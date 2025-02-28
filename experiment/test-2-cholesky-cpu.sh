@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH -w simcl1n1
-#SBATCH --job-name="gp_1"
-#SBATCH --output=job_gprat-1.out #SBATCH --time=24:00:00
+#SBATCH -w simcl1n2
+#SBATCH --job-name="gp_2"
+#SBATCH --output=job_gprat-2.out #SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --exclusive
 
@@ -21,16 +21,16 @@ git switch experiment
 cd $msd_dir
 ./run_msd.sh
 
-# Test 1
-echo "=== Starting Test 1"
+# Test 2
+echo "=== Starting Test 2"
 cd $gprat_dir
-./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
 cd experiment/test-1-2-cholesky-cpu/
 mkdir -p apex
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
-results_dir=$HOME/results/1/${timestamp}
+results_dir=$HOME/results/2/${timestamp}
 mkdir -p ${results_dir}
 cp output.csv ${results_dir}/output.csv
 cp -r apex/ ${results_dir}/apex/
-echo "=== Finished Test 1"
+echo "=== Finished Test 2"
