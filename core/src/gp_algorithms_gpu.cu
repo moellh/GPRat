@@ -1493,6 +1493,7 @@ cholesky(const std::vector<double> &h_training_input,
 #if GPRAT_ASSEMBLY_ONLY
     hpx::wait_all(d_tiles);
     apex::sample_value("cholesky_step assembly", diff(cholesky_step_assembly_timer));
+    free_lower_tiled_matrix(d_tiles, n_tiles);
     return hpx::make_ready_future(std::vector<std::vector<double>>());
 #endif
 #if GPRAT_CHOLESKY_STEPS
