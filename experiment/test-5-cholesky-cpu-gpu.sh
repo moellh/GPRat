@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH -w simcl1n1,simcl1n2
-#SBATCH --job-name="gp_2"
-#SBATCH --output=job_gprat-2.out
+#SBATCH --job-name="gp_5"
+#SBATCH --output=job_gprat-5.out
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --exclusive
@@ -22,16 +22,19 @@ git switch experiment
 cd $msd_dir
 ./run_msd.sh
 
-# Test 2
-echo "=== Starting Test 2"
+# Test 5
+echo "=== Starting Test 5"
 cd $gprat_dir
-./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON
-cd experiment/test-2-cholesky-cpu/
-mkdir -p apex
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
+cd experiment/test-5-cholesky-gpu/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
-results_dir=$HOME/results/2/${timestamp}
+results_dir=$HOME/results/5/${timestamp}
 mkdir -p ${results_dir}
-cp output.csv ${results_dir}/output.csv
-cp -r apex/ ${results_dir}/apex/
-echo "=== Finished Test 2"
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 5"

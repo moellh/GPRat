@@ -2,7 +2,8 @@
 
 #SBATCH -w simcl1n1,simcl1n2
 #SBATCH --job-name="gp_3"
-#SBATCH --output=job_gprat-3.out #SBATCH --time=24:00:00
+#SBATCH --output=job_gprat-3.out
+#SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --exclusive
 
