@@ -1481,8 +1481,8 @@ cholesky(const std::vector<double> &h_training_input,
 {
     gpu.create();
 
-#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     auto cholesky_timer = now();
+#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     auto cholesky_step_assembly_timer = now();
 #endif
 
@@ -1510,8 +1510,8 @@ cholesky(const std::vector<double> &h_training_input,
 #if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(d_tiles);
     apex::sample_value("cholesky_step cholesky", diff(cholesky_step_cholesky_timer));
-    apex::sample_value("cholesky", diff(cholesky_timer));
 #endif
+    apex::sample_value("cholesky", diff(cholesky_timer));
 
     // Copy tiled matrix to host
     std::vector<std::vector<double>> h_tiles = move_lower_tiled_matrix_to_host(d_tiles, n_tile_size, n_tiles, gpu);

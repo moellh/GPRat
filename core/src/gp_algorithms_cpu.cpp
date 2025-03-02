@@ -1280,8 +1280,8 @@ cholesky(const std::vector<double> &training_input,
          int n_regressors,
          gpxpy_hyper::SEKParams sek_params)
 {
-#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     auto cholesky_timer = now();
+#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
     auto cholesky_step_assembly_timer = now();
 #endif
     // Tiled future data structure is matrix represented as vector of tiles.
@@ -1324,8 +1324,8 @@ cholesky(const std::vector<double> &training_input,
 #if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(K_tiles);
     apex::sample_value("cholesky_step cholesky", diff(cholesky_step_cholesky_timer));
-    apex::sample_value("cholesky", diff(cholesky_timer));
 #endif
+    apex::sample_value("cholesky", diff(cholesky_timer));
 
     // Get & return predictions and uncertainty
     std::vector<std::vector<double>> result(n_tiles * n_tiles);
