@@ -1479,17 +1479,10 @@ cholesky(const std::vector<double> &h_training_input,
          const gpxpy_hyper::SEKParams sek_params,
          gpxpy::CUDA_GPU &gpu)
 {
-#if GPRAT_CHOLESKY_STEPS
-    auto cholesky_step_ra_timer = now();
-#endif
     gpu.create();
-    cusolverDnHandle_t cusolver = create_cusolver_handle();
-
-#if GPRAT_CHOLESKY_STEPS
-    apex::sample_value("cholesky_step ressource allocation", diff(cholesky_step_ra_timer));
-#endif
 
 #if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
+    auto cholesky_timer = now();
     auto cholesky_step_assembly_timer = now();
 #endif
 
@@ -1510,31 +1503,21 @@ cholesky(const std::vector<double> &h_training_input,
 #endif
 
     // Compute Tiled Cholesky decomposition on device
+    cusolverDnHandle_t cusolver = create_cusolver_handle();
     right_looking_cholesky_tiled(d_tiles, n_tile_size, n_tiles, gpu, cusolver);
 
 #if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(d_tiles);
     apex::sample_value("cholesky_step cholesky", diff(cholesky_step_cholesky_timer));
-    // ---
-    auto cholesky_step_copyback_timer = now();
+    apex::sample_value("cholesky", diff(cholesky_timer));
 #endif
 
     // Copy tiled matrix to host
     std::vector<std::vector<double>> h_tiles = move_lower_tiled_matrix_to_host(d_tiles, n_tile_size, n_tiles, gpu);
 
-#if GPRAT_CHOLESKY_STEPS
-    apex::sample_value("cholesky_step copyback", diff(cholesky_step_copyback_timer));
-    // ---
-    auto cholesky_step_rd_timer = now();
-#endif
-
     cudaFree(d_training_input);
     destroy(cusolver);
     gpu.destroy();
-
-#if GPRAT_CHOLESKY_STEPS
-    apex::sample_value("cholesky_step ressource destroy", diff(cholesky_step_rd_timer));
-#endif
 
     return hpx::make_ready_future(h_tiles);
 }
