@@ -26,7 +26,7 @@ cd $msd_dir
 echo "=== Starting Test 5"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
-cd experiment/test-5-cholesky-gpu/
+cd experiment/test-5-cholesky-cpu-gpu/
 mkdir -p apex-cpu
 mkdir -p apex-gpu
 ./run_simcl1.sh
