@@ -10,9 +10,7 @@
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>
 
-#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY || GPRAT_PREDICT_STEPS || GPRAT_PREDICT_UNCER_STEPS || GPRAT_PREDICT_FULL_COV_STEPS
-    #include <apex_utils.hpp>
-#endif
+#include <apex_utils.hpp>
 
 namespace gpu
 {
