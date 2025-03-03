@@ -1,0 +1,37 @@
+"rank","name","type","num samples/calls","yields","minimum","mean","maximum","stddev","total","inclusive (ns)","num threads","total per thread"
+0,"APEX MAIN","timer",1,0,40631508127,40631508127,40631508127,0,40631508127,40631508127,1,40631508127
+0,"<unknown>","timer",1,0,100542,100542,100542,0,100542,100542,1,100542
+0,"N3hpx10components6server15runtime_support19shutdown_all_actionE","timer",1,2,23290,287964,146762,0,287964,287964,2,143982
+0,"run_as_hpx_thread (void)","timer",10,9,87215226,4037038186,5016196059,0,40370381855,40370381855,15,2691358790
+0,"DRAM Energy","counter",40,0,0,0,0,0,0,0,1,0
+0,"Package-0 Energy","counter",40,0,0,0,0,0,0,0,1,0
+0,"status:VmHWM kB","counter",41,0,137312,43532569,86933232,25335162,1784835332,0,1,1784835332
+0,"CPU I/O Wait %","counter",40,0,0,0,0,0,0,0,1,0
+0,"CPU Guest %","counter",40,0,0,0,0,0,0,0,1,0
+0,"status:VmExe kB","counter",41,0,2772,2772,2772,0,113652,0,1,113652
+0,"status:VmPTE kB","counter",41,0,640,88709,173880,50317,3637064,0,1,3637064
+0,"N3hpx10components6server15runtime_support22load_components_actionE","timer",1,0,1820917,1820917,1820917,0,1820917,1820928,1,1820917
+0,"status:VmLck kB","counter",41,0,0,0,0,0,0,0,1,0
+0,"status:VmPin kB","counter",41,0,0,0,0,0,0,0,1,0
+0,"status:VmSize kB","counter",41,0,2114044,49463390,92878476,25488634,2027999004,0,1,2027999004
+0,"status:VmLib kB","counter",41,0,1328152,1328152,1328152,0,54454232,0,1,54454232
+0,"run_helper","timer",1,3,28310,1007215,661890,0,1007215,1007215,3,335738
+0,"status:VmData kB","counter",41,0,172168,45500035,88899048,25653716,1865501444,0,1,1865501444
+0,"assemble K_tiles","timer",328960,328959,370,2305567,12827269,0,758439320321,758439320321,96,7900409587
+0,"cholesky_step assembly","counter",10,0,3740395825,3917579846,4654622542,276464698,39175798456,0,9,4352866495
+0,"status:VmSwap kB","counter",41,0,0,0,0,0,0,0,1,0
+0,"1 Minute Load average","counter",41,0,35,50,65,9,2041,0,1,2041
+0,"status:VmPeak kB","counter",41,0,2236920,49496575,92944012,25479730,2029359576,0,1,2029359576
+0,"status:voluntary_ctxt_switches","counter",41,0,41,293,304,40,12014,0,1,12014
+0,"status:nonvoluntary_ctxt_switches","counter",41,0,100,106,111,3,4362,0,1,4362
+0,"CPU IRQ %","counter",40,0,0,0,0,0,0,0,1,0
+0,"status:VmRSS kB","counter",41,0,137312,43372945,86933232,25443067,1778290732,0,1,1778290732
+0,"CPU soft IRQ %","counter",40,0,0,0,0,0,0,0,1,0
+0,"N3hpx10components6server15runtime_support29call_startup_functions_actionE","timer",2,0,6430,31951,57471,25521,63901,64000,1,63901
+0,"status:VmStk kB","counter",41,0,140,140,140,0,5740,0,1,5740
+0,"CPU User %","counter",40,0,98,99,99,0,3949,0,1,3949
+0,"CPU System %","counter",40,0,1,1,1,0,44,0,1,44
+0,"CPU Nice %","counter",40,0,0,0,0,0,0,0,1,0
+0,"CPU Idle %","counter",40,0,0,0,1,0,7,0,1,7
+0,"status:Threads","counter",41,0,10,100,102,14,4090,0,1,4090
+0,"CPU Steal %","counter",40,0,0,0,0,0,0,0,1,0
