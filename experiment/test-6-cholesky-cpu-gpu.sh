@@ -22,7 +22,7 @@ git switch experiment
 cd $msd_dir
 ./run_msd.sh
 
-# Test 5
+# Test 6
 echo "=== Starting Test 6"
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_CHOLESKY_STEPS=ON

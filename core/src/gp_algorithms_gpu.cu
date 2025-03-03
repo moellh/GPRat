@@ -1480,7 +1480,7 @@ cholesky(const std::vector<double> &h_training_input,
     gpu.create();
 
     auto cholesky_timer = now();
-#if GPRAT_CHOLESKY_STEPS || GPRAT_ASSEMBLY_ONLY
+#if GPRAT_CHOLESKY_STEPS
     auto cholesky_step_assembly_timer = now();
 #endif
 
@@ -1488,12 +1488,6 @@ cholesky(const std::vector<double> &h_training_input,
     // Assemble tiled covariance matrix on GPU.
     std::vector<hpx::shared_future<double *>> d_tiles = assemble_tiled_covariance_matrix(d_training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
 
-#if GPRAT_ASSEMBLY_ONLY
-    hpx::wait_all(d_tiles);
-    apex::sample_value("cholesky_step assembly", diff(cholesky_step_assembly_timer));
-    free_lower_tiled_matrix(d_tiles, n_tiles);
-    return hpx::make_ready_future(std::vector<std::vector<double>>());
-#endif
 #if GPRAT_CHOLESKY_STEPS
     hpx::wait_all(d_tiles);
     apex::sample_value("cholesky_step assembly", diff(cholesky_step_assembly_timer));
@@ -1509,6 +1503,7 @@ cholesky(const std::vector<double> &h_training_input,
     hpx::wait_all(d_tiles);
     apex::sample_value("cholesky_step cholesky", diff(cholesky_step_cholesky_timer));
 #endif
+    hpx::wait_all(d_tiles);
     apex::sample_value("cholesky", diff(cholesky_timer));
 
     // Copy tiled matrix to host
