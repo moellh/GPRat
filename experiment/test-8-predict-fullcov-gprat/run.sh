@@ -3,7 +3,7 @@
 source $HOME/spack/share/spack/setup-env.sh
 spack env activate gpxpy
 
-# Test 8a
+# Test 9
 
 run_experiment_cpu() {
   for core in "${N_CORES[@]}"; do

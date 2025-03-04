@@ -3,7 +3,7 @@
 source $HOME/spack/share/spack/setup-env.sh
 spack env activate gpxpy
 
-# Test 8b
+# Test 7b
 
 # GPyTorch
 N_CORES=(48)

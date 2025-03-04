@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #SBATCH -w simcl1n1
-#SBATCH --job-name="gp_8b"
-#SBATCH --output=job_gprat-8b.out
+#SBATCH --job-name="gp_7a"
+#SBATCH --output=job_gprat-7a.out
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --exclusive
@@ -22,18 +22,19 @@ git switch experiment
 cd $msd_dir
 ./run_msd.sh
 
-# Test 8b
-echo "=== Starting Test 8b (GPyTorch, GPflow) ==="
+# Test 7a
+echo "=== Starting Test 7a (GPRat) ==="
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
-cd experiment/test-8-predict-fullcov-gpytorch-gpflow/
+cd experiment/test-7a-predict-fullcov-gprat/
+mkdir -p apex-cpu
+mkdir -p apex-gpu
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
-results_dir=$HOME/results/8b/${timestamp}
-mkdir -p ${results_dir}/gpytorch
-mkdir -p ${results_dir}/gpflow
-cp gpytorch/output-cpu.csv ${results_dir}/gpytorch/output-cpu.csv
-cp gpytorch/output-gpu.csv ${results_dir}/gpytorch/output-gpu.csv
-cp gpflow/output-cpu.csv ${results_dir}/gpflow/output-cpu.csv
-cp gpflow/output-gpu.csv ${results_dir}/gpflow/output-gpu.csv
-echo "=== Finished Test 8b"
+results_dir=$HOME/results/7a/${timestamp}
+mkdir -p ${results_dir}
+cp output-cpu.csv ${results_dir}/output-cpu.csv
+cp output-gpu.csv ${results_dir}/output-gpu.csv
+cp -r apex-cpu/ ${results_dir}/apex-cpu/
+cp -r apex-gpu/ ${results_dir}/apex-gpu/
+echo "=== Finished Test 7a"
