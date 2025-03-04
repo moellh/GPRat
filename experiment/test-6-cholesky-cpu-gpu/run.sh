@@ -41,7 +41,7 @@ run_experiment_gpu() {
 N_TRAIN=(128 256 512 1024 2048 4096 8192 16384 32768 65536)
 N_TILES=(128)
 run_experiment_cpu
-
-N_TRAIN=(128 256 512 1024 2048 4096 8192 16384 32768 65536)
-N_TILES=(32)
-run_experiment_gpu
+#
+# N_TRAIN=(128 256 512 1024 2048 4096 8192 16384 32768 65536)
+# N_TILES=(32)
+# run_experiment_gpu
