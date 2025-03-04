@@ -1,8 +1,8 @@
 #!/bin/bash
 
-#SBATCH -w simcl1n1,simcl1n2
-#SBATCH --job-name="gp_8"
-#SBATCH --output=job_gprat-8.out
+#SBATCH -w simcl1n1
+#SBATCH --job-name="gp_test"
+#SBATCH --output=job_gprat-test.out
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --exclusive
@@ -22,19 +22,19 @@ git switch experiment
 cd $msd_dir
 ./run_msd.sh
 
-# Test 8
-echo "=== Starting Test 8"
+# Test
+echo "=== Starting Test test ==="
 cd $gprat_dir
 ./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON
-cd experiment/test-8-predict/
+cd experiment/test-test-predict-fullcov-gprat/
 mkdir -p apex-cpu
 mkdir -p apex-gpu
 ./run_simcl1.sh
 timestamp=$(date +"%m-%d_%H-%M-%S")
-results_dir=$HOME/results/8/${timestamp}
+results_dir=$HOME/results/test/${timestamp}
 mkdir -p ${results_dir}
 cp output-cpu.csv ${results_dir}/output-cpu.csv
 cp output-gpu.csv ${results_dir}/output-gpu.csv
 cp -r apex-cpu/ ${results_dir}/apex-cpu/
 cp -r apex-gpu/ ${results_dir}/apex-gpu/
-echo "=== Finished Test 8"
+echo "=== Finished Test test"

@@ -1,29 +1,46 @@
-import argparse
-import logging
-import os
+import sys
 import time
+import os
+import logging
 from csv import writer
+from hpx_logger import setup_logging
+import argparse
 
 import gpxpy as gpx
-
-from hpx_logger import setup_logging
 
 logger = logging.getLogger()
 log_filename = "./hpx_logs.log"
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--n_cores", type=int)
-parser.add_argument("--n_train", type=int)
-parser.add_argument("--n_test", type=int)
-parser.add_argument("--n_tiles", type=int)
-parser.add_argument("--n_reg", type=int)
-parser.add_argument("--n_loops", type=int)
+parser.add_argument(
+    "--n_cores",
+    type=int,
+)
+parser.add_argument(
+    "--n_train",
+    type=int,
+)
+parser.add_argument(
+    "--n_test",
+    type=int,
+)
+parser.add_argument(
+    "--n_tiles",
+    type=int,
+)
+parser.add_argument(
+    "--n_reg",
+    type=int,
+)
+parser.add_argument(
+    "--n_loops",
+    type=int,
+)
 args = parser.parse_args()
 
 TRAIN_IN_FILE = "../../data/generators/msd_simulator/data/input_data.txt"
 TRAIN_OUT_FILE = "../../data/generators/msd_simulator/data/output_data.txt"
 TEST_IN_FILE = "../../data/generators/msd_simulator/data/input_data.txt"
-
 
 def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
     # setup logging
@@ -59,20 +76,15 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
     train_out = gpx.GP_data(TRAIN_OUT_FILE, n_train)
     test_in = gpx.GP_data(TEST_IN_FILE, n_test)
 
-    gp_cpu = gpx.GP(
-        train_in.data,
-        train_out.data,
-        n_tiles,
-        n_tile_size,
-        trainable=[True, True, True],
-    )
+    gp_cpu = gpx.GP(train_in.data, train_out.data, n_tiles, n_tile_size, trainable=[True, True, True])
 
     pred_t = time.time()
-    _ = gp_cpu.predict(test_in.data, m_tiles, m_tile_size)
+    _ = gp_cpu.predict_with_full_cov(test_in.data, m_tiles, m_tile_size)
     pred_t = time.time() - pred_t
 
     row_data = [n_cores, n_train, n_test, n_tiles, n_reg, i_loop, pred_t]
     csv.writerow(row_data)
+
 
 
 if __name__ == "__main__":

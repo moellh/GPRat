@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -w simcl1n1,simcl1n2
+#SBATCH -w simcl1n1
 #SBATCH --job-name="gp_9"
 #SBATCH --output=job_gprat-9.out
 #SBATCH --time=24:00:00
@@ -22,11 +22,10 @@ git switch experiment
 cd $msd_dir
 ./run_msd.sh
 
-# Test 9
 echo "=== Starting Test 9"
 cd $gprat_dir
-./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_PREDICT_STEPS=ON
-cd experiment/test-8-9-predict/
+./compile_gpxpy_python_simcl1.sh -DGPXPY_WITH_CUDA=ON -DGPRAT_PREDICT_FULL_COV_STEPS=ON
+cd experiment/test-9-predict-fullcov/
 mkdir -p apex-cpu
 mkdir -p apex-gpu
 ./run_simcl1.sh
