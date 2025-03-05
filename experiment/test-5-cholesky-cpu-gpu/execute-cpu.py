@@ -78,7 +78,5 @@ def single_run(csv, n_cores, n_train, n_tiles, n_reg, i_loop):
     row_data = [n_cores, n_train, n_tiles, n_reg, i_loop, chol_t]
     csv.writerow(row_data)
 
-
-
 if __name__ == "__main__":
     execute(args.n_cores, args.n_train, args.n_tiles, args.n_reg, args.n_loops)

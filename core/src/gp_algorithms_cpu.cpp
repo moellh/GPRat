@@ -765,7 +765,7 @@ predict_with_full_cov(const std::vector<double> &training_input,
     hpx::wait_all(prior_K_tiles);
     apex::sample_value("predict_full_cov_step full cov", diff(predict_full_cov_step_full_cov_timer));
     // ---
-    auto predict_full_cov_step_pred_uncer_timer = apex::start("predict_full_cov_step pred uncer");
+    auto predict_full_cov_step_pred_uncer_timer = now();
 #endif
 
     //// Compute predicition uncertainty
