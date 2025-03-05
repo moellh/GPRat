@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH -w simcl1n1
+#SBATCH -w simcl1n1,simcl1n2
 #SBATCH --job-name="gp_7a"
 #SBATCH --output=job_gprat-7a.out
 #SBATCH --time=24:00:00
