@@ -1,8 +1,4 @@
 #!/bin/bash
-#
-# Activate spack environment
-source $HOME/spack/share/spack/setup-env.sh
-spack env activate gpxpy
 
 # Create & Activate python enviroment
 if [ ! -d "gpytorch_env" ]; then

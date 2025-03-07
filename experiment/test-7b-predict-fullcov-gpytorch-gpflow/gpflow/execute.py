@@ -11,7 +11,7 @@ from gpflow_logger import setup_logging
 from utils import (
     init_model,
     load_data,
-    predict_with_full_cov,
+    predict_with_var,
 )
 
 parser = argparse.ArgumentParser()
@@ -114,7 +114,7 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
     )
 
     pred_full_cov_t = time.time()
-    f_pred, f_full_cov = predict_with_full_cov(model, X_test)
+    f_pred, f_full_cov = predict_with_var(model, X_test)
     pred_full_cov_t = time.time() - pred_full_cov_t
 
     row_data = [n_cores, n_train, n_test, n_tiles, n_reg, i_loop, pred_full_cov_t]

@@ -148,22 +148,6 @@ def predict_with_var(model, X_test):
 
     return f_pred, f_var
 
-def predict_with_full_cov(model, X_test):
-    """
-    Predict latent function values and observed target values for the given test data.
-
-    Args:
-        model (gpflow.models.GPModel): The trained GPflow model.
-        X_test (numpy.ndarray): The test input data.
-
-    Returns:
-        f_pred (numpy.ndarray): Mean of latent function values for test data.
-        f_var (numpy.ndarray): Variance of latent function values for test data.
-    """
-    f_pred, f_full_cov = model.predict_f_full_cov(X_test)
-
-    return f_pred, f_full_cov
-
 def predict(model, X_test):
     """
     Predict latent function values and observed target values for the given test data.

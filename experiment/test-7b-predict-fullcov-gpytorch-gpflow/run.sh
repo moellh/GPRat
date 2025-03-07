@@ -15,8 +15,8 @@ run_experiment_gpytorch() {
       for test in "${N_TEST[@]}"; do
         for reg in "${N_REG[@]}"; do
           for loop in "${N_LOOPS[@]}"; do
-            python3 run_gpytorch_cpu.sh --n_cores $core --n_train $train --n_test $test --n_reg $reg --n_loops $loop
-            python3 run_gpytorch_gpu.sh --n_cores $core --n_train $train --n_test $test --n_reg $reg --n_loops $loop
+            ./run_gpytorch_cpu.sh --n_cores $core --n_train $train --n_test $test --n_reg $reg --n_loops $loop
+            ./run_gpytorch_gpu.sh --n_cores $core --n_train $train --n_test $test --n_reg $reg --n_loops $loop
           done
         done
       done
@@ -76,8 +76,8 @@ run_experiment_gpflow() {
       for test in "${N_TEST[@]}"; do
         for reg in "${N_REG[@]}"; do
           for loop in "${N_LOOPS[@]}"; do
-            python3 run_gpflow_cpu.sh --n_cores $core --n_train $train --n_test $test --n_reg $reg --n_loops $loop
-            python3 run_gpflow_gpu.sh --n_cores $core --n_train $train --n_test $test --n_reg $reg --n_loops $loop
+            ./run_gpflow_cpu.sh --n_cores $core --n_train $train --n_test $test --n_reg $reg --n_loops $loop
+            ./run_gpflow_gpu.sh --n_cores $core --n_train $train --n_test $test --n_reg $reg --n_loops $loop
           done
         done
       done

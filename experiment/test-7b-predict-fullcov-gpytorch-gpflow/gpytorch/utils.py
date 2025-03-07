@@ -190,10 +190,10 @@ def predict_with_full_cov(model, likelihood, X_test):
     model.eval()
     likelihood.eval()
 
-    with torch.no_grad(), gpytorch.settings.fast_pred_var(), gpytorch.settings.lazily_evaluate_kernels(False):
+    with torch.no_grad(), gpytorch.settings.fast_pred_var():
         f_pred = model(X_test)
         f_mean = f_pred.mean
-        f_full_cov = f_pred.covariance_matrix
+        f_var = f_pred.variance
 
     '''
     for future plot generation:
@@ -202,7 +202,7 @@ def predict_with_full_cov(model, likelihood, X_test):
     lower, upper = observed_pred.confidence_region()
     '''
 
-    return f_mean, f_full_cov
+    return f_mean, f_var
 
 def predict(model, likelihood, X_test):
     """

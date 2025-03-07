@@ -4,7 +4,6 @@ source $HOME/spack/share/spack/setup-env.sh
 spack env activate gpxpy
 
 N_CORES=(48)
-N_STREAMS=(32)
 N_REG=(8)
 N_LOOPS=(10)
 
@@ -38,10 +37,20 @@ run_experiment_gpu() {
   done
 }
 
-N_TRAIN=(128 256 512 1024 2048 4096 8192 16384 32768 65536)
-N_TILES=(128)
+# N_TRAIN=(128 256 512 1024 2048 4096 8192 16384 32768 65536)
+# N_TILES=(128)
+# run_experiment_cpu
+#
+# N_TRAIN=(128 256 512 1024 2048 4096 8192 16384 32768 65536)
+# N_TILES=(32)
+# N_STREAMS=(32)
+# run_experiment_gpu
+
+N_TRAIN=(4 8 16 32 64 128 256 512 1024 2048 4096 8192)
+N_TILES=(4)
 run_experiment_cpu
 
-N_TRAIN=(128 256 512 1024 2048 4096 8192 16384 32768 65536)
-N_TILES=(32)
+N_TRAIN=(1 2 4 8 16 32 64 128 256 512 1024 2048 4096 8192)
+N_TILES=(1)
+N_STREAMS=(1)
 run_experiment_gpu
