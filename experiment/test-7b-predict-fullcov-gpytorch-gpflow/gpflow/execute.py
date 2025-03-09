@@ -2,6 +2,7 @@ import argparse
 import logging
 import os
 import time
+from csv import writer
 
 import gpflow
 import numpy as np
@@ -74,12 +75,13 @@ def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
 
     file_path = "./output-gpu.csv" if args.use_gpu else "./output-cpu.csv"
     file_exists = os.path.isfile(file_path)
+    output_file = open(file_path, "a", newline="")
+    output_writer = writer(output_file)
 
-    with open(file_path, "a") as output_file:
-        if not file_exists or os.stat(file_path).st_size == 0:
-            logger.info("Write output file header")
-            header = "n_cores,n_train,n_test,n_reg,i_loop,time\n"
-            output_file.write(header)
+    if not file_exists:
+        logger.info("Write output file header")
+        header = ["n_cores", "n_train", "n_test", "n_reg", "i_loop", "time"]
+        output_writer.writerow(header)
 
         if PRECISION == "float32":
             gpflow.config.set_default_float(np.float32)
@@ -88,7 +90,7 @@ def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
 
         tf.config.threading.set_intra_op_parallelism_threads(n_cores)
         for i_loop in range(n_loops):
-            single_run(output_file, n_cores, n_train, n_test, n_tiles, n_reg, i_loop)
+            single_run(output_writer, n_cores, n_train, n_test, n_tiles, n_reg, i_loop)
 
     logger.info(f"completed run: {n_cores}, {n_train}, {n_test}, {n_tiles}, {n_reg}, {n_loops}")
 
@@ -118,7 +120,7 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
     pred_full_cov_t = time.time() - pred_full_cov_t
 
     row_data = [n_cores, n_train, n_test, n_tiles, n_reg, i_loop, pred_full_cov_t]
-    csv.writerow(row_data)
+    csv.write(row_data)
 
 if __name__ == "__main__":
     execute(args.n_cores, args.n_train, args.n_test, args.n_tiles, args.n_reg, args.n_loops)

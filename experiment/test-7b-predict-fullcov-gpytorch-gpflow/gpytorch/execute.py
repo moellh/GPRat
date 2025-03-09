@@ -4,6 +4,7 @@ import torch
 import gpytorch
 import os
 import argparse
+from csv import writer
 
 from gpytorch_logger import setup_logging
 from utils import load_data, ExactGPModel, train, predict_with_full_cov
@@ -51,14 +52,13 @@ def execute(n_cores, n_train, n_test, n_reg, n_loops):
 
     file_path = "./output-gpu.csv" if args.use_gpu else "./output-cpu.csv"
     file_exists = os.path.isfile(file_path)
+    output_file = open(file_path, "a", newline="")
+    output_writer = writer(output_file)
 
-    with open(file_path, "a") as output_file:
-        if not file_exists or os.stat(file_path).st_size == 0:
-            # logger.info("Write output file header")
-            logger.info("Write output file header")
-            header = "n_cores,n_train,n_test,n_reg,i_loop,time\n"
-            output_file.write(header)
-
+    if not file_exists:
+        logger.info("Write output file header")
+        header = ["n_cores", "n_train", "n_test", "n_reg", "i_loop", "time"]
+        output_writer.writerow(header)
 
         # torch.set_num_threads(config["N_CORES"])
         if PRECISION == "float32":
@@ -68,7 +68,7 @@ def execute(n_cores, n_train, n_test, n_reg, n_loops):
 
         torch.set_num_threads(n_cores)
         for i_loop in range(n_loops):
-            single_run(output_file, n_cores, n_train, n_test, n_reg, i_loop)
+            single_run(output_writer, n_cores, n_train, n_test, n_reg, i_loop)
 
     logger.info(f"completed run: {n_cores}, {n_train}, {n_test}, {n_reg}, {n_loops}")
 
@@ -106,7 +106,7 @@ def single_run(csv, n_cores, n_train, n_test, n_reg, i_loop):
     # logger.info("Finished making predictions.")
 
     row_data = [n_cores, n_train, n_test, n_reg, i_loop, pred_full_cov_t]
-    csv.writerow(row_data)
+    csv.write(row_data)
 
 
 if __name__ == "__main__":
