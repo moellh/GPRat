@@ -120,7 +120,7 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
     pred_full_cov_t = time.time() - pred_full_cov_t
 
     row_data = [n_cores, n_train, n_test, n_tiles, n_reg, i_loop, pred_full_cov_t]
-    csv.write(row_data)
+    csv.writerow(row_data)
 
 if __name__ == "__main__":
     execute(args.n_cores, args.n_train, args.n_test, args.n_tiles, args.n_reg, args.n_loops)

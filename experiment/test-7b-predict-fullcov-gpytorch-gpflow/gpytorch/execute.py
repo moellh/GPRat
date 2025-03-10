@@ -106,7 +106,7 @@ def single_run(csv, n_cores, n_train, n_test, n_reg, i_loop):
     # logger.info("Finished making predictions.")
 
     row_data = [n_cores, n_train, n_test, n_reg, i_loop, pred_full_cov_t]
-    csv.write(row_data)
+    csv.writerow(row_data)
 
 
 if __name__ == "__main__":
