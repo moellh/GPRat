@@ -83,14 +83,14 @@ def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
         header = ["n_cores", "n_train", "n_test", "n_reg", "i_loop", "time"]
         output_writer.writerow(header)
 
-        if PRECISION == "float32":
-            gpflow.config.set_default_float(np.float32)
-        else:
-            gpflow.config.set_default_float(np.float64)
+    if PRECISION == "float32":
+        gpflow.config.set_default_float(np.float32)
+    else:
+        gpflow.config.set_default_float(np.float64)
 
-        tf.config.threading.set_intra_op_parallelism_threads(n_cores)
-        for i_loop in range(n_loops):
-            single_run(output_writer, n_cores, n_train, n_test, n_tiles, n_reg, i_loop)
+    tf.config.threading.set_intra_op_parallelism_threads(n_cores)
+    for i_loop in range(n_loops):
+        single_run(output_writer, n_cores, n_train, n_test, n_tiles, n_reg, i_loop)
 
     logger.info(f"completed run: {n_cores}, {n_train}, {n_test}, {n_tiles}, {n_reg}, {n_loops}")
 

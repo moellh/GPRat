@@ -26,7 +26,7 @@ run_experiment_gpytorch() {
 
 N_CORES=(48)
 N_REG=(8)
-N_LOOPS=(10)
+N_LOOPS=(11)
 
 N_TRAIN=(128)
 N_TEST=(128)
@@ -60,6 +60,7 @@ N_TRAIN=(16384)
 N_TEST=(16384)
 run_experiment_gpytorch
 
+# NOTE: this throws out of memory exception for GPU implementation
 N_TRAIN=(32768)
 N_TEST=(32768)
 run_experiment_gpytorch
@@ -87,7 +88,7 @@ run_experiment_gpflow() {
 
 N_CORES=(48)
 N_REG=(8)
-N_LOOPS=(10)
+N_LOOPS=(11)
 
 N_TRAIN=(128)
 N_TEST=(128)

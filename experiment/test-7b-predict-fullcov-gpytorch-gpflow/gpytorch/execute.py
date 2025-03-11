@@ -60,15 +60,15 @@ def execute(n_cores, n_train, n_test, n_reg, n_loops):
         header = ["n_cores", "n_train", "n_test", "n_reg", "i_loop", "time"]
         output_writer.writerow(header)
 
-        # torch.set_num_threads(config["N_CORES"])
-        if PRECISION == "float32":
-            torch.set_default_dtype(torch.float32)
-        else:
-            torch.set_default_dtype(torch.float64)
+    # torch.set_num_threads(config["N_CORES"])
+    if PRECISION == "float32":
+        torch.set_default_dtype(torch.float32)
+    else:
+        torch.set_default_dtype(torch.float64)
 
-        torch.set_num_threads(n_cores)
-        for i_loop in range(n_loops):
-            single_run(output_writer, n_cores, n_train, n_test, n_reg, i_loop)
+    torch.set_num_threads(n_cores)
+    for i_loop in range(n_loops):
+        single_run(output_writer, n_cores, n_train, n_test, n_reg, i_loop)
 
     logger.info(f"completed run: {n_cores}, {n_train}, {n_test}, {n_reg}, {n_loops}")
 
