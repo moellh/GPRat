@@ -1,0 +1,27 @@
+"rank","name","type","num samples/calls","yields","minimum","mean","maximum","stddev","total","inclusive (ns)","num threads","total per thread"
+0,"N3hpx10components6server15runtime_support19shutdown_all_actionE","timer",1,2,16580,150751,98641,0,150751,150751,2,75376
+0,"cholesky","counter",50,0,505324,1158396,22247238,3015225,57919812,0,1,57919812
+0,"run_as_hpx_thread (void)","timer",50,50,474974,7009221,224616337,31042189,350461065,350461065,59,5940018
+0,"cholesky potrf","timer",50,50,1460,399511,12854037,1779410,19975543,19975543,37,539880
+0,"N3hpx10components6server15runtime_support29call_startup_functions_actionE","timer",2,0,35820,56446,77071,20626,112891,112896,1,112891
+0,"status:nonvoluntary_ctxt_switches","counter",1,0,100,100,100,0,100,0,1,100
+0,"status:voluntary_ctxt_switches","counter",1,0,137,137,137,0,137,0,1,137
+0,"1 Minute Load average","counter",1,0,48,48,48,0,48,0,1,48
+0,"status:VmPeak kB","counter",1,0,2226736,2226736,2226736,0,2226736,0,1,2226736
+0,"assemble K_tiles","timer",50,50,1600,184577,412833,0,9228826,9228826,42,219734
+0,"run_helper","timer",1,3,5720,934576,603934,0,934576,934576,2,467288
+0,"status:VmSize kB","counter",1,0,2177724,2177724,2177724,0,2177724,0,1,2177724
+0,"status:VmLck kB","counter",1,0,0,0,0,0,0,0,1,0
+0,"status:VmPin kB","counter",1,0,0,0,0,0,0,0,1,0
+0,"<unknown>","timer",1,0,78201,78201,78201,0,78201,78336,1,78201
+0,"N3hpx10components6server15runtime_support22load_components_actionE","timer",1,0,1705713,1705713,1705713,0,1705713,1705728,1,1705713
+0,"status:VmPTE kB","counter",1,0,628,628,628,0,628,0,1,628
+0,"status:VmStk kB","counter",1,0,140,140,140,0,140,0,1,140
+0,"APEX MAIN","timer",1,0,455779342,455779342,455779342,0,455779342,455779342,1,455779342
+0,"status:VmExe kB","counter",1,0,2772,2772,2772,0,2772,0,1,2772
+0,"status:VmLib kB","counter",1,0,1328164,1328164,1328164,0,1328164,0,1,1328164
+0,"status:VmHWM kB","counter",1,0,136988,136988,136988,0,136988,0,1,136988
+0,"status:VmData kB","counter",1,0,170160,170160,170160,0,170160,0,1,170160
+0,"status:VmSwap kB","counter",1,0,0,0,0,0,0,0,1,0
+0,"status:VmRSS kB","counter",1,0,136988,136988,136988,0,136988,0,1,136988
+0,"status:Threads","counter",1,0,11,11,11,0,11,0,1,11
