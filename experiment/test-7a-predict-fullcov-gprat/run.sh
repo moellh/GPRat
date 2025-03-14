@@ -101,9 +101,17 @@ N_TEST=(32768)
 run_experiment_cpu
 
 N_CORES=(48)
-N_TILES=(128)
+N_TILES=(32)
 N_REG=(8)
 N_LOOPS=(10)
+
+N_TRAIN=(32)
+N_TEST=(32)
+run_experiment_cpu
+
+N_TRAIN=(64)
+N_TEST=(64)
+run_experiment_cpu
 
 N_TRAIN=(128)
 N_TEST=(128)
