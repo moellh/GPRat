@@ -28,6 +28,34 @@ N_CORES=(48)
 N_REG=(8)
 N_LOOPS=(11)
 
+N_TRAIN=(1)
+N_TEST=(1)
+run_experiment_gpytorch
+
+N_TRAIN=(2)
+N_TEST=(2)
+run_experiment_gpytorch
+
+N_TRAIN=(4)
+N_TEST=(4)
+run_experiment_gpytorch
+
+N_TRAIN=(8)
+N_TEST=(8)
+run_experiment_gpytorch
+
+N_TRAIN=(16)
+N_TEST=(16)
+run_experiment_gpytorch
+
+N_TRAIN=(32)
+N_TEST=(32)
+run_experiment_gpytorch
+
+N_TRAIN=(64)
+N_TEST=(64)
+run_experiment_gpytorch
+
 N_TRAIN=(128)
 N_TEST=(128)
 run_experiment_gpytorch
@@ -122,6 +150,7 @@ N_TRAIN=(16384)
 N_TEST=(16384)
 run_experiment_gpflow
 
+# NOTE: this throws out of memory exception for GPU implementation
 N_TRAIN=(32768)
 N_TEST=(32768)
 run_experiment_gpflow
