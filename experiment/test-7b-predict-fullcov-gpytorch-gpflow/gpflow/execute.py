@@ -34,10 +34,6 @@ parser.add_argument(
     type=int,
 )
 parser.add_argument(
-    "--n_tiles",
-    type=int,
-)
-parser.add_argument(
     "--n_reg",
     type=int,
 )
@@ -63,7 +59,7 @@ TEST_OUT_FILE = "../../../data/generators/msd_simulator/data/output_data.txt"
 
 
 
-def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
+def execute(n_cores, n_train, n_test, n_reg, n_loops):
     setup_logging(log_filename, True, logger)
 
     # Check if TensorFlow is using GPU
@@ -90,12 +86,12 @@ def execute(n_cores, n_train, n_test, n_tiles, n_reg, n_loops):
 
     tf.config.threading.set_intra_op_parallelism_threads(n_cores)
     for i_loop in range(n_loops):
-        single_run(output_writer, n_cores, n_train, n_test, n_tiles, n_reg, i_loop)
+        single_run(output_writer, n_cores, n_train, n_test, n_reg, i_loop)
 
-    logger.info(f"completed run: {n_cores}, {n_train}, {n_test}, {n_tiles}, {n_reg}, {n_loops}")
+    logger.info(f"completed run: {n_cores}, {n_train}, {n_test}, {n_reg}, {n_loops}")
 
 
-def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
+def single_run(csv, n_cores, n_train, n_test, n_reg, i_loop):
     X_train, Y_train, X_test, Y_test = load_data(
         train_in_path=TRAIN_IN_FILE,
         train_out_path=TRAIN_OUT_FILE,
@@ -119,8 +115,8 @@ def single_run(csv, n_cores, n_train, n_test, n_tiles, n_reg, i_loop):
     f_pred, f_full_cov = predict_with_var(model, X_test)
     pred_full_cov_t = time.time() - pred_full_cov_t
 
-    row_data = [n_cores, n_train, n_test, n_tiles, n_reg, i_loop, pred_full_cov_t]
+    row_data = [n_cores, n_train, n_test, n_reg, i_loop, pred_full_cov_t]
     csv.writerow(row_data)
 
 if __name__ == "__main__":
-    execute(args.n_cores, args.n_train, args.n_test, args.n_tiles, args.n_reg, args.n_loops)
+    execute(args.n_cores, args.n_train, args.n_test, args.n_reg, args.n_loops)

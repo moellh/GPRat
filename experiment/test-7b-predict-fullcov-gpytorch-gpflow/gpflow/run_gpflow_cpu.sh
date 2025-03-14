@@ -9,6 +9,7 @@ source gpflow_env/bin/activate
 # install requirements
 if ! python3 -c "import gpflow"; then
     pip3 install gpflow
+    pip3 install tensorflow[and-cuda]
 fi
 
 # Execute the python script
