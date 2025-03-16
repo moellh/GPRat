@@ -161,7 +161,7 @@ def predict_with_var(model, likelihood, X_test):
     model.eval()
     likelihood.eval()
 
-    with torch.no_grad(), gpytorch.settings.fast_pred_var():
+    with torch.no_grad(), gpytorch.settings.lazily_evaluate_kernels(False), gpytorch.settings.fast_computations(covar_root_decomposition=False, log_prob=False, solves=False):
         f_pred = model(X_test)
         f_mean = f_pred.mean
         f_var = f_pred.variance
