@@ -15,7 +15,8 @@ namespace py = pybind11;
 void start_hpx_wrapper(std::vector<std::string> args, std::size_t n_cores)
 {
     // If args is empty, set the first argument to "gprat"
-    if (args.empty()) {
+    if (args.empty())
+    {
         args.push_back("gprat");
     }
 
