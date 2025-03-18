@@ -1,0 +1,43 @@
+"rank","name","type","num samples/calls","yields","minimum","mean","maximum","stddev","total","inclusive (ns)","num threads","total per thread"
+0,"APEX MAIN","timer",1,0,60372842385,60372842385,60372842385,0,60372842385,60372842385,1,60372842385
+0,"<unknown>","timer",1,0,98041,98041,98041,0,98041,98048,1,98041
+0,"DRAM Energy","counter",60,0,0,0,0,0,0,0,1,0
+0,"Package-0 Energy","counter",60,0,0,0,0,0,0,0,1,0
+0,"CPU Guest %","counter",60,0,0,0,0,0,0,0,1,0
+0,"CPU IRQ %","counter",60,0,0,0,0,0,0,0,1,0
+0,"CPU I/O Wait %","counter",60,0,0,0,0,0,0,0,1,0
+0,"CPU System %","counter",60,0,0,1,1,0,40,0,1,40
+0,"CPU Nice %","counter",60,0,0,0,0,0,0,0,1,0
+0,"CPU Steal %","counter",60,0,0,0,0,0,0,0,1,0
+0,"status:Threads","counter",61,0,10,102,104,12,6250,0,1,6250
+0,"CPU soft IRQ %","counter",60,0,0,0,0,0,4,0,1,4
+0,"status:VmRSS kB","counter",61,0,137280,3069859,7335704,2031969,187261372,0,1,187261372
+0,"status:VmHWM kB","counter",61,0,137280,6980444,7402112,1466940,425807076,0,1,425807076
+0,"status:VmExe kB","counter",61,0,2772,2772,2772,0,169092,0,1,169092
+0,"cholesky syrk","timer",280,280,1120,13014382,66428462,14131657,3644026956,3644026956,91,40044252
+0,"status:VmPTE kB","counter",61,0,632,7318,15744,4028,446420,0,1,446420
+0,"status:VmLck kB","counter",61,0,0,0,0,0,0,0,1,0
+0,"status:VmLib kB","counter",61,0,1328168,1328168,1328168,0,81018248,0,1,81018248
+0,"run_helper","timer",1,3,4450,906993,689380,0,906993,906993,2,453497
+0,"status:VmData kB","counter",61,0,169996,3807477,8118380,2070996,232256104,0,1,232256104
+0,"assemble K_tiles","timer",360,358,1200,26909601,55414370,14067777,9687456232,9687456232,96,100911002
+0,"status:VmPeak kB","counter",61,0,2177568,20597710,21203096,2634725,1256460308,0,1,1256460308
+0,"status:voluntary_ctxt_switches","counter",61,0,37,268,286,32,16359,0,1,16359
+0,"status:nonvoluntary_ctxt_switches","counter",61,0,101,209,319,65,12733,0,1,12733
+0,"N3hpx10components6server15runtime_support29call_startup_functions_actionE","timer",2,0,5970,33796,61621,27826,67591,67840,1,67591
+0,"cholesky potrf","timer",80,80,900,18514045,70503929,19076783,1481123610,1481123610,53,27945728
+0,"N3hpx10components6server15runtime_support19shutdown_all_actionE","timer",1,2,56311,252624,113062,0,252624,252624,2,126312
+0,"run_as_hpx_thread (void)","timer",10,90,13870,1705044504,1732277130,0,17050445036,17050445036,62,275007178
+0,"status:VmSwap kB","counter",61,0,0,0,0,0,0,0,1,0
+0,"1 Minute Load average","counter",61,0,3,23,38,14,1384,0,1,1384
+0,"cholesky_step assembly","counter",10,0,52964376,53646282,56267631,900204,536462819,0,9,59606980
+0,"N3hpx10components6server15runtime_support22load_components_actionE","timer",1,0,1359949,1359949,1359949,0,1359949,1359949,1,1359949
+0,"cholesky trsm","timer",280,279,880,15613710,26941484,6450291,4371838725,4371838725,91,48042184
+0,"status:VmPin kB","counter",61,0,0,0,0,0,0,0,1,0
+0,"status:VmSize kB","counter",61,0,2177568,16768633,21151892,2665416,1022886636,0,1,1022886636
+0,"cholesky gemm","timer",560,560,1090,24504611,66215620,16948531,13722582035,13722582035,96,142943563
+0,"status:VmStk kB","counter",61,0,140,140,140,0,8540,0,1,8540
+0,"CPU User %","counter",60,0,8,28,95,28,1683,0,1,1683
+0,"cholesky_step cholesky","counter",10,0,271392658,290191796,319222204,13255933,2901917962,0,9,322435329
+0,"CPU Idle %","counter",60,0,4,71,92,28,4273,0,1,4273
+0,"cholesky","counter",10,0,324990422,343859544,375505956,13879743,3438595443,0,1,3438595443
