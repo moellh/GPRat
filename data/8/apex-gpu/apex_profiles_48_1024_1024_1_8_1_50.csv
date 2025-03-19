@@ -1,0 +1,48 @@
+"rank","name","type","num samples/calls","yields","minimum","mean","maximum","stddev","total","inclusive (ns)","num threads","total per thread"
+0,"APEX MAIN","timer",1,0,567672185,567672185,567672185,4,567672185,567672185,1,567672185
+0,"predict_full_cov_step copyback","counter",50,0,33080,68737,108591,20865,3436847,0,36,95468
+0,"predict_full_cov_step pred uncer","counter",50,0,50450,91244,465593,57926,4562183,0,36,126727
+0,"predict_full_cov_step ressource destroy","counter",50,0,677295,882941,1051198,93182,44147028,0,36,1226306
+0,"full_cov gemm","timer",50,49,1091,347589,640085,0,17379436,17379436,38,457354
+0,"predict_full_cov_step prediction","counter",50,0,80461,140880,288252,38800,7043999,0,36,195667
+0,"pred_uncer diag_tile","timer",50,46,1069,97532,418384,34072,4876617,4876617,37,131800
+0,"predict_full_cov_step backward","counter",50,0,120371,148989,222231,19945,7449427,0,36,206929
+0,"forward trsv","timer",50,50,1170,185693,1345660,160379,9284637,9284637,42,221063
+0,"predict_full_cov_step cholesky","counter",50,0,1339180,1629379,13622099,1713403,81468929,0,36,2263026
+0,"backward trsv","timer",50,49,1100,152628,183841,0,7631387,7631387,36,211983
+0,"status:Threads","counter",1,0,11,11,11,0,11,0,1,11
+0,"status:VmRSS kB","counter",1,0,137256,137256,137256,0,137256,0,1,137256
+0,"status:VmHWM kB","counter",1,0,137256,137256,137256,0,137256,0,1,137256
+0,"status:VmExe kB","counter",1,0,2772,2772,2772,0,2772,0,1,2772
+0,"assemble alpha_tiles","timer",50,50,1190,525564,1435901,287732,26278220,26278220,40,656956
+0,"status:VmStk kB","counter",1,0,140,140,140,0,140,0,1,140
+0,"predict gemv","timer",50,50,990,142755,240342,0,7137750,7137750,37,192912
+0,"status:VmPTE kB","counter",1,0,632,632,632,0,632,0,1,632
+0,"N3hpx10components6server15runtime_support22load_components_actionE","timer",1,0,1891364,1891364,1891364,0,1891364,1891364,1,1891364
+0,"forward_KcK trsm","timer",50,44,710,706246,968407,0,35312317,35312317,36,980898
+0,"assemble zeros","timer",150,150,1310,814243,1813063,169259,122136434,122136434,78,1565852
+0,"status:VmLck kB","counter",1,0,0,0,0,0,0,0,1,0
+0,"predict_full_cov_step ressource allocation","counter",50,0,507704,3860863,155237589,21625593,193043166,0,36,5362310
+0,"predict_full_cov_step forward KcK","counter",50,0,656045,698230,957747,44787,34911498,0,36,969764
+0,"status:VmPin kB","counter",1,0,0,0,0,0,0,0,1,0
+0,"status:VmSize kB","counter",1,0,2046548,2046548,2046548,0,2046548,0,1,2046548
+0,"status:VmLib kB","counter",1,0,1328192,1328192,1328192,0,1328192,0,1,1328192
+0,"run_helper","timer",1,3,23630,942367,647435,0,942367,942367,3,314122
+0,"status:VmData kB","counter",1,0,170012,170012,170012,0,170012,0,1,170012
+0,"assemble K_tiles","timer",50,50,1430,614159,1659502,257659,30707961,30707961,37,829945
+0,"status:VmSwap kB","counter",1,0,0,0,0,0,0,0,1,0
+0,"1 Minute Load average","counter",1,0,93,93,93,0,93,0,1,93
+0,"<unknown>","timer",1,0,44710,44710,44710,0,44710,44800,1,44710
+0,"assemble cross_covariance_tiles","timer",50,50,1740,802301,1445651,107624,40115057,40115057,39,1028591
+0,"status:VmPeak kB","counter",1,0,2046548,2046548,2046548,0,2046548,0,1,2046548
+0,"status:voluntary_ctxt_switches","counter",1,0,42,42,42,0,42,0,1,42
+0,"status:nonvoluntary_ctxt_switches","counter",1,0,101,101,101,0,101,0,1,101
+0,"predict_full_cov_step forward","counter",50,0,132171,182729,1357270,168540,9136446,0,36,253790
+0,"N3hpx10components6server15runtime_support29call_startup_functions_actionE","timer",2,0,49581,77841,106101,28260,155682,155682,1,155682
+0,"assemble prior_K_tiles_full","timer",50,50,1260,774612,1541121,194873,38730613,38730613,37,1046773
+0,"cholesky potrf","timer",50,50,1250,1636204,13592749,1703553,81810193,81810193,37,2211086
+0,"N3hpx10components6server15runtime_support19shutdown_all_actionE","timer",1,2,21060,173502,109461,0,173502,173502,2,86751
+0,"run_as_hpx_thread (void)","timer",50,400,6431,5987800,155458181,21259339,299390003,299390003,95,3151474
+0,"assemble t_cross_covariance_tiles","timer",50,50,1260,342014,993207,82559,17100683,17100683,38,450018
+0,"predict_full_cov_step full cov","counter",50,0,296032,343595,680215,56256,17179745,0,36,477215
+0,"predict_full_cov_step assembly","counter",50,0,906667,1175835,2254847,229847,58791765,0,36,1633105
