@@ -12,8 +12,8 @@ auto now = std::chrono::high_resolution_clock::now;
 int main(int argc, char *argv[])
 {
     // number of training points, number of rows/columns in the kernel matrix
-    const int N_TRAIN_START = 1 << 12;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
-    const int N_TRAIN_END = 1 << 12;    // 7,   8,   9,   10,   11,   12,   13,   14,  15
+    const int N_TRAIN_START = 1 << 10;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
+    const int N_TRAIN_END = 1 << 10;    // 7,   8,   9,   10,   11,   12,   13,   14,  15
 
     const int N_TEST = 8;
 
@@ -30,9 +30,9 @@ int main(int argc, char *argv[])
 
     // number of regressors, i.e. number of previous points incl. current point
     // considered for each entry in the kernel matrix
-    std::string train_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
-    std::string train_out_path = "../../../data/generators/msd_simulator/data/output_data.txt";
-    std::string test_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
+    std::string train_in_path = "../../../data/data_1024/training_input.txt";
+    std::string train_out_path = "../../../data/data_1024/training_output.txt";
+    std::string test_in_path = "../../../data/data_1024/test_input.txt";
 
     // Add number of threads to arguments
     std::vector<std::string> args(argv, argv + argc);
@@ -92,17 +92,8 @@ int main(int argc, char *argv[])
                 // Cholesky factorization time ----------------------------- {{{
                 auto start_cholesky = now();
 
-                // std::vector<std::vector<double>> cpu_tiles = gp_cpu.cholesky();
+                std::vector<std::vector<double>> cpu_tiles = gp_cpu.cholesky();
                 std::vector<std::vector<double>> gpu_tiles = gp_gpu.cholesky();
-                // double chol_err = 0;
-                // for (std::size_t i = 0; i < cpu_tiles.size(); i++)
-                // {
-                //     for (std::size_t j = 0; j < cpu_tiles[i].size(); j++)
-                //     {
-                //         chol_err += std::abs(cpu_tiles[i][j] - gpu_tiles[i][j]);
-                //     }
-                // }
-                // std::cout << "Cholesky error: " << chol_err << std::endl;
 
                 auto cholesky_time = now() - start_cholesky;
                 // ------------ }}}
@@ -132,13 +123,7 @@ int main(int argc, char *argv[])
                 // Predict time -------------------------------------------- {{{
                 auto start_pred = now();
                 /* std::vector<double> cpu_pred = gp_cpu.predict(test_input.data, n_test_tiles, n_test_tile_size);
-                std::vector<double> gpu_pred = gp_gpu.predict(test_input.data, n_test_tiles, n_test_tile_size);
-                double pred_err = 0;
-                for (std::size_t i = 0; i < cpu_pred.size(); i++)
-                {
-                    pred_err += std::abs(cpu_pred[i] - gpu_pred[i]);
-                }
-                std::cout << "Prediction error: " << pred_err << std::endl; */
+                std::vector<double> gpu_pred = gp_gpu.predict(test_input.data, n_test_tiles, n_test_tile_size); */
                 auto pred_time = now() - start_pred;  // ----------------- }}}
 
                 // Predict & Uncertainty time  ----------------------------- {{{
@@ -159,19 +144,10 @@ int main(int argc, char *argv[])
 
                 // Predictions with full covariance time ------------------- {{{
                 auto start_pred_full_cov = now();
-                /* std::vector<std::vector<double>> pred_full_cpu = gp_cpu.predict_with_full_cov(test_input.data, n_test_tile_size, n_test_tile_size);
+                std::vector<std::vector<double>> pred_full_cpu = gp_cpu.predict_with_full_cov(test_input.data, n_test_tile_size, n_test_tile_size);
                 std::vector<std::vector<double>> pred_full_gpu = gp_gpu.predict_with_full_cov(test_input.data, n_test_tile_size, n_test_tile_size);
-                double pred_full_err = 0;
-                for (std::size_t j = 0; j < pred_full_cpu[0].size(); j++)
-                {
-                    pred_full_err += std::abs(pred_full_cpu[0][j] - pred_full_gpu[0][j]);
-                }
-                for (std::size_t j = 0; j < pred_full_cpu[1].size(); j++)
-                {
-                    pred_full_err += std::abs(pred_full_cpu[1][j] - pred_full_gpu[1][j]);
-                }
-                std::cout << "Pred FullCov error: " << pred_full_err << std::endl; */
                 auto pred_full_cov_time = now() - start_pred_full_cov;  // -- }}}
+
                 auto total_time = now() - start_total;  // ----------------- }}}
 
                 // Append parameters & times as CSV

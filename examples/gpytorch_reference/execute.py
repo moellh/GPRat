@@ -7,7 +7,7 @@ import argparse
 
 from config import get_config
 from gpytorch_logger import setup_logging
-from utils import load_data, ExactGPModel, train, predict, predict_with_var
+from utils import load_data, ExactGPModel, predict_with_full_cov, train, predict, predict_with_var
 
 logger = logging.getLogger()
 log_filename = "./gpytorch_logs.log"
@@ -64,6 +64,11 @@ def gpytorch_run(config, output_file, size_train, l, cores):
 
     pred_var_t = time.time()
     f_pred, f_var = predict_with_var(model, likelihood, X_test)
+    pred_var_t = time.time() - pred_var_t
+    # logger.info("Finished making predictions.")
+
+    pred_var_t = time.time()
+    f_pred, f_var = predict_with_full_cov(model, likelihood, X_test)
     pred_var_t = time.time() - pred_var_t
     # logger.info("Finished making predictions.")
 

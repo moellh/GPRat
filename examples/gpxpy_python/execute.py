@@ -29,7 +29,7 @@ def gpx_run(config, output_csv_obj, n_train, l, cores):
     ###### GP object ######
     init_t = time.time()
     gp_cpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True])
-    gp_gpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True], gpu_id=0, n_streams=1)
+    # gp_gpu = gpx.GP(train_in.data, train_out.data, config["N_TILES"], n_tile_size, trainable=[True, True, True], gpu_id=0, n_streams=1)
     init_t = time.time() - init_t
 
     gpx.suspend_hpx()
@@ -38,32 +38,32 @@ def gpx_run(config, output_csv_obj, n_train, l, cores):
     # Calculate Cholesky decomposition
     chol_t = time.time()
     matrix_cpu = gp_cpu.cholesky()
-    matrix_gpu = gp_gpu.cholesky()
+    # matrix_gpu = gp_gpu.cholesky()
     chol_t = time.time() - chol_t
 
     # Perform optmization
-    chol_t = time.time()
-    losses = gp_cpu.optimize(hpar)
-    chol_t = time.time() - chol_t
-    logger.info("Finished optimization.")
+    # chol_t = time.time()
+    # losses = gp_cpu.optimize(hpar)
+    # chol_t = time.time() - chol_t
+    # logger.info("Finished optimization.")
 
     # # Predict
-    pred_uncer_t = time.time()
-    pr, var = gp_cpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size)
-    pred_uncer_t = time.time() - pred_uncer_t
-    logger.info("Finished predictions.")
+    # pred_uncer_t = time.time()
+    # pr, var = gp_cpu.predict_with_uncertainty(test_in.data, m_tiles, m_tile_size)
+    # pred_uncer_t = time.time() - pred_uncer_t
+    # logger.info("Finished predictions.")
 
     # Predict
-    pred_full_t = time.time()
-    pr__, var__ = gp_cpu.predict_with_full_cov(test_in.data, m_tiles, m_tile_size)
-    pred_full_t = time.time() - pred_full_t
-    logger.info("Finished predictions with full cov.")
+    # pred_full_t = time.time()
+    # pr__, var__ = gp_cpu.predict_with_full_cov(test_in.data, m_tiles, m_tile_size)
+    # pred_full_t = time.time() - pred_full_t
+    # logger.info("Finished predictions with full cov.")
 
     # Predict
-    pred_t = time.time()
-    pr_ = gp_cpu.predict(test_in.data, m_tiles, m_tile_size)
-    pred_t = time.time() - pred_t
-    logger.info("Finished predictions.")
+    # pred_t = time.time()
+    # pr_ = gp_cpu.predict(test_in.data, m_tiles, m_tile_size)
+    # pred_t = time.time() - pred_t
+    # logger.info("Finished predictions.")
 
     # Stop HPX runtime
     gpx.stop_hpx()

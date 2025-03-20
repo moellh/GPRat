@@ -6,7 +6,7 @@ import gpytorch
 class ExactGPModel(gpytorch.models.ExactGP):
     """
     This class defines the exact Gaussian Process model for regression.
-    
+
     Args:
     - train_x (torch.Tensor): The training input data.
     - train_y (torch.Tensor): The training target data.
@@ -16,17 +16,17 @@ class ExactGPModel(gpytorch.models.ExactGP):
         super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
         self.mean_module = gpytorch.means.ConstantMean()
         self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-        
+
         self.covar_module.base_kernel.lengthscale = 1.0
         self.covar_module.outputscale = 1.0
-    
+
     def forward(self, x):
         """
         Forward pass through the model.
-        
+
         Args:
         - x (torch.Tensor): Input data.
-        
+
         Returns:
         - gpytorch.distributions.MultivariateNormal: Multivariate normal distribution over the output.
         """
@@ -36,7 +36,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
 
 def generate_regressor(x_original, n_regressors):
     """
-    Generate regressor matrix by padding the original input array with zeros 
+    Generate regressor matrix by padding the original input array with zeros
     from the left for (n_regressors - 1) positions, and rolling over the input
     array where the window size equals n_regressors.
 
@@ -141,7 +141,7 @@ def train(model, likelihood, X_train, Y_train, training_iter=10):
     #         model.likelihood.noise.item()
     #     ))
     #     optimizer.step()
-        
+
     return None
 
 
@@ -160,19 +160,49 @@ def predict_with_var(model, likelihood, X_test):
     """
     model.eval()
     likelihood.eval()
-    
+
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         f_pred = model(X_test)
         f_mean = f_pred.mean
         f_var = f_pred.variance
-    
+
     '''
     for future plot generation:
     # Get upper and lower confidence bounds
     observed_pred = likelihood(model(test_x))
     lower, upper = observed_pred.confidence_region()
     '''
-    
+
+    return f_mean, f_var
+
+def predict_with_full_cov(model, likelihood, X_test):
+    """
+    Predict the mean and variance of latent function values and observed target values.
+
+    Args:
+        model (gpytorch.models.ExactGP): The trained Gaussian process regression model.
+        likelihood (gpytorch.likelihoods.GaussianLikelihood): The likelihood function.
+        X_test (torch.Tensor): The test input data.
+
+    Returns:
+        - f_mean (torch.Tensor): Mean of latent function values.
+        - f_var (torch.Tensor): Variance of latent function values.
+    """
+    model.eval()
+    likelihood.eval()
+
+    with torch.no_grad(), gpytorch.settings.lazily_evaluate_kernels(False), gpytorch.settings.fast_computations(covar_root_decomposition=False, log_prob=False, solves=False):
+        f_pred = model(X_test)
+        f_mean = f_pred.mean
+        f_var = f_pred.variance
+
+    '''
+    for future plot generation:
+    # Get upper and lower confidence bounds
+    observed_pred = likelihood(model(test_x))
+    lower, upper = observed_pred.confidence_region()
+    '''
+
     return f_mean, f_var
 
 def predict(model, likelihood, X_test):
@@ -189,7 +219,7 @@ def predict(model, likelihood, X_test):
     """
     model.eval()
     likelihood.eval()
-    
+
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         f_pred = model(X_test)
         f_mean = f_pred.mean
@@ -200,7 +230,7 @@ def predict(model, likelihood, X_test):
     observed_pred = likelihood(model(test_x))
     lower, upper = observed_pred.confidence_region()
     '''
-    
+
     return f_mean
 
 
