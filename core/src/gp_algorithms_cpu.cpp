@@ -484,7 +484,6 @@ predict_with_full_cov(const std::vector<double> &training_input,
     std::vector<hpx::shared_future<std::vector<double>>> K_tiles;
     std::vector<hpx::shared_future<std::vector<double>>> alpha_tiles;
     std::vector<hpx::shared_future<std::vector<double>>> prior_K_tiles;
-    std::vector<hpx::shared_future<std::vector<double>>> prior_inter_tiles;
     std::vector<hpx::shared_future<std::vector<double>>>
         cross_covariance_tiles;
     std::vector<hpx::shared_future<std::vector<double>>>

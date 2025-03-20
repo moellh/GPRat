@@ -367,15 +367,13 @@ assemble_tiled_covariance_matrix(const double *d_training_input,
 {
     std::vector<hpx::shared_future<double *>> d_tiles(n_tiles * n_tiles);
 
-    // clang-format off
-    for_loop(hpx::execution::par, 0, n_tiles, [&](std::size_t tile_row)
+    for(std::size_t tile_row = 0; tile_row < n_tiles; ++tile_row)
     {
-        for_loop(hpx::execution::par, 0, tile_row + 1, [&](std::size_t tile_column)
+        for(std::size_t tile_column = 0; tile_column < tile_row + 1; ++tile_column)
         {
             d_tiles[tile_row * n_tiles + tile_column] = hpx::async(&gen_tile_covariance, d_training_input, tile_row, tile_column, n_tile_size, n_regressors, sek_params, std::ref(gpu));
-        });
-    });
-    // clang-format on
+        }
+    }
 
     return d_tiles;
 }
@@ -737,9 +735,6 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
 
     auto d_t_cross_covariance_tiles = assemble_t_cross_covariance_tiles(d_cross_covariance_tiles, n_tiles, m_tiles, n_tile_size, m_tile_size, gpu);
 
-    // Assemble placeholder matrix for diag(K_MxN * (K^-1_NxN * K_NxM))
-    auto d_prior_inter_tiles = assemble_tiles_with_zeros(m_tile_size, m_tiles, gpu);
-
     auto d_prediction_tiles = assemble_tiles_with_zeros(m_tile_size, m_tiles, gpu);
 
     // Assemble placeholder for uncertainty
@@ -776,7 +771,6 @@ predict_with_full_cov(const std::vector<double> &h_training_input,
     free_lower_tiled_matrix(d_prior_K_tiles, m_tiles);
     free(d_cross_covariance_tiles);
     free(d_t_cross_covariance_tiles);
-    free(d_prior_inter_tiles);
     free(d_prediction_tiles);
     free(d_prediction_uncertainty_tiles);
     destroy(cusolver);

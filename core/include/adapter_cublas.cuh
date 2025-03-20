@@ -18,8 +18,6 @@ typedef enum BLAS_SIDE { Blas_left = 0,
 typedef enum BLAS_ALPHA { Blas_add = 1,
                           Blas_substract = -1 } BLAS_ALPHA;
 
-using cublas_executor = hpx::cuda::experimental::cublas_executor;
-
 // BLAS level 3 operations {{{
 
 /**

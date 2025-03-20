@@ -132,7 +132,6 @@ Parameters:
             [](gpxpy::GP &gp, double value)
             { gp.sek_params.noise_variance = value; })
         .def_readwrite("n_reg", &gpxpy::GP::n_regressors)
-        .def_readonly("target", &gpxpy::GP::target)
         .def("__repr__", &gpxpy::GP::repr)
         .def("get_input_data", &gpxpy::GP::get_training_input)
         .def("get_output_data", &gpxpy::GP::get_training_output)

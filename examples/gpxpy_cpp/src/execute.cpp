@@ -12,8 +12,8 @@ auto now = std::chrono::high_resolution_clock::now;
 int main(int argc, char *argv[])
 {
     // number of training points, number of rows/columns in the kernel matrix
-    const int N_TRAIN_START = 1 << 7;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
-    const int N_TRAIN_END = 1 << 15;    // 7,   8,   9,   10,   11,   12,   13,   14,  15
+    const int N_TRAIN_START = 1 << 12;  // 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768
+    const int N_TRAIN_END = 1 << 12;    // 7,   8,   9,   10,   11,   12,   13,   14,  15
 
     const int N_TEST = 8;
 
@@ -30,10 +30,9 @@ int main(int argc, char *argv[])
 
     // number of regressors, i.e. number of previous points incl. current point
     // considered for each entry in the kernel matrix
-
     std::string train_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
     std::string train_out_path = "../../../data/generators/msd_simulator/data/output_data.txt";
-    std::string test_in_path = "../../../data/data_1024/test_input.txt";
+    std::string test_in_path = "../../../data/generators/msd_simulator/data/input_data.txt";
 
     // Add number of threads to arguments
     std::vector<std::string> args(argv, argv + argc);

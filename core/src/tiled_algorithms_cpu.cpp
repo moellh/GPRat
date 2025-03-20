@@ -344,8 +344,7 @@ void posterior_covariance_tiled(
 {
     for (std::size_t i = 0; i < m_tiles; ++i)
     {
-        for (std::size_t n = 0; n < n_tiles;
-             ++n)
+        for (std::size_t n = 0; n < n_tiles; ++n)
         {  // Compute inner product to obtain diagonal elements of
            // (K_MxN * (K^-1_NxN * K_NxM))
             ft_inter_tiles[i] = hpx::dataflow(

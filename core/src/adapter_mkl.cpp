@@ -1,7 +1,7 @@
 #include "../include/adapter_mkl.hpp"
 
-#include "mkl_cblas.h"
-#include "mkl_lapacke.h"
+#include <mkl_cblas.h>
+#include <mkl_lapacke.h>
 #include <vector>
 
 // BLAS level 3 operations ------------------------------------------------- {{{

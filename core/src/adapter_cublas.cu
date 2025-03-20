@@ -8,7 +8,6 @@
 
 // frequently used names
 using hpx::cuda::experimental::check_cuda_error;
-using cublas_future = hpx::cuda::experimental::cuda_executor::future_type;
 
 // BLAS level 3 operations ------------------------------------------------- {{{
 

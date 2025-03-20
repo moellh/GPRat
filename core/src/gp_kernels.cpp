@@ -7,6 +7,6 @@ SEKParams::SEKParams(double lengthscale,
                      double noise_variance) :
     lengthscale(lengthscale),
     vertical_lengthscale(vertical_lengthscale),
-    noise_variance(noise_variance) {};
-
-}
+    noise_variance(noise_variance)
+{ }
+}  // namespace gpxpy_hyper

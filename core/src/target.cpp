@@ -97,10 +97,10 @@ std::pair<cublasHandle_t, cudaStream_t> CUDA_GPU::next_cublas_handle()
 
 CPU get_cpu() { return CPU(); }
 
-CUDA_GPU get_gpu(int id, int n_executors)
+CUDA_GPU get_gpu(int id, int n_streams)
 {
 #ifdef GPXPY_WITH_CUDA
-    return CUDA_GPU(id, n_executors);
+    return CUDA_GPU(id, n_streams);
 #else
     throw not_compiled_with_cuda_exception();
 #endif

@@ -23,7 +23,7 @@ set(SOURCE_FILES
     src/adapter_mkl.cpp
     src/gp_algorithms_cpu.cpp
     src/gp_functions.cpp
-    src/gp_kernel.cpp
+    src/gp_kernels.cpp
     src/gp_hyperparameters.cpp
     src/gp_optimizer_cpu.cpp
     src/gp_uncertainty_cpu.cpp
