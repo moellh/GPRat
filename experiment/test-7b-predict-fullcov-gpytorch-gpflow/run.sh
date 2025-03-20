@@ -84,13 +84,9 @@ N_TRAIN=(8192)
 N_TEST=(8192)
 run_experiment_gpytorch
 
+# NOTE: this throws out of memory exception for GPU implementation, just ignore it
 N_TRAIN=(16384)
 N_TEST=(16384)
-run_experiment_gpytorch
-
-# NOTE: this throws out of memory exception for GPU implementation
-N_TRAIN=(32768)
-N_TEST=(32768)
 run_experiment_gpytorch
 
 cd ..
@@ -176,11 +172,6 @@ run_experiment_gpflow
 
 N_TRAIN=(16384)
 N_TEST=(16384)
-run_experiment_gpflow
-
-# NOTE: this throws out of memory exception for GPU implementation
-N_TRAIN=(32768)
-N_TEST=(32768)
 run_experiment_gpflow
 
 cd ..

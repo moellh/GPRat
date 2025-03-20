@@ -40,9 +40,17 @@ run_experiment_gpu() {
 }
 
 N_CORES=(48)
-N_TILES=(4)
+N_TILES=(1)
 N_REG=(8)
-N_LOOPS=(10)
+N_LOOPS=(50)
+
+N_TRAIN=(1)
+N_TEST=(1)
+run_experiment_cpu
+
+N_TRAIN=(2)
+N_TEST=(2)
+run_experiment_cpu
 
 N_TRAIN=(4)
 N_TEST=(4)
@@ -101,9 +109,13 @@ N_TEST=(32768)
 run_experiment_cpu
 
 N_CORES=(48)
-N_TILES=(32)
+N_TILES=(16)
 N_REG=(8)
 N_LOOPS=(10)
+
+N_TRAIN=(16)
+N_TEST=(16)
+run_experiment_cpu
 
 N_TRAIN=(32)
 N_TEST=(32)

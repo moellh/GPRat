@@ -13,6 +13,7 @@ source gpflow_env/bin/activate
 # install gpflow if not already installed
 if ! python3 -c "import gpflow"; then
     pip3 install gpflow
+    pip3 install tensorflow[and-cuda]
 fi
 
 export XLA_FLAGS=--xla_gpu_cuda_data_dir=$CUDA_HOME/
