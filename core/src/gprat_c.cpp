@@ -1,20 +1,17 @@
 #include "gprat_c.hpp"
 
+#include "cpu/gp_functions.hpp"
 #include "utils_c.hpp"
 #include <cstdio>
+
+#ifdef GPRAT_WITH_CUDA
+#include "gpu/gp_functions.hpp"
+#endif
 
 // namespace for GPRat library entities
 namespace gprat
 {
 
-/**
- * @brief Initialize of Gaussian process data by loading data from a file.
- *
- * The file specified by `f_path` must contain `n` samples.
- *
- * @param f_path Path to the file
- * @param n Number of samples
- */
 GP_data::GP_data(const std::string &f_path, int n, int n_reg) :
     file_path(f_path),
     n_samples(n),
@@ -23,224 +20,349 @@ GP_data::GP_data(const std::string &f_path, int n, int n_reg) :
     data = utils::load_data(f_path, n, n_reg - 1);
 }
 
-/**
- * @brief Initialize of Gaussian process.
- *
- * @param input Training input data
- * @param output Training output data
- * @param n_tiles Number of tiles
- * @param n_tile_size Size of each tile
- * @param l Lengthscale
- * @param v Vertical lengthscale
- * @param n Noise variance
- * @param n_r Number of regressors
- * @param trainable_bool Boolean vector indicating which hyperparameters are
- * trainable
- */
 GP::GP(std::vector<double> input,
        std::vector<double> output,
        int n_tiles,
        int n_tile_size,
-       int n_r,
+       int n_regressors,
        std::vector<double> kernel_hyperparams,
        std::vector<bool> trainable_bool) :
     _training_input(input),
     _training_output(output),
     _n_tiles(n_tiles),
     _n_tile_size(n_tile_size),
-    n_regressors(n_r),
+    n_regressors(n_regressors),
     sek_params(kernel_hyperparams[0], kernel_hyperparams[1], kernel_hyperparams[2]),
     trainable_params(trainable_bool)
 { }
 
-/**
- * Returns Gaussian process attributes as string.
- */
+GP::GP(std::vector<double> input,
+       std::vector<double> output,
+       int n_tiles,
+       int n_tile_size,
+       int n_regressors,
+       std::vector<double> kernel_hyperparams,
+       std::vector<bool> trainable_bool) :
+    _training_input(input),
+    _training_output(output),
+    _n_tiles(n_tiles),
+    _n_tile_size(n_tile_size),
+    n_regressors(n_regressors),
+    sek_params(kernel_hyperparams[0], kernel_hyperparams[1], kernel_hyperparams[2]),
+    trainable_params(trainable_bool),
+    target(std::make_shared<CPU>())
+{ }
+
+GP::GP(std::vector<double> input,
+       std::vector<double> output,
+       int n_tiles,
+       int n_tile_size,
+       int n_regressors,
+       std::vector<double> kernel_hyperparams,
+       std::vector<bool> trainable_bool,
+       int gpu_id,
+       int n_streams) :
+    _training_input(input),
+    _training_output(output),
+    _n_tiles(n_tiles),
+    _n_tile_size(n_tile_size),
+    n_regressors(n_regressors),
+    sek_params(kernel_hyperparams[0], kernel_hyperparams[1], kernel_hyperparams[2]),
+    trainable_params(trainable_bool),
+    target(std::make_shared<CUDA_GPU>(CUDA_GPU(gpu_id, n_streams)))
+{ }
+
 std::string GP::repr() const
 {
-    // clang-format OFF
     std::ostringstream oss;
     oss << std::fixed << std::setprecision(12);
     oss << "Kernel_Params: [lengthscale=" << sek_params.lengthscale << ", vertical_lengthscale="
         << sek_params.vertical_lengthscale << ", noise_variance=" << sek_params.noise_variance
-        << ", n_regressors=" << n_regressors << ", trainable_params l=" << trainable_params[0]
-        << ", trainable_params v=" << trainable_params[1] << ", trainable_params n=" << trainable_params[2] << "]";
+        << ", n_regressors=" << n_regressors << "], Trainable_Params: [trainable_params l=" << trainable_params[0]
+        << ", trainable_params v=" << trainable_params[1] << ", trainable_params n=" << trainable_params[2]
+        << "], Target: [" << target->repr() << "], n_tiles=" << _n_tiles << ", n_tile_size=" << _n_tile_size;
     return oss.str();
-    // clang-format ON
 }
 
-/**
- * @brief Returns training input data
- */
 std::vector<double> GP::get_training_input() const { return _training_input; }
 
-/**
- * @brief Returns training output data
- */
 std::vector<double> GP::get_training_output() const { return _training_output; }
 
-/**
- * @brief Predict output for test input
- *
- * @param test_data Test input data
- * @param m_tiles Number of tiles
- * @param m_tile_size Size of each tile
- *
- * @return Predicted output
- */
 std::vector<double> GP::predict(const std::vector<double> &test_input, int m_tiles, int m_tile_size)
 {
     return hpx::async(
                [this, &test_input, m_tiles, m_tile_size]()
                {
-                   return predict_hpx(
-                       _training_input,
-                       _training_output,
+#ifdef GPRAT_WITH_CUDA
+                   if (target->is_gpu())
+                   {
+                       return gpu::predict(
+                           training_input,
+                           training_output,
+                           test_input,
+                           n_tiles,
+                           n_tile_size,
+                           m_tiles,
+                           m_tile_size,
+                           n_regressors,
+                           sek_params,
+                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target));
+                   }
+                   else
+                   {
+                       return cpu::predict(
+                           training_input,
+                           training_output,
+                           test_input,
+                           n_tiles,
+                           n_tile_size,
+                           m_tiles,
+                           m_tile_size,
+                           n_regressors,
+                           sek_params);
+                   }
+#else
+                   return cpu::predict(
+                       training_input,
+                       training_output,
                        test_input,
-                       sek_params,
-                       _n_tiles,
-                       _n_tile_size,
+                       n_tiles,
+                       n_tile_size,
                        m_tiles,
                        m_tile_size,
-                       n_regressors);
+                       n_regressors,
+                       sek_params);
+#endif
                })
         .get();
 }
 
-/**
- * @brief Predict output for test input and additionally provide
- *        uncertainty for the predictions.
- *
- * @param test_input Test input data
- * @param m_tiles Number of tiles
- * @param m_tile_size Size of each tile
- *
- * @return
- */
 std::vector<std::vector<double>>
 GP::predict_with_uncertainty(const std::vector<double> &test_input, int m_tiles, int m_tile_size)
 {
     return hpx::async(
                [this, &test_input, m_tiles, m_tile_size]()
                {
-                   return predict_with_uncertainty_hpx(
-                       _training_input,
-                       _training_output,
+#ifdef GPRAT_WITH_CUDA
+                   if (target->is_gpu())
+                   {
+                       return gpu::predict_with_uncertainty(
+                           training_input,
+                           training_output,
+                           test_input,
+                           n_tiles,
+                           n_tile_size,
+                           m_tiles,
+                           m_tile_size,
+                           n_regressors,
+                           sek_params,
+                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target));
+                   }
+                   else
+                   {
+                       return cpu::predict_with_uncertainty(
+                           training_input,
+                           training_output,
+                           test_input,
+                           n_tiles,
+                           n_tile_size,
+                           m_tiles,
+                           m_tile_size,
+                           n_regressors,
+                           sek_params);
+                   }
+#else
+                   return cpu::predict_with_uncertainty(
+                       training_input,
+                       training_output,
                        test_input,
-                       sek_params,
-                       _n_tiles,
-                       _n_tile_size,
+                       n_tiles,
+                       n_tile_size,
                        m_tiles,
                        m_tile_size,
-                       n_regressors);
+                       n_regressors,
+                       sek_params);
+#endif
                })
         .get();
 }
 
-/**
- * @brief Predict output for test input and additionally compute full
- * posterior covariance matrix.
- *
- * @param test_input Test input data
- * @param m_tiles Number of tiles
- * @param m_tile_size Size of each tile
- *
- * @return Full covariance matrix
- */
 std::vector<std::vector<double>>
 GP::predict_with_full_cov(const std::vector<double> &test_input, int m_tiles, int m_tile_size)
 {
     return hpx::async(
                [this, &test_input, m_tiles, m_tile_size]()
                {
-                   return predict_with_full_cov_hpx(
-                       _training_input,
-                       _training_output,
+#ifdef GPRAT_WITH_CUDA
+                   if (target->is_gpu())
+                   {
+                       return gpu::predict_with_full_cov(
+                           training_input,
+                           training_output,
+                           test_input,
+                           n_tiles,
+                           n_tile_size,
+                           m_tiles,
+                           m_tile_size,
+                           n_regressors,
+                           sek_params,
+                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target));
+                   }
+                   else
+                   {
+                       return cpu::predict_with_full_cov(
+                           training_input,
+                           training_output,
+                           test_input,
+                           n_tiles,
+                           n_tile_size,
+                           m_tiles,
+                           m_tile_size,
+                           n_regressors,
+                           sek_params);
+                   }
+#else
+                   return cpu::predict_with_full_cov(
+                       training_input,
+                       training_output,
                        test_input,
-                       sek_params,
-                       _n_tiles,
-                       _n_tile_size,
+                       n_tiles,
+                       n_tile_size,
                        m_tiles,
                        m_tile_size,
-                       n_regressors);
+                       n_regressors,
+                       sek_params);
+#endif
                })
         .get();
 }
 
-/**
- * @brief Optimize hyperparameters
- *
- * @param hyperparams Hyperparameters of squared exponential kernel:
- *        lengthscale, vertical_lengthscale, noise_variance
- *
- * @return losses
- */
 std::vector<double> GP::optimize(const gprat_hyper::AdamParams &adam_params)
 {
     return hpx::async(
                [this, &adam_params]()
                {
-                   return optimize_hpx(
-                       _training_input,
-                       _training_output,
-                       _n_tiles,
-                       _n_tile_size,
+#ifdef GPRAT_WITH_CUDA
+                   if (target->is_gpu())
+                   {
+                       std::err << "GP::optimze_step has not been implemented for the GPU.\n"
+                                << "Instead, this operation executes the CPU implementation." << std::endl;
+                   }
+                   return cpu::optimize(
+                       training_input,
+                       training_output,
+                       n_tiles,
+                       n_tile_size,
                        n_regressors,
-                       adam_params,
                        sek_params,
-                       trainable_params);
+                       trainable_params,
+                       adam_params);
+#else
+                   return cpu::optimize(
+                       training_input,
+                       training_output,
+                       n_tiles,
+                       n_tile_size,
+                       n_regressors,
+                       sek_params,
+                       trainable_params,
+                       adam_params);
+#endif
                })
         .get();
 }
 
-/**
- * @brief Perform a single optimization step
- *
- * @param hyperparams Hyperparameters of squared exponential kernel:
- *        lengthscale, vertical_lengthscale, noise_variance
- * @param iter number of iterations
- *
- * @return loss
- */
 double GP::optimize_step(gprat_hyper::AdamParams &adam_params, int iter)
 {
     return hpx::async(
                [this, &adam_params, iter]()
                {
-                   return optimize_step_hpx(
-                       _training_input,
-                       _training_output,
-                       _n_tiles,
-                       _n_tile_size,
+#ifdef GPRAT_WITH_CUDA
+                   if (target->is_gpu())
+                   {
+                       std::err << "GP::optimze_step has not been implemented for the GPU.\n"
+                                << "Instead, this operation executes the CPU implementation." << std::endl;
+                   }
+                   return cpu::optimize_step(
+                       training_input,
+                       training_output,
+                       n_tiles,
+                       n_tile_size,
                        n_regressors,
-                       adam_params,
+                       iter,
                        sek_params,
                        trainable_params,
-                       iter);
+                       adam_params);
+#else
+                   return cpu::optimize_step(
+                       training_input,
+                       training_output,
+                       n_tiles,
+                       n_tile_size,
+                       n_regressors,
+                       iter,
+                       sek_params,
+                       trainable_params,
+                       adam_params);
+#endif
                })
         .get();
 }
 
-/**
- * @brief Calculate loss for given data and Gaussian process model
- */
 double GP::calculate_loss()
 {
     return hpx::async(
-               [this]() {
-                   return compute_loss_hpx(
-                       _training_input, _training_output, sek_params, _n_tiles, _n_tile_size, n_regressors);
+               [this]()
+               {
+#ifdef GPRAT_WITH_CUDA
+                   if (target->is_gpu())
+                   {
+                       return gpu::compute_loss(
+                           training_input,
+                           training_output,
+                           n_tiles,
+                           n_tile_size,
+                           n_regressors,
+                           sek_params,
+                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target));
+                   }
+                   else
+                   {
+                       return cpu::compute_loss(
+                           training_input, training_output, n_tiles, n_tile_size, n_regressors, sek_params);
+                   }
+#else
+                   return cpu::compute_loss(
+                       training_input, training_output, n_tiles, n_tile_size, n_regressors, sek_params);
+#endif
                })
         .get();
 }
 
-/**
- * @brief Computes & returns cholesky decomposition
- */
 std::vector<std::vector<double>> GP::cholesky()
 {
-    return hpx::async([this]()
-                      { return cholesky_hpx(_training_input, sek_params, _n_tiles, _n_tile_size, n_regressors); })
+    return hpx::async(
+               [this]()
+               {
+#ifdef GPRAT_WITH_CUDA
+                   if (target->is_gpu())
+                   {
+                       return gpu::cholesky(
+                           training_input,
+                           n_tiles,
+                           n_tile_size,
+                           n_regressors,
+                           sek_params,
+                           *std::dynamic_pointer_cast<gprat::CUDA_GPU>(target));
+                   }
+                   else
+                   {
+                       return cpu::cholesky(training_input, n_tiles, n_tile_size, n_regressors, sek_params);
+                   }
+#else
+                   return cpu::cholesky(training_input, n_tiles, n_tile_size, n_regressors, sek_params);
+#endif
+               })
         .get();
 }
 
