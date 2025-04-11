@@ -1,8 +1,8 @@
-#include "../include/gp_functions.hpp"
+#include "cpu/gp_functions.hpp"
 
-#include "../include/gp_algorithms_cpu.hpp"
-#include "../include/gp_optimizer.hpp"
-#include "../include/tiled_algorithms_cpu.hpp"
+#include "cpu/gp_algorithms.hpp"
+#include "cpu/gp_optimizer.hpp"
+#include "cpu/tiled_algorithms.hpp"
 #include <hpx/future.hpp>
 
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
@@ -11,7 +11,7 @@ using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
 ///////////////////////////////////////////////////////////////////////////
 // PREDICT
 std::vector<std::vector<double>>
-cholesky_hpx(const std::vector<double> &training_input,
+cholesky(const std::vector<double> &training_input,
              const gprat_hyper::SEKParams &sek_params,
              int n_tiles,
              int n_tile_size,
@@ -60,7 +60,7 @@ cholesky_hpx(const std::vector<double> &training_input,
 }
 
 std::vector<double>
-predict_hpx(const std::vector<double> &training_input,
+predict(const std::vector<double> &training_input,
             const std::vector<double> &training_output,
             const std::vector<double> &test_input,
             const gprat_hyper::SEKParams &sek_params,
@@ -176,7 +176,7 @@ predict_hpx(const std::vector<double> &training_input,
     return prediction_result;
 }
 
-std::vector<std::vector<double>> predict_with_uncertainty_hpx(
+std::vector<std::vector<double>> predict_with_uncertainty(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
@@ -373,7 +373,7 @@ std::vector<std::vector<double>> predict_with_uncertainty_hpx(
     return std::vector<std::vector<double>>{ std::move(prediction_result), std::move(uncertainty_result) };
 }
 
-std::vector<std::vector<double>> predict_with_full_cov_hpx(
+std::vector<std::vector<double>> predict_with_full_cov(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     const std::vector<double> &test_input,
@@ -584,7 +584,7 @@ std::vector<std::vector<double>> predict_with_full_cov_hpx(
 
 ///////////////////////////////////////////////////////////////////////////
 // OPTIMIZATION
-double compute_loss_hpx(const std::vector<double> &training_input,
+double compute_loss(const std::vector<double> &training_input,
                         const std::vector<double> &training_output,
                         const gprat_hyper::SEKParams &sek_params,
                         int n_tiles,
@@ -668,7 +668,7 @@ double compute_loss_hpx(const std::vector<double> &training_input,
 }
 
 std::vector<double>
-optimize_hpx(const std::vector<double> &training_input,
+optimize(const std::vector<double> &training_input,
              const std::vector<double> &training_output,
              int n_tiles,
              int n_tile_size,
@@ -916,7 +916,7 @@ optimize_hpx(const std::vector<double> &training_input,
     return losses;
 }
 
-double optimize_step_hpx(
+double optimize_step(
     const std::vector<double> &training_input,
     const std::vector<double> &training_output,
     int n_tiles,

@@ -1,4 +1,4 @@
-#include "../include/gp_uncertainty.hpp"
+#include "cpu/gp_uncertainty.hpp"
 
 hpx::shared_future<std::vector<double>> get_matrix_diagonal(hpx::shared_future<std::vector<double>> f_A, std::size_t M)
 {

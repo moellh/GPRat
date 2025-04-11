@@ -10,8 +10,6 @@
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>
 
-using hpx::experimental::for_loop;
-
 namespace gpu
 {
 

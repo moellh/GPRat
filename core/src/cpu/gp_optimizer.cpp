@@ -1,6 +1,6 @@
-#include "../include/gp_optimizer.hpp"
+#include "cpu/gp_optimizer.hpp"
 
-#include "../include/adapter_cblas_fp64.hpp"
+#include "cpu/adapter_cblas_fp64.hpp"
 #include <numeric>
 
 ///////////////////////////////////////////////////////////

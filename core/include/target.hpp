@@ -116,7 +116,7 @@ struct CUDA_GPU : public Target
      */
     std::string repr() override;
 
-#ifdef GPXPY_WITH_CUDA
+#ifdef GPRAT_WITH_CUDA
     /**
      * @brief Creates n_streams CUDA streams and cublas handles.
      *

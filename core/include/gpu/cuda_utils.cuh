@@ -40,7 +40,7 @@ class not_compiled_with_cuda_exception : public std::runtime_error
  *
  * @return A pointer to the copied vector on the device
  */
-inline double *copy_to_device(const std::vector<double> &h_vector, gpxpy::CUDA_GPU &gpu)
+inline double *copy_to_device(const std::vector<double> &h_vector, gprat::CUDA_GPU &gpu)
 {
     double *d_vector;
     check_cuda_error(cudaMalloc(&d_vector, h_vector.size() * sizeof(double)));

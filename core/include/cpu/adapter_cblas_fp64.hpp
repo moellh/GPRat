@@ -1,11 +1,13 @@
-#ifndef ADAPTER_CBLAS_FP64_H
-#define ADAPTER_CBLAS_FP64_H
+#ifndef CPU_ADAPTER_CBLAS_FP64_H
+#define CPU_ADAPTER_CBLAS_FP64_H
 
 #include <hpx/future.hpp>
 #include <vector>
+
 using vector_future = hpx::shared_future<std::vector<double>>;
 
 // Constants that are compatible with CBLAS
+
 typedef enum BLAS_TRANSPOSE { Blas_no_trans = 111, Blas_trans = 112 } BLAS_TRANSPOSE;
 
 typedef enum BLAS_SIDE { Blas_left = 141, Blas_right = 142 } BLAS_SIDE;
@@ -18,11 +20,7 @@ typedef enum BLAS_ALPHA { Blas_add = 1, Blas_substract = -1 } BLAS_ALPHA;
 // typedef enum BLAS_ORDERING { Blas_row_major = 101,
 //                              Blas_col_major = 102 } BLAS_ORDERING;
 
-// =============================================================================
-// BLAS operations on CPU with MKL
-// =============================================================================
-
-// BLAS level 3 operations -------------------------------------- {{{
+// BLAS level 3 operations
 
 /**
  * @brief FP64 In-place Cholesky decomposition of A
@@ -78,9 +76,7 @@ gemm(vector_future f_A,
      const BLAS_TRANSPOSE transpose_A,
      const BLAS_TRANSPOSE transpose_B);
 
-// }}} --------------------------------- end of BLAS level 3 operations
-
-// BLAS level 2 operations ------------------------------- {{{
+// BLAS level 2 operations
 
 /**
  * @brief FP64 In-place solve L(^T) * x = a where L lower triangular
@@ -131,9 +127,7 @@ vector_future dot_diag_syrk(vector_future f_A, vector_future f_r, const int N, c
  */
 vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future f_r, const int N, const int M);
 
-// }}} --------------------------------- end of BLAS level 2 operations
-
-// BLAS level 1 operations ------------------------------- {{{
+// BLAS level 1 operations
 
 /**
  * @brief FP64 AXPY: y - x
@@ -153,6 +147,4 @@ vector_future axpy(vector_future f_y, vector_future f_x, const int N);
  */
 double dot(std::vector<double> a, std::vector<double> b, const int N);
 
-// }}} --------------------------------- end of BLAS level 1 operations
-
-#endif  // end of ADAPTER_CBLAS_FP64_H
+#endif  // end of CPU_ADAPTER_CBLAS_FP64_H

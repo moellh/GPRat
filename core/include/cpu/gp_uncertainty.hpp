@@ -15,4 +15,4 @@
 // std::vector<double> get_matrix_diagonal(const std::vector<double> &A, std::size_t M);
 hpx::shared_future<std::vector<double>> get_matrix_diagonal(hpx::shared_future<std::vector<double>> f_A, std::size_t M);
 
-#endif  // CPU_GP_UNCERTAINTY_H
+#endif  // end of CPU_GP_UNCERTAINTY_H

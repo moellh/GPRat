@@ -174,4 +174,5 @@ double optimize_step(const std::vector<double> &training_input,
                      gprat_hyper::SEKParams &sek_params,
                      std::vector<bool> trainable_params,
                      int iter);
-#endif
+
+#endif  // end of CPU_GP_FUNCTIONS_H

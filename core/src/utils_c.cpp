@@ -1,4 +1,4 @@
-#include "../include/utils_c.hpp"
+#include "utils_c.hpp"
 
 #include <cstdio>
 
