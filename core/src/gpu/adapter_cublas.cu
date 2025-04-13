@@ -1,4 +1,4 @@
-#include "adapter_cublas.cuh"
+#include "gpu/adapter_cublas.cuh"
 
 #include <cuda_runtime.h>
 #include <hpx/future.hpp>
@@ -342,7 +342,8 @@ dot_diag_syrk_kernel(cublasHandle_t cublas, double *d_A, double *d_r, const std:
 }
 
 hpx::shared_future<double *>
-dot_diag_syrk(cudaStream_t stream,
+dot_diag_syrk(cublasHandle_t cublas,
+              cudaStream_t stream,
               hpx::shared_future<double *> f_A,
               hpx::shared_future<double *> f_r,
               const std::size_t M,

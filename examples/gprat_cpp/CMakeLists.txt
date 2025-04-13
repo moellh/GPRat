@@ -11,6 +11,11 @@ else()
   find_package(GPRat REQUIRED)
 endif()
 
+# Option for GPU support with CUDA, cuSolver, cuBLAS
+option(GPRAT_WITH_CUDA "Enable GPU support with CUDA, cuSolver, cuBLAS" OFF)
+# Pass variable to C++ code
+add_compile_definitions(GPRAT_WITH_CUDA=$<BOOL:${GPRAT_WITH_CUDA}>)
+
 # Add the executable
 add_executable(gprat_cpp src/execute.cpp)
 

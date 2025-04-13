@@ -8,6 +8,10 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 # Configurations
 ################################################################################
 
+# Release:	release-linux
+# Debug:	dev-linux
+export PRESET=dev-linux #TODO: change to release
+
 # Bindings
 if [[ "$1" == "python" ]]
 then
@@ -39,35 +43,51 @@ fi
 
 if [[ $cpu -eq 1 ]]; then
     # Load GCC compiler
-    module load gcc/14.1.0
+    # module load gcc/14.1.0 # TODO: uncomment
+    #
+    # # Activate spack environment
+    # spack env activate gprat_cpu_gcc
 
-    # Activate spack environment
-    spack env activate gprat_cpu_gcc
-
-elif [[ $gpu -eq 1 ]]; then
-    # Load Clang compiler and CUDA library
-    module load clang/17.0.1
-    module load cuda/12.1.0
+    module load clang/17.0.1 # TODO: remove
+    module load cuda/12.0.1
 
     # Activate spack environment
     spack env activate gprat_gpu_clang
 
-    # Enable GPU code
-    export GPRAT_WITH_CUDA=ON
-fi
+    cmake --preset $PRESET \
+        -DGPRAT_BUILD_BINDINGS=$BINDINGS \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+        -DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
+        -DGPRAT_ENABLE_FORMAT_TARGETS=OFF \
+        -DGPRAT_WITH_CUDA=OFF
 
-# Release:	release-linux
-# Debug:	dev-linux
-export PRESET=release-linux
+elif [[ $gpu -eq 1 ]]; then
+    # Load Clang compiler and CUDA library
+    module load clang/17.0.1
+    module load cuda/12.0.1
+
+    # Activate spack environment
+    spack env activate gprat_gpu_clang
+
+    CUDA_ARCH=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')
+
+    cmake --preset $PRESET \
+        -DGPRAT_BUILD_BINDINGS=$BINDINGS \
+        -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
+        -DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
+        -DGPRAT_ENABLE_FORMAT_TARGETS=OFF \
+	-DCMAKE_C_COMPILER=$(which clang) \
+	-DCMAKE_CXX_COMPILER=$(which clang++) \
+	-DCMAKE_CUDA_COMPILER=$(which clang++) \
+	-DCMAKE_CUDA_FLAGS=--cuda-path=${CUDA_HOME} \
+	-DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCH} \
+        -DGPRAT_WITH_CUDA=ON
+fi
 
 ################################################################################
 # Compile code
 ################################################################################
-cmake --preset $PRESET \
-      -DGPRAT_BUILD_BINDINGS=$BINDINGS \
-      -DCMAKE_INSTALL_PREFIX=$INSTALL_DIR \
-      -DHPX_IGNORE_BOOST_COMPATIBILITY=ON \
-      -DGPRAT_ENABLE_FORMAT_TARGETS=OFF
+
 cmake --build --preset $PRESET -- -j
 cmake --install build/$PRESET
 

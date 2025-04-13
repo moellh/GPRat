@@ -1,5 +1,9 @@
 #include "cpu/gp_algorithms.hpp"
+
 #include <cmath>
+
+namespace cpu
+{
 
 // Tile generation
 
@@ -197,3 +201,5 @@ double compute_error_norm(std::size_t n_tiles,
     }
     return sqrt(error);
 }
+
+}  // end of namespace cpu

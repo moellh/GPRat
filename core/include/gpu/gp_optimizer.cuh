@@ -336,6 +336,6 @@ double sum_noise_gradleft(const std::vector<double> &ft_invK,
 double
 sum_noise_gradright(const std::vector<double> &alpha, double grad, gprat_hyper::SEKParams sek_params, std::size_t N);
 
-}  // namespace gpu
+}  // end of namespace gpu
 
 #endif  // end of GPU_GP_OPTIMIZER_H

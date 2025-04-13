@@ -3,7 +3,7 @@
 #include <iostream>
 
 #if GPRAT_WITH_CUDA
-#include "cuda_utils.cuh"
+#include "gpu/cuda_utils.cuh"
 using hpx::cuda::experimental::check_cuda_error;
 #endif
 
@@ -16,17 +16,17 @@ bool CPU::is_cpu() { return true; }
 
 bool CPU::is_gpu() { return false; }
 
-std::string CPU::repr() const
-{
-    return "CPU";
-}
+std::string CPU::repr() const { return "CPU"; }
 
+CPU get_cpu() { return CPU(); }
+
+#if GPRAT_WITH_CUDA
 CUDA_GPU::CUDA_GPU(int id, int n_streams) :
     id(id),
     n_streams(n_streams),
-    streams(),
     i_stream(0),
-    shared_memory_size(0)
+    shared_memory_size(0),
+    streams()
 {
 #if GPRAT_WITH_CUDA
     int deviceCount;
@@ -36,7 +36,7 @@ CUDA_GPU::CUDA_GPU(int id, int n_streams) :
         throw std::runtime_error("Requested GPU device is not available.");
     }
 #else
-    throw not_compiled_with_cuda_exception();
+    throw std::runtime_error("CUDA is not available because GPRat has been compiled without CUDA.");
 #endif
 }
 
@@ -45,16 +45,16 @@ bool CUDA_GPU::is_cpu() { return false; }
 bool CUDA_GPU::is_gpu() { return true; }
 
 std::string CUDA_GPU::repr() const
+{
     std::ostringstream oss;
     oss << "GPU (CUDA): [id=" << id << ", n_streams=" << n_streams << "]";
     return oss.str();
 }
 
-#if GPRAT_WITH_CUDA
 void CUDA_GPU::create()
 {
-    streams = std::vector<cudaStream_t>(n_streams);
-    cublas_handles = std::vector<cublasHandle_t>(n_streams);
+    streams = std::vector<cudaStream_t>(static_cast<std::size_t>(n_streams));
+    cublas_handles = std::vector<cublasHandle_t>(static_cast<std::size_t>(n_streams));
     for (size_t i = 0; i < streams.size(); ++i)
     {
         check_cuda_error(cudaStreamCreateWithFlags(&streams[i], cudaStreamNonBlocking));
@@ -71,7 +71,7 @@ void CUDA_GPU::destroy()
     }
 }
 
-cudaStream_t CUDA_GPU::next_stream() { return streams[i_stream++ % n_streams]; }
+cudaStream_t CUDA_GPU::next_stream() { return streams[static_cast<std::size_t>(i_stream++) % static_cast<std::size_t>(n_streams)]; }
 
 void CUDA_GPU::sync_streams(std::vector<cudaStream_t> &subset_of_streams)
 {
@@ -93,35 +93,24 @@ void CUDA_GPU::sync_streams(std::vector<cudaStream_t> &subset_of_streams)
 
 std::pair<cublasHandle_t, cudaStream_t> CUDA_GPU::next_cublas_handle()
 {
-    std::size_t i = i_stream++;
-    cublasHandle_t cublas = cublas_handles[i % n_streams];
-    cudaStream_t stream = streams[i % n_streams];
+    std::size_t i = static_cast<std::size_t>(i_stream++);
+    cublasHandle_t cublas = cublas_handles[i % static_cast<std::size_t>(n_streams)];
+    cudaStream_t stream = streams[i % static_cast<std::size_t>(n_streams)];
     cublasSetStream(cublas, stream);
 
     return std::make_pair(cublas, stream);
 }
 
-#endif
-
-CPU get_cpu() { return CPU(); }
-
 CUDA_GPU get_gpu(int id, int n_streams)
 {
-#if GPRAT_WITH_CUDA
     return CUDA_GPU(id, n_streams);
-#else
-    throw not_compiled_with_cuda_exception();
-#endif
 }
 
 CUDA_GPU get_gpu()
 {
-#if GPRAT_WITH_CUDA
     return CUDA_GPU(0, 1);
-#else
-    throw not_compiled_with_cuda_exception();
-#endif
 }
+#endif
 
 void print_available_gpus()
 {

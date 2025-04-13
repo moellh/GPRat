@@ -4,6 +4,9 @@
 #include "gp_kernels.hpp"
 #include <vector>
 
+namespace cpu
+{
+
 /**
  * @brief Compute the squared exponential kernel of two feature vectors
  *
@@ -164,5 +167,7 @@ std::vector<double> gen_tile_zeros(std::size_t N);
  * @return A NxN identity tile
  */
 std::vector<double> gen_tile_identity(std::size_t N);
+
+}  // end of namespace cpu
 
 #endif  // end of CPU_GP_ALGORITHMS_H

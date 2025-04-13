@@ -1,10 +1,13 @@
-#include "gpu/gp_uncertainty_gpu.cuh"
+#include "gpu/gp_uncertainty.cuh"
 
 #include "target.hpp"
 #include "gpu/cuda_utils.cuh"
 #include <hpx/async_cuda/cuda_exception.hpp>
 
 using hpx::cuda::experimental::check_cuda_error;
+
+namespace gpu
+{
 
 hpx::shared_future<double *>
 diag_posterior(
@@ -44,3 +47,5 @@ diag_tile(
 
     return hpx::make_ready_future(diag_tile);
 }
+
+}  // end of namespace gpu

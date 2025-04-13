@@ -6,27 +6,12 @@
 #include <cusolverDn.h>
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>
-#include <stdexcept>
 #include <target.hpp>
 #include <vector>
 
 #define BLOCK_SIZE 16
 
 using hpx::cuda::experimental::check_cuda_error;
-
-/**
- * @brief Exception thrown when GPRat is compiled without CUDA support.
- */
-class not_compiled_with_cuda_exception : public std::runtime_error
-{
-  public:
-    /**
-     * @brief Constructs the exception with a default CUDA-related error message.
-     */
-    not_compiled_with_cuda_exception() :
-        std::runtime_error("CUDA is not available because GPRat has been compiled without CUDA.")
-    { }
-};
 
 /**
  * @brief Copies a vector from the host to the device using the next CUDA stream

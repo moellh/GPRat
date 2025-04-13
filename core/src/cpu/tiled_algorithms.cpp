@@ -6,6 +6,9 @@
 #include "cpu/gp_uncertainty.hpp"
 #include <hpx/future.hpp>
 
+namespace cpu
+{
+
 // Tiled Cholesky Algorithm
 
 void right_looking_cholesky_tiled(Tiled_matrix &ft_tiles, int N, std::size_t n_tiles)
@@ -443,3 +446,5 @@ void update_hyperparameter_tiled(
     // Transform hyperparameter back to constrained form
     sek_params.set_param(param_idx, to_constrained(updated_param, jitter));
 }
+
+}  // end of namespace cpu

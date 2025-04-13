@@ -55,31 +55,39 @@ class GP
 {
   private:
     /** @brief Input data for training */
-    std::vector<double> _training_input;
+    std::vector<double> training_input_;
 
     /** @brief Output data for given input data */
-    std::vector<double> _training_output;
+    std::vector<double> training_output_;
 
     /** @brief Number of tiles */
-    int _n_tiles;
+    int n_tiles_;
 
     /** @brief Size of each tile in each dimension */
-    int _n_tile_size;
-
-  public:
-    /** @brief Number of regressors */
-    int n_regressors;
-
-    /**
-     * @brief Hyperarameters of the squared exponential kernel
-     */
-    gprat_hyper::SEKParams sek_params;
+    int n_tile_size_;
 
     /**
      * @brief List of bools indicating trainable parameters: lengthscale,
      * vertical lengthscale, noise variance
      */
-    std::vector<bool> trainable_params;
+    std::vector<bool> trainable_params_;
+
+    /**
+     * @brief Target handle pointing to the unit used for computation.
+     */
+    std::shared_ptr<Target> target_;
+
+
+  public:
+
+    /** @brief Number of regressors */
+    int n_reg;
+
+    /**
+     * @brief Hyperarameters of the squared exponential kernel
+     */
+    gprat_hyper::SEKParams kernel_params;
+
 
     /**
      * @brief Constructs a Gaussian Process (GP)
@@ -144,8 +152,8 @@ class GP
        std::vector<double> output,
        int n_tiles,
        int n_tile_size,
-       std::vector<double> kernel_hyperparams,
        int n_regressors,
+       std::vector<double> kernel_hyperparams,
        std::vector<bool> trainable_bool,
        int gpu_id,
        int n_streams);

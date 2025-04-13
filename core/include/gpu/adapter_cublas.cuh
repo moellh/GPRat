@@ -197,7 +197,8 @@ ger(cublasHandle_t cublas,
  * @return vector f_r, in-place update
  */
 hpx::shared_future<double *>
-dot_diag_syrk(cudaStream_t stream,
+dot_diag_syrk(cublasHandle_t cublas,
+              cudaStream_t stream,
               hpx::shared_future<double *> f_A,
               hpx::shared_future<double *> f_r,
               const std::size_t M,

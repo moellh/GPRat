@@ -3,6 +3,9 @@
 #include "cpu/adapter_cblas_fp64.hpp"
 #include <numeric>
 
+namespace cpu
+{
+
 ///////////////////////////////////////////////////////////
 // Parameter constraints
 double to_constrained(double parameter, bool noise)
@@ -239,3 +242,5 @@ double compute_trace_diag(const std::vector<double> &tile, double trace, std::si
     }
     return trace + local_trace;
 }
+
+}  // end of namespace cpu

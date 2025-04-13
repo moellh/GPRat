@@ -83,7 +83,7 @@ std::vector<double> gen_tile_distance(
         {
             j_global = N * col + j;
             // compute covariance function
-            cov_dist = compute_covariance_dist_func(i_global, j_global, n_regressors, sek_params, input, input);
+            cov_dist = compute_covariance_distance(i_global, j_global, n_regressors, sek_params, input, input);
             tile[i * N + j] = cov_dist;
         }
     }
@@ -373,4 +373,4 @@ sum_noise_gradright(const std::vector<double> &alpha, double grad, gprat_hyper::
     return 0.0;
 }
 
-}  // namespace gpu
+}  // end of namespace gpu

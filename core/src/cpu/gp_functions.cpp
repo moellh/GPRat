@@ -8,14 +8,17 @@
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
 using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
 
+namespace cpu
+{
+
 ///////////////////////////////////////////////////////////////////////////
 // PREDICT
 std::vector<std::vector<double>>
 cholesky(const std::vector<double> &training_input,
-             const gprat_hyper::SEKParams &sek_params,
-             int n_tiles,
-             int n_tile_size,
-             int n_regressors)
+         const gprat_hyper::SEKParams &sek_params,
+         int n_tiles,
+         int n_tile_size,
+         int n_regressors)
 {
     std::vector<std::vector<double>> result;
     // Tiled future data structures
@@ -61,14 +64,14 @@ cholesky(const std::vector<double> &training_input,
 
 std::vector<double>
 predict(const std::vector<double> &training_input,
-            const std::vector<double> &training_output,
-            const std::vector<double> &test_input,
-            const gprat_hyper::SEKParams &sek_params,
-            int n_tiles,
-            int n_tile_size,
-            int m_tiles,
-            int m_tile_size,
-            int n_regressors)
+        const std::vector<double> &training_output,
+        const std::vector<double> &test_input,
+        const gprat_hyper::SEKParams &sek_params,
+        int n_tiles,
+        int n_tile_size,
+        int m_tiles,
+        int m_tile_size,
+        int n_regressors)
 {
     /*
      * Prediction: hat(y)_M = cross(K)_MxN * K^-1_NxN * y_N
@@ -585,11 +588,11 @@ std::vector<std::vector<double>> predict_with_full_cov(
 ///////////////////////////////////////////////////////////////////////////
 // OPTIMIZATION
 double compute_loss(const std::vector<double> &training_input,
-                        const std::vector<double> &training_output,
-                        const gprat_hyper::SEKParams &sek_params,
-                        int n_tiles,
-                        int n_tile_size,
-                        int n_regressors)
+                    const std::vector<double> &training_output,
+                    const gprat_hyper::SEKParams &sek_params,
+                    int n_tiles,
+                    int n_tile_size,
+                    int n_regressors)
 {
     /*
      * Negative log likelihood loss:
@@ -669,13 +672,13 @@ double compute_loss(const std::vector<double> &training_input,
 
 std::vector<double>
 optimize(const std::vector<double> &training_input,
-             const std::vector<double> &training_output,
-             int n_tiles,
-             int n_tile_size,
-             int n_regressors,
-             const gprat_hyper::AdamParams &adam_params,
-             gprat_hyper::SEKParams &sek_params,
-             std::vector<bool> trainable_params)
+         const std::vector<double> &training_output,
+         int n_tiles,
+         int n_tile_size,
+         int n_regressors,
+         const gprat_hyper::AdamParams &adam_params,
+         gprat_hyper::SEKParams &sek_params,
+         std::vector<bool> trainable_params)
 {
     /*
      * - Hyperparameters theta={v, l, v_n}
@@ -916,16 +919,15 @@ optimize(const std::vector<double> &training_input,
     return losses;
 }
 
-double optimize_step(
-    const std::vector<double> &training_input,
-    const std::vector<double> &training_output,
-    int n_tiles,
-    int n_tile_size,
-    int n_regressors,
-    gprat_hyper::AdamParams &adam_params,
-    gprat_hyper::SEKParams &sek_params,
-    std::vector<bool> trainable_params,
-    int iter)
+double optimize_step(const std::vector<double> &training_input,
+                     const std::vector<double> &training_output,
+                     int n_tiles,
+                     int n_tile_size,
+                     int n_regressors,
+                     gprat_hyper::AdamParams &adam_params,
+                     gprat_hyper::SEKParams &sek_params,
+                     std::vector<bool> trainable_params,
+                     int iter)
 {
     /*
      * - Hyperparameters theta={v, l, v_n}
@@ -1155,3 +1157,5 @@ double optimize_step(
     }
     return loss_value.get();
 }
+
+}  // end of namespace cpu

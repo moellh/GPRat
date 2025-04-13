@@ -5,7 +5,7 @@ set -e
 
 # Create environment and copy config file
 source $HOME/spack/share/spack/setup-env.sh
-# spack env create gprat_gpu_clang
+spack env create gprat_gpu_clang
 cp spack_gpu_clang.yaml $HOME/spack/var/spack/environments/gprat_gpu_clang/spack.yaml
 spack env activate gprat_gpu_clang
 

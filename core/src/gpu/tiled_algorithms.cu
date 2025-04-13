@@ -211,10 +211,9 @@ void backward_solve_tiled_matrix(
     const std::size_t m_tiles,
     gprat::CUDA_GPU &gpu)
 {
-    // clang-format off
-    for_loop(hpx::execution::seq, 0, m_tiles, [&](std::size_t c)
+    for (std::size_t c = 0; c < m_tiles; ++c)
     {
-        for_loop(hpx::execution::seq, 0, n_tiles, [&](std::size_t k)
+        for (std::size_t k = 0; k < n_tiles; ++k)
         {
             auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -230,7 +229,7 @@ void backward_solve_tiled_matrix(
                 Blas_trans,
                 Blas_left);
 
-            for_loop(hpx::execution::seq, 0, k, [&](std::size_t m)
+            for (std::size_t m = 0; m < k; ++m)
             {
                 auto [cublas, stream] = gpu.next_cublas_handle();
 
@@ -247,10 +246,9 @@ void backward_solve_tiled_matrix(
                     n_tile_size,
                     Blas_trans,
                     Blas_no_trans);
-            });
-        });
-    });
-    // clang-format on
+            }
+        }
+    }
 }
 
 void matrix_vector_tiled(std::vector<hpx::shared_future<double *>> &ft_tiles,
@@ -543,4 +541,4 @@ double update_noise_variance(
     // return 0;
 }
 
-}  // namespace gpu
+}  // end of namespace gpu

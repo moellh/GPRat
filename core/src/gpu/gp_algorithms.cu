@@ -4,13 +4,10 @@
 #include "gpu/cuda_kernels.cuh"
 #include "gpu/cuda_utils.cuh"
 #include "gpu/gp_optimizer.cuh"
-#include "gpu/tiled_algorithms.cuh"
 #include "target.hpp"
 #include <cuda_runtime.h>
 #include <hpx/algorithm.hpp>
 #include <hpx/async_cuda/cuda_exception.hpp>
-
-using hpx::experimental::for_loop;
 
 namespace gpu
 {
@@ -35,15 +32,12 @@ __global__ void gen_tile_covariance_kernel(
         std::size_t j_global = n_tile_size * tile_column + j;
 
         double distance = 0.0;
+        double z_ik_minus_z_jk;
+
         for (std::size_t k = 0; k < n_regressors; ++k)
         {
-            int offset = -n_regressors + 1 + k;
-            int i_local = i_global + offset;
-            int j_local = j_global + offset;
-
-            double z_ik = (i_local >= 0) ? d_input[i_local] : 0.0;
-            double z_jk = (j_local >= 0) ? d_input[j_local] : 0.0;
-            distance += (z_ik - z_jk) * (z_ik - z_jk);
+            z_ik_minus_z_jk = d_input[i_global + k] - d_input[j_global + k];
+            distance += z_ik_minus_z_jk * z_ik_minus_z_jk;
         }
 
         // Compute the covariance value
@@ -102,15 +96,12 @@ __global__ void gen_tile_full_prior_covariance_kernel(
         std::size_t j_global = n_tile_size * tile_column + j;
 
         double distance = 0.0;
+        double z_ik_minus_z_jk;
+
         for (std::size_t k = 0; k < n_regressors; ++k)
         {
-            int offset = -n_regressors + 1 + k;
-            int i_local = i_global + offset;
-            int j_local = j_global + offset;
-
-            double z_ik = (i_local >= 0) ? d_input[i_local] : 0.0;
-            double z_jk = (j_local >= 0) ? d_input[j_local] : 0.0;
-            distance += (z_ik - z_jk) * (z_ik - z_jk);
+            z_ik_minus_z_jk = d_input[i_global + k] - d_input[j_global + k];
+            distance += z_ik_minus_z_jk * z_ik_minus_z_jk;
         }
 
         double covariance =
@@ -162,15 +153,12 @@ __global__ void gen_tile_prior_covariance_kernel(
         std::size_t j_global = n_tile_size * tile_column + i;
 
         double distance = 0.0;
+        double z_ik_minus_z_jk;
+
         for (std::size_t k = 0; k < n_regressors; ++k)
         {
-            int offset = -n_regressors + 1 + k;
-            int i_local = i_global + offset;
-            int j_local = j_global + offset;
-
-            double z_ik = (i_local >= 0) ? d_input[i_local] : 0.0;
-            double z_jk = (j_local >= 0) ? d_input[j_local] : 0.0;
-            distance += (z_ik - z_jk) * (z_ik - z_jk);
+            z_ik_minus_z_jk = d_input[i_global + k] - d_input[j_global + k];
+            distance += z_ik_minus_z_jk * z_ik_minus_z_jk;
         }
 
         double covariance =
@@ -224,25 +212,13 @@ __global__ void gen_tile_cross_covariance_kernel(
         std::size_t i_global = n_row_tile_size * tile_row + i;
         std::size_t j_global = n_column_tile_size * tile_column + j;
 
-        double z_ik = 0.0;
-        double z_jk = 0.0;
         double distance = 0.0;
+        double z_ik_minus_z_jk;
 
         for (std::size_t k = 0; k < n_regressors; ++k)
         {
-            int offset = -n_regressors + 1 + k;
-            int i_local = i_global + offset;
-            int j_local = j_global + offset;
-
-            if (i_local >= 0)
-            {
-                z_ik = d_row_input[i_local];
-            }
-            if (j_local >= 0)
-            {
-                z_jk = d_col_input[j_local];
-            }
-            distance += (z_ik - z_jk) * (z_ik - z_jk);
+            z_ik_minus_z_jk = d_row_input[i_global + k] - d_col_input[j_global + k];
+            distance += z_ik_minus_z_jk * z_ik_minus_z_jk;
         }
 
         double covariance =

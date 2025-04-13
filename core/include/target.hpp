@@ -3,9 +3,9 @@
 
 #include <string>
 
-#ifdef GPRAT_WITH_CUDA
-    #include <cuda_runtime.h>
-    #include <hpx/async_cuda/cublas_executor.hpp>
+#if GPRAT_WITH_CUDA
+#include <cuda_runtime.h>
+#include <hpx/async_cuda/cublas_executor.hpp>
 #endif
 
 namespace gprat
@@ -40,7 +40,7 @@ struct Target
      *
      * Implemented by subclasses.
      */
-    virtual std::string repr() = 0;
+    virtual std::string repr() const = 0;
 
     virtual ~Target() { }
 
@@ -69,9 +69,17 @@ struct CPU : public Target
     /**
      * @brief Returns string representation of the CPU target.
      */
-    std::string repr() override;
+    std::string repr() const override;
 };
 
+/**
+ * @brief Creates and returns handle for CPU target.
+ *
+ * @return CPU target
+ */
+CPU get_cpu();
+
+#if GPRAT_WITH_CUDA
 struct CUDA_GPU : public Target
 {
     /**
@@ -114,9 +122,8 @@ struct CUDA_GPU : public Target
     /**
      * @brief Returns string representation of the GPU target.
      */
-    std::string repr() override;
+    std::string repr() const override;
 
-#ifdef GPRAT_WITH_CUDA
     /**
      * @brief Creates n_streams CUDA streams and cublas handles.
      *
@@ -166,15 +173,7 @@ struct CUDA_GPU : public Target
   private:
     std::vector<cudaStream_t> streams;
     std::vector<cublasHandle_t> cublas_handles;
-#endif
 };
-
-/**
- * @brief Creates and returns handle for CPU target.
- *
- * @return CPU target
- */
-CPU get_cpu();
 
 /**
  * @brief Creates and returns handle for GPU target.
@@ -192,6 +191,7 @@ CUDA_GPU get_gpu(int id, int n_streams);
  * Uses only one stream, so single-threaded GPU execution.
  */
 CUDA_GPU get_gpu();
+#endif
 
 /**
  * @brief Lists available GPUs with their properties.

@@ -7,6 +7,7 @@
 
 namespace gprat_hyper
 {
+
 /**
  * @brief Squared Exponential Kernel Parameters
  */

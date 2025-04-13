@@ -1,5 +1,8 @@
 #include "cpu/gp_uncertainty.hpp"
 
+namespace cpu
+{
+
 hpx::shared_future<std::vector<double>> get_matrix_diagonal(hpx::shared_future<std::vector<double>> f_A, std::size_t M)
 {
     auto A = f_A.get();
@@ -14,3 +17,5 @@ hpx::shared_future<std::vector<double>> get_matrix_diagonal(hpx::shared_future<s
 
     return hpx::make_ready_future(std::move(tile));
 }
+
+}  // end of namespace cpu

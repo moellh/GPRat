@@ -8,6 +8,9 @@
 using Tiled_matrix = std::vector<hpx::shared_future<std::vector<double>>>;
 using Tiled_vector = std::vector<hpx::shared_future<std::vector<double>>>;
 
+namespace cpu
+{
+
 // Tiled Cholesky Algorithm
 
 /**
@@ -174,5 +177,7 @@ void update_hyperparameter_tiled(
     std::size_t n_tiles,
     std::size_t iter,
     std::size_t param_idx);
+
+}  // end of namespace cpu
 
 #endif // end of CPU_TILED_ALGORITHMS_H

@@ -6,7 +6,6 @@
 #include <cusolverDn.h>
 #include <gp_kernels.hpp>
 #include <hpx/modules/async_cuda.hpp>
-#include <vector>
 
 namespace gpu
 {

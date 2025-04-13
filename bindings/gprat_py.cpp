@@ -120,8 +120,8 @@ Parameters:
     n_streams (int): Number of streams for GPU computation. Default is 1.
 
              )pbdoc")
-        .def_readwrite("n_reg", &gprat::GP::n_regressors)
-        .def_readwrite("kernel_params", &gprat::GP::sek_params)
+        .def_readwrite("n_reg", &gprat::GP::n_reg)
+        .def_readwrite("kernel_params", &gprat::GP::kernel_params)
         .def("__repr__", &gprat::GP::repr)
         .def("get_input_data", &gprat::GP::get_training_input)
         .def("get_output_data", &gprat::GP::get_training_output)

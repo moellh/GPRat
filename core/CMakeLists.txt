@@ -43,7 +43,16 @@ add_library(GPRat::core ALIAS gprat_core)
 
 # Add them as PRIVATE sources here so they show up in project files Can't use
 # PUBLIC etc., see: https://stackoverflow.com/a/62465051
-file(GLOB_RECURSE header_files CONFIGURE_DEPENDS include/*.hpp)
+file(GLOB_RECURSE header_files CONFIGURE_DEPENDS
+    include/*.hpp
+    include/cpu/*.hpp
+)
+if(GPRAT_WITH_CUDA)
+  file(GLOB_RECURSE cuda_headers CONFIGURE_DEPENDS
+      include/gpu/*.cuh
+  )
+  list(APPEND header_files ${cuda_headers})
+endif()
 target_sources(gprat_core PRIVATE ${header_files})
 
 # Link HPX libraries

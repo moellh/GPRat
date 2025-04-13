@@ -134,7 +134,7 @@ void stop_hpx_runtime()
 
 bool compiled_with_cuda()
 {
-#ifdef GPRAT_WITH_CUDA
+#if GPRAT_WITH_CUDA
     return true;
 #else
     return false;

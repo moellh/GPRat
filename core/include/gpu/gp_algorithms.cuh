@@ -1,7 +1,6 @@
 #ifndef GPU_GP_ALGORITHMS_H
 #define GPU_GP_ALGORITHMS_H
 
-#include "gp_hyperparameters.hpp"
 #include "gp_kernels.hpp"
 #include "target.hpp"
 #include <hpx/future.hpp>
@@ -273,21 +272,21 @@ std::vector<hpx::shared_future<double *>> assemble_t_cross_covariance_tiles(
  * @param gpu GPU target for computations
  */
 std::vector<hpx::shared_future<double *>> assemble_y_tiles(
-    const double *d_training_output, const std::size_t n_tiles, const std::size_t n_tile_size, gprat::CUDA_GPU &gpu)
+    const double *d_training_output, const std::size_t n_tiles, const std::size_t n_tile_size, gprat::CUDA_GPU &gpu);
 
-    /**
-     * @brief Allocates the tiled covariance matrix on the device given the training
-     *        data.
-     *
-     * @param d_training_input The training input data
-     * @param n_tile_size The size of the tile
-     * @param n_tiles The number of tiles per dimension
-     * @param gpu GPU target for computations
-     */
-    std::vector<double> copy_tiled_vector_to_host_vector(std::vector<hpx::shared_future<double *>> &d_tiles,
-                                                         std::size_t n_tile_size,
-                                                         std::size_t n_tiles,
-                                                         gprat::CUDA_GPU &gpu);
+/**
+ * @brief Allocates the tiled covariance matrix on the device given the training
+ *        data.
+ *
+ * @param d_training_input The training input data
+ * @param n_tile_size The size of the tile
+ * @param n_tiles The number of tiles per dimension
+ * @param gpu GPU target for computations
+ */
+std::vector<double> copy_tiled_vector_to_host_vector(std::vector<hpx::shared_future<double *>> &d_tiles,
+                                                     std::size_t n_tile_size,
+                                                     std::size_t n_tiles,
+                                                     gprat::CUDA_GPU &gpu);
 
 /**
  * @brief Moves lower triangular tiles of the covariance matrix to the host.

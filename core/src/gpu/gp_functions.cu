@@ -1,9 +1,8 @@
 #include "gpu/gp_functions.cuh"
 
 #include "gp_kernels.hpp"
-#include "gpu/cuda_kernels.cuh"
 #include "gpu/cuda_utils.cuh"
-#include "gpu/gp_optimizer.cuh"
+#include "gpu/gp_algorithms.cuh"
 #include "gpu/tiled_algorithms.cuh"
 #include "target.hpp"
 #include <cuda_runtime.h>
@@ -17,7 +16,7 @@ std::vector<double>
 predict(const std::vector<double> &h_training_input,
         const std::vector<double> &h_training_output,
         const std::vector<double> &h_test_input,
-        const gprat_hyper::SEKParams sek_params,
+        const gprat_hyper::SEKParams &sek_params,
         int n_tiles,
         int n_tile_size,
         int m_tiles,
@@ -33,9 +32,11 @@ predict(const std::vector<double> &h_training_input,
 
     auto d_tiles =
         assemble_tiled_covariance_matrix(d_training_input, n_tiles, n_tile_size, n_regressors, sek_params, gpu);
+
     auto alpha_tiles = assemble_alpha_tiles(d_training_output, n_tiles, n_tile_size, gpu);
     auto cross_covariance_tiles = assemble_cross_covariance_tiles(
         d_test_input, d_training_input, m_tiles, n_tiles, m_tile_size, n_tile_size, n_regressors, sek_params, gpu);
+
     auto prediction_tiles = assemble_tiles_with_zeros(m_tile_size, m_tiles, gpu);
 
     cusolverDnHandle_t cusolver = create_cusolver_handle();
@@ -45,7 +46,7 @@ predict(const std::vector<double> &h_training_input,
     forward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu);
     backward_solve_tiled(d_tiles, alpha_tiles, n_tile_size, n_tiles, gpu);
 
-    prediction_tiled(
+    matrix_vector_tiled(
         cross_covariance_tiles, alpha_tiles, prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles, gpu);
     std::vector<double> prediction = copy_tiled_vector_to_host_vector(prediction_tiles, m_tile_size, m_tiles, gpu);
 
@@ -64,7 +65,7 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     const std::vector<double> &h_training_input,
     const std::vector<double> &h_training_output,
     const std::vector<double> &h_test_input,
-    const gprat_hyper::SEKParams sek_params,
+    const gprat_hyper::SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
@@ -108,18 +109,18 @@ std::vector<std::vector<double>> predict_with_uncertainty(
     backward_solve_tiled(d_K_tiles, d_alpha_tiles, n_tile_size, n_tiles, gpu);
 
     // Triangular solve A_M,N * K_NxN = K_MxN -> A_MxN = K_MxN * K^-1_NxN
-    forward_solve_KcK_tiled(d_K_tiles, d_t_cross_covariance_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles, gpu);
+    forward_solve_tiled_matrix(d_K_tiles, d_t_cross_covariance_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles, gpu);
 
     // Compute predictions
-    prediction_tiled(
+    matrix_vector_tiled(
         d_cross_covariance_tiles, d_alpha_tiles, d_prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles, gpu);
 
     // posterior covariance matrix - (K_MxN * K^-1_NxN) * K_NxM
-    posterior_covariance_tiled(
+    symmetric_matrix_matrix_diagonal_tiled(
         d_t_cross_covariance_tiles, d_prior_inter_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles, gpu);
 
     // Compute predicition uncertainty
-    prediction_uncertainty_tiled(
+    vector_difference_tiled(
         d_prior_K_tiles, d_prior_inter_tiles, d_prediction_uncertainty_tiles, m_tile_size, m_tiles, gpu);
 
     // Get predictions and uncertainty to return them
@@ -149,7 +150,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
     const std::vector<double> &h_training_input,
     const std::vector<double> &h_training_output,
     const std::vector<double> &h_test_input,
-    const gprat_hyper::SEKParams sek_params,
+    const gprat_hyper::SEKParams &sek_params,
     int n_tiles,
     int n_tile_size,
     int m_tiles,
@@ -191,17 +192,18 @@ std::vector<std::vector<double>> predict_with_full_cov(
     backward_solve_tiled(d_K_tiles, d_alpha_tiles, n_tile_size, n_tiles, gpu);
 
     // Triangular solve A_M,N * K_NxN = K_MxN -> A_MxN = K_MxN * K^-1_NxN
-    forward_solve_KcK_tiled(d_K_tiles, d_t_cross_covariance_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles, gpu);
+    forward_solve_tiled_matrix(d_K_tiles, d_t_cross_covariance_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles, gpu);
 
     // Compute predictions
-    prediction_tiled(
+    matrix_vector_tiled(
         d_cross_covariance_tiles, d_alpha_tiles, d_prediction_tiles, m_tile_size, n_tile_size, n_tiles, m_tiles, gpu);
 
     // posterior covariance matrix - (K_MxN * K^-1_NxN) * K_NxM
-    full_cov_tiled(d_t_cross_covariance_tiles, d_prior_K_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles, gpu);
+    symmetric_matrix_matrix_tiled(
+        d_t_cross_covariance_tiles, d_prior_K_tiles, n_tile_size, m_tile_size, n_tiles, m_tiles, gpu);
 
     // Compute predicition uncertainty
-    pred_uncer_tiled(d_prior_K_tiles, d_prediction_uncertainty_tiles, m_tile_size, m_tiles, gpu);
+    matrix_diagonal_tiled(d_prior_K_tiles, d_prediction_uncertainty_tiles, m_tile_size, m_tiles, gpu);
 
     // Get predictions and uncertainty to return them
     std::vector<double> prediction = copy_tiled_vector_to_host_vector(d_prediction_tiles, m_tile_size, m_tiles, gpu);
@@ -227,7 +229,7 @@ std::vector<std::vector<double>> predict_with_full_cov(
 
 double compute_loss(const std::vector<double> &h_training_input,
                     const std::vector<double> &h_training_output,
-                    const gprat_hyper::SEKParams sek_params,
+                    const gprat_hyper::SEKParams &sek_params,
                     int n_tiles,
                     int n_tile_size,
                     int n_regressors,
@@ -303,7 +305,7 @@ double optimize_step(const std::vector<double> &training_input,
 
 std::vector<std::vector<double>>
 cholesky(const std::vector<double> &h_training_input,
-         const gprat_hyper::SEKParams sek_params,
+         const gprat_hyper::SEKParams &sek_params,
          int n_tiles,
          int n_tile_size,
          int n_regressors,

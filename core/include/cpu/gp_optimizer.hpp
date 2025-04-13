@@ -5,6 +5,9 @@
 #include "gp_kernels.hpp"
 #include <vector>
 
+namespace cpu
+{
+
 /**
  * @brief Transform hyperparameter to enforce constraints using softplus.
  *
@@ -224,5 +227,7 @@ double compute_dot(const std::vector<double> &vector_T, const std::vector<double
  * @return The updated global trace
  */
 double compute_trace_diag(const std::vector<double> &tile, double trace, std::size_t N);
+
+}  // end of namespace cpu
 
 #endif  // end of CPU_GP_OPTIMIZER_H
