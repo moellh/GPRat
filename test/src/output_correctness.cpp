@@ -54,7 +54,8 @@ gprat_results tag_invoke(boost::json::value_to_tag<gprat_results>, const boost::
 }
 
 // This logic is basically equivalent to the GPRat C++ example (for now).
-gprat_results run_on_data(const std::string &train_path, const std::string &out_path, const std::string &test_path)
+std::pair<gprat_results, gprat_results>
+run_on_data(const std::string &train_path, const std::string &out_path, const std::string &test_path)
 {
     // configuration
     const std::size_t OPT_ITER = 3;
@@ -77,21 +78,36 @@ gprat_results run_on_data(const std::string &train_path, const std::string &out_
 
     // GP
     const std::vector<bool> trainable = { true, true, true };
-    gprat::GP gp(training_input.data, training_output.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, trainable);
+    gprat::GP gp_cpu(
+        training_input.data, training_output.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, trainable);
+    gprat::GP gp_gpu(
+        training_input.data, training_output.data, n_tiles, tile_size, n_reg, { 1.0, 1.0, 0.1 }, trainable, 0, 1);
 
     // Initialize HPX with no arguments, don't run hpx_main
     utils::start_hpx_runtime(0, nullptr);
 
-    gprat_results results;
-    results.choleksy = gp.cholesky();
-    results.losses = gp.optimize(hpar);
-    results.sum = gp.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
-    results.full = gp.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
-    results.pred = gp.predict(test_input.data, test_tiles.first, test_tiles.second);
+    gprat_results results_cpu;
+    gprat_results results_gpu;
+
+    results_cpu.choleksy = gp_cpu.cholesky();
+    results_gpu.choleksy = gp_gpu.cholesky();
+
+    results_cpu.losses = gp_cpu.optimize(hpar);
+    results_gpu.losses = gp_cpu.optimize(hpar);  // TODO: Change to gp_gpu if optimization is implemented for GPU
+
+    results_cpu.sum = gp_cpu.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
+    results_gpu.sum = gp_gpu.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
+
+    results_cpu.full = gp_cpu.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
+    results_gpu.full = gp_gpu.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
+
+    results_cpu.pred = gp_cpu.predict(test_input.data, test_tiles.first, test_tiles.second);
+    results_gpu.pred = gp_gpu.predict(test_input.data, test_tiles.first, test_tiles.second);
 
     // Stop the HPX runtime
     utils::stop_hpx_runtime();
-    return results;
+
+    return { results_cpu, results_gpu };
 }
 
 bool load_or_create_expected_results(
