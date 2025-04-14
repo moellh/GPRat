@@ -99,26 +99,6 @@ gprat_results run_on_data_cpu(const std::string &train_path, const std::string &
     results_cpu.losses = gp_cpu.optimize(hpar);
 
     results_cpu.sum = gp_cpu.predict_with_uncertainty(test_input.data, test_tiles.first, test_tiles.second);
-    // std::cout << std::scientific << std::setprecision(16);
-    // std::cout << "[";
-    // for (std::size_t i = 0; i < results_cpu.sum.size(); ++i)
-    // {
-    //     std::cout << "[";
-    //     for (std::size_t j = 0; j < results_cpu.sum[i].size(); ++j)
-    //     {
-    //         std::cout << results_cpu.sum[i][j];
-    //         if (j + 1 < results_cpu.sum[i].size())
-    //         {
-    //             std::cout << ",";
-    //         }
-    //     }
-    //     std::cout << "]";
-    //     if (i + 1 < results_cpu.sum.size())
-    //     {
-    //         std::cout << ",";
-    //     }
-    // }
-    // std::cout << "]";
 
     results_cpu.full = gp_cpu.predict_with_full_cov(test_input.data, test_tiles.first, test_tiles.second);
 

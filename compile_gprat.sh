@@ -10,7 +10,7 @@ set -e  # Exit immediately if a command exits with a non-zero status.
 
 # Release:	release-linux
 # Debug:	dev-linux
-export PRESET=dev-linux #TODO: change to release
+export PRESET=release-linux
 
 # Bindings
 if [[ "$1" == "python" ]]
@@ -43,16 +43,10 @@ fi
 
 if [[ $cpu -eq 1 ]]; then
     # Load GCC compiler
-    # module load gcc/14.1.0 # TODO: uncomment
-    #
-    # # Activate spack environment
-    # spack env activate gprat_cpu_gcc
-
-    module load clang/17.0.1 # TODO: remove
-    module load cuda/12.0.1
+    module load gcc/14.1.0
 
     # Activate spack environment
-    spack env activate gprat_gpu_clang
+    spack env activate gprat_cpu_gcc
 
     cmake --preset $PRESET \
         -DGPRAT_BUILD_BINDINGS=$BINDINGS \
