@@ -11,7 +11,7 @@ source gpytorch_env/bin/activate
 
 # Install requirements
 if ! python -c "import gpytorch"; then
-    pip install gpytorch==1.13
+    pip install gpytorch==1.14
 fi
 
 # run on CPU or GPU
