@@ -1,10 +1,10 @@
-#include "../include/adapter_cblas_fp64.hpp"
+#include "cpu/adapter_cblas_fp64.hpp"
 
 // MKL CBLAS and LAPACKE
 #include "mkl_cblas.h"
 #include "mkl_lapacke.h"
 
-// BLAS level 3 operations -------------------------------------- {{{
+// BLAS level 3 operations
 
 vector_future potrf(vector_future f_A, const int N)
 {
@@ -95,9 +95,7 @@ gemm(vector_future f_A,
     return hpx::make_ready_future(C);
 }
 
-// }}} --------------------------------- end of BLAS level 3 operations
-
-// BLAS level 2 operations ------------------------------- {{{
+// BLAS level 2 operations
 
 vector_future trsv(vector_future f_L, vector_future f_a, const int N, const BLAS_TRANSPOSE transpose_L)
 {
@@ -175,9 +173,7 @@ vector_future dot_diag_gemm(vector_future f_A, vector_future f_B, vector_future 
     return hpx::make_ready_future(r);
 }
 
-// }}} --------------------------------- end of BLAS level 2 operations
-
-// BLAS level 1 operations ------------------------------- {{{
+// BLAS level 1 operations
 
 vector_future axpy(vector_future f_y, vector_future f_x, const int N)
 {
@@ -192,5 +188,3 @@ double dot(std::vector<double> a, std::vector<double> b, const int N)
     // DOT: a * b
     return cblas_ddot(N, a.data(), 1, b.data(), 1);
 }
-
-// }}} --------------------------------- end of BLAS level 1 operations
