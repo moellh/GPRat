@@ -9,7 +9,7 @@ code.
 
 ## Dependencies
 
-GPRat utilizes two external libraries:
+GPRat utilizes three external libraries:
 
 - [HPX](https://hpx-docs.stellar-group.org/latest/html/index.html) for asynchronous task-based parallelization
 - [MKL](https://www.intel.com/content/www/us/en/developer/tools/oneapi/onemkl.html) for CPU-only BLAS computations
@@ -36,6 +36,8 @@ ctest --preset=dev-linux
 
 As a developer, you may create a `CMakeUserPresets.json` file at the root of the project that contains additional
 presets local to your machine.
+In addition to the build configuration `dev-linux`, there are `release-linux`, `dev-linux-gpu`, and `release-linux-gpu`.
+The configurations suffixed with `-gpu` build the library with CUDA.
 
 GPRat can be build with or without Python bindings.
 The following options can be set to include / exclude parts of the project:
@@ -46,7 +48,6 @@ The following options can be set to include / exclude parts of the project:
 | GPRAT_BUILD_BINDINGS        | Enable/Disable building of the Python bindings | ON              |
 | GPRAT_ENABLE_FORMAT_TARGETS | Enable/disable code formatting helper targets  | ON if top-level |
 | GPRAT_ENABLE_EXAMPLES       | Enable/disable example projects                | ON if top-level |
-| GPRAT_WITH_CUDA             | Enable/disable compilation with CUDA support   | OFF             |
 
 Respective scripts can be found in this directory.
 
@@ -68,7 +69,7 @@ implementations based on TensorFlow ([GPflow](https://github.com/GPflow/GPflow))
 
 - Go to [`examples/gprat_python`](examples/gprat_python/)
 - Set parameters in [`config.json`](examples/gprat_python/config.json)
-- Run `./run_gprat_python.sh` to run example
+- Run `./run_gprat_python.sh [--use_gpu]` to run the example
 
 ### To run GPflow reference
 
