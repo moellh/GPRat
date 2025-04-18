@@ -158,7 +158,8 @@
       "inherits": ["ci-linux"],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "GPRAT_WITH_CUDA": "OFF"
       }
     },
     {
@@ -167,7 +168,8 @@
       "inherits": ["ci-linux"],
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "GPRAT_WITH_CUDA": "OFF"
       }
     },
     {
@@ -175,11 +177,6 @@
       "binaryDir": "${sourceDir}/build/dev-linux-gpu",
       "inherits": ["dev-linux"],
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "$(which clang)",
-        "CMAKE_CXX_COMPILER": "$(which clang++)",
-        "CMAKE_CUDA_COMPILER": "$(which clang++)",
-        "CMAKE_CUDA_FLAGS": "--cuda-path: ${CUDA_HOME}",
-        "CMAKE_CUDA_ARCHITECTURES": "$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')",
         "GPRAT_WITH_CUDA": "ON"
       }
     },
@@ -188,11 +185,6 @@
       "binaryDir": "${sourceDir}/build/release-linux-gpu",
       "inherits": ["release-linux"],
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "$(which clang)",
-        "CMAKE_CXX_COMPILER": "$(which clang++)",
-        "CMAKE_CUDA_COMPILER": "$(which clang++)",
-        "CMAKE_CUDA_FLAGS": "--cuda-path: ${CUDA_HOME}",
-        "CMAKE_CUDA_ARCHITECTURES": "$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')",
         "GPRAT_WITH_CUDA": "ON"
       }
     }
@@ -206,6 +198,16 @@
     {
       "name": "release-linux",
       "configurePreset": "release-linux",
+      "configuration": "Release"
+    },
+    {
+      "name": "dev-linux-gpu",
+      "configurePreset": "dev-linux-gpu",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-linux-gpu",
+      "configurePreset": "release-linux-gpu",
       "configuration": "Release"
     }
   ],
@@ -223,8 +225,30 @@
     },
     {
       "name": "release-linux",
-      "configurePreset": "dev-linux",
+      "configurePreset": "release-linux",
+      "configuration": "Release",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "dev-linux-gpu",
+      "configurePreset": "dev-linux-gpu",
       "configuration": "Debug",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error"
+      }
+    },
+    {
+      "name": "release-linux-gpu",
+      "configurePreset": "release-linux-gpu",
+      "configuration": "Release",
       "output": {
         "outputOnFailure": true
       },
