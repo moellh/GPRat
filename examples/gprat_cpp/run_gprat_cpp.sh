@@ -29,6 +29,8 @@ if [[ $cpu -eq 1 ]]; then
     # Activate spack environment
     spack env activate gprat_cpu_gcc
 
+    GPRAT_WITH_CUDA=OFF
+
 elif [[ $gpu -eq 1 ]]; then
     # Load Clang compiler and CUDA library
     module load clang/17.0.1
@@ -45,6 +47,8 @@ elif [[ $gpu -eq 1 ]]; then
         echo "Please specify second input parameter: cpu/gpu"
         exit 1
     fi
+
+    GPRAT_WITH_CUDA=ON
 fi
 
 # Configure APEX
@@ -54,11 +58,13 @@ export APEX_DISABLE=1
 ################################################################################
 # Compile code
 ################################################################################
+
 rm -rf build && mkdir build && cd build
 
 # Configure the project
 cmake .. -DCMAKE_BUILD_TYPE=Release \
-         -DGPRat_DIR=./lib/cmake/GPRat
+         -DGPRat_DIR=./lib/cmake/GPRat \
+         -DGPRAT_WITH_CUDA=${GPRAT_WITH_CUDA}
 
  # Build the project
 make -j
@@ -66,4 +72,5 @@ make -j
 ################################################################################
 # Run code
 ################################################################################
+
 ./gprat_cpp $use_gpu

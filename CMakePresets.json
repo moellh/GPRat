@@ -169,6 +169,32 @@
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
       }
+    },
+    {
+      "name": "dev-linux-gpu",
+      "binaryDir": "${sourceDir}/build/dev-linux-gpu",
+      "inherits": ["dev-linux"],
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "$(which clang)",
+        "CMAKE_CXX_COMPILER": "$(which clang++)",
+        "CMAKE_CUDA_COMPILER": "$(which clang++)",
+        "CMAKE_CUDA_FLAGS": "--cuda-path: ${CUDA_HOME}",
+        "CMAKE_CUDA_ARCHITECTURES": "$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')",
+        "GPRAT_WITH_CUDA": "ON"
+      }
+    },
+    {
+      "name": "release-linux-gpu",
+      "binaryDir": "${sourceDir}/build/release-linux-gpu",
+      "inherits": ["release-linux"],
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "$(which clang)",
+        "CMAKE_CXX_COMPILER": "$(which clang++)",
+        "CMAKE_CUDA_COMPILER": "$(which clang++)",
+        "CMAKE_CUDA_FLAGS": "--cuda-path: ${CUDA_HOME}",
+        "CMAKE_CUDA_ARCHITECTURES": "$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader | awk -F '.' '{print $1$2}')",
+        "GPRAT_WITH_CUDA": "ON"
+      }
     }
   ],
   "buildPresets": [
